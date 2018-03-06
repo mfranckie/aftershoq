@@ -84,9 +84,7 @@ class Local(Platform):
     def submitandwait(self, prog,  args, dirpath):
         proc = su.runprogram(prog, args, dirpath)
         while proc.poll() == None:
-            print proc.poll()
             time.sleep(0.1)
-            print proc.poll()
         return proc
     
     def jobstatus(self, proc):

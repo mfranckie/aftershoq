@@ -403,6 +403,12 @@ class NumPar(object):
         C[cls.Niter],C[cls.Iconf],C[cls.Bei],C[cls.Nhist]=40, 2, 0.8, 40
         C[cls.Igauge] = 1
         C[cls.Nper] = 1
+        C[cls.Nzp] = 400
+        C[cls.Nqp] = 400
+        C[cls.Nwann] = 5
+        C[cls.Nnu] = 5
+        C[cls.eFd0],C[cls.deFd],C[cls.NeFd] = 0.050, 0.010, 1
+        C[cls.NE],C[cls.Nk] = 1000,1000
         
     
     @classmethod
