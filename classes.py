@@ -4,6 +4,8 @@ Created on 26 Jan 2018
 @author: martin
 '''
 import random
+import hilbert
+import numpy as np
 
 class MaterialPar():
     meff = 0
@@ -140,8 +142,9 @@ class Material:
             self.updateAlloy(x)
             
     def updateAlloy(self,x):
-        self.x = x
-        self.params = self.alloy(self.mat1,self.mat2,self.C,self.x)
+        if(self.x is not None):
+            self.x = x
+            self.params = self.alloy(self.mat1,self.mat2,self.C,self.x)
         
     def __str__(self):
         return self.name
@@ -205,6 +208,121 @@ class Sgenerator():
             self.structures.append(news)
             del news
            
-                
+    def genRanHilbertStructs(self,N,p):
+        """
+        Generate N structures on the hilbert curve defined by p
+        Number of dimensions is determined by # parameters to 
+        change
+        """
         
-    
+        # Number of dimensions in Euclidian space
+        ND = 0
+        
+        # Defince list of changeable parameters
+        params = []
+        dparams = []
+        windex = []
+        xindex = []
+        dopindex = []
+        for i in range(0,len(self.orig.layers)):
+            if self.dw[i]>0:
+                params.append(self.orig.layers[i].width)
+                dparams.append(self.dw[i])
+                windex.append(i)
+                ND += 1
+        # TODO: extend to multiple doping layers
+        for i in range(0,len(self.orig.dopings[0])):
+            if self.ddop[i] > 0:
+                params.append(self.orig.dopoings[0][i])
+                dparams.append(self.ddop[i])
+                dopindex.append(i)
+                ND +=1
+        for i in range(0,len(self.dx)):
+            if self.dx[i] > 0:
+                params.append(self.orig.layers[i].material.x)
+                dparams.append(self.dx[i])
+                xindex.append(i)
+                ND += 1
+  
+        
+        # define hilbert curve:
+        hilbert_curve = hilbert.HilbertCurve(p, ND)
+        
+        # imax = length of hilbert curve (# nodes)
+        imax = 2**(ND*p)-1
+        
+        # pmax = side of hyper cube
+        pmax = 2**p-1
+        
+        print 'Dim = {0}, p = {1}, imax = {2}, pmax = {3}'.format(ND,p,imax,pmax)
+        
+        #define distance along hilbert curve:
+        dhil = []
+        [dhil.append(i) for i in range (0,imax+1) ]
+        
+        # define mapping from distance to coordinates
+        hmap = []
+        [hmap.append(hilbert_curve.coordinates_from_distance(i)) for i in dhil]
+        
+        # scaling each dimension to p_iE[0:pmax]:
+        
+        arr_par = np.array(params)
+        arr_dpar = np.array(dparams)
+        parmin = arr_par - arr_dpar
+        parmax = arr_par + arr_dpar
+        
+        # contains all parameters, scaled to the range [0:pmax]
+        par_scaled = (arr_par - parmin)/(parmax-parmin)*pmax
+        
+        hmap_array = np.array(hmap)
+        
+        coordinates = []
+        w1 = []
+        w2 = []
+        for _ in range(0,N):
+            # pick a random point along the hilbert curve:
+            d = random.random()*imax
+            
+            # interpolate to get the coordingates:
+            intd = int(d)
+            dd = float(dhil[intd])-d
+            
+            if intd == imax:
+                dp = hmap_array[intd-1][:]-hmap_array[intd][:]
+            else:
+                dp = hmap_array[intd][:]-hmap_array[intd+1][:]
+            
+            # x_ipl now contains the scaled coordingates (widths, x:s, and dopings)
+            p_ipl = hmap_array[intd][:] + dp*dd
+            
+            # un-scale it and create structure
+            p_unscaled = p_ipl*(parmax-parmin)/pmax + parmin
+            
+            # generate strucure:
+            news = Structure(self.orig)
+            pindex = 0
+            for i in range(0,len(windex)):
+                news.layers[windex[i]].width = p_unscaled[pindex]
+                pindex+=1
+            for i in range(0,len(dopindex)):
+                news.dopings[dopindex[i]] = p_unscaled[pindex]
+                pindex +=1
+            for i in range(0,len(xindex)):
+                news.layers[xindex[i]].material.updateAlloy(p_unscaled[pindex])
+                pindex +=1
+            self.structures.append(news)
+            #del news
+            coordinates.append(p_unscaled)
+            w1.append(p_unscaled[0])
+            w2.append(p_unscaled[1])
+       
+        #pl.plot(w1,w2,'*')
+        x1 = []
+        y1 = []
+        [x1.append(float(hmap[i][0])) for i in range(0,imax+1)]
+        [y1.append(float(hmap[i][1])) for i in range(0,imax+1)]
+        x1 = np.array(x1)/pmax*(parmax[0]-parmin[0]) + parmin[0]
+        y1 = np.array(y1)/pmax*(parmax[1]-parmin[1]) + parmin[1]
+        #pl.plot(x1,y1,'-+',hold = 'true')
+        #pl.show()
+        return coordinates

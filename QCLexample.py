@@ -10,6 +10,7 @@ from qclutil import MaterialUtil as mu
 from runplatf import Local
 from systemutil import SystemUtil as su
 import os
+#import cProfile
 
 if __name__ == '__main__':
     
@@ -86,15 +87,21 @@ if __name__ == '__main__':
     
     # define variations in composition (not implemented yet), layer widths,
     # and doping location/density:
-    dx = [0.05, 0.05, 0.05, 0.05]
-    dw = [10,10,10,10]
-    ddop = [0.1,1,1e17]
+    dx = [0.0, 0.0, 0.0, 0.0]
+    dw = [1,1,1,1]
+    ddop = [0,0,0]
     
     # create a structure generator instance, based on our structure s above:
     sg = Sgenerator(s,dw,dx,ddop)
     
     # generate N random structures with the distribution in parameters defined above:
-    sg.genRanStructs(N)
+    #sg.genRanStructs(N)
+    
+    #coord = []
+    #cProfile.run("coord = sg.genRanHilbertStructs(N, 6)")
+    #print coord
+    coord = sg.genRanHilbertStructs(N, 5)
+    
     for st in sg.structures:
         print str(st.sid) + ' ' + str(st)
         

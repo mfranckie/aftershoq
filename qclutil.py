@@ -119,7 +119,7 @@ class MaterialUtil():
         Par.initList(A)
         A[Par.Ec] = -0.185
         A[Par.Eg] = 0.5
-        AlGaAs = Material(name,Material.alloy(AlAs, GaAs, A, x))
+        AlGaAs = Material(name,[],AlAs,GaAs,A,x)
         return AlGaAs
     
     @staticmethod
@@ -137,7 +137,7 @@ class MaterialUtil():
         A[Par.Ep] = -4.81
         A[Par.Vdef] = -1.4
         A[Par.Ec] = 0.094 # (= Cvbo + Cgap, Vurgaftman)
-        AlInAs = Material(name,Material.alloy(AlAs, InAs, A, x))
+        AlInAs = Material(name,[],AlAs, InAs, A, x)
         #if x == 0.48:
         #    AlInAs.params[Par.Ec] = 0.52
         return AlInAs
@@ -159,7 +159,7 @@ class MaterialUtil():
         A[Par.eps0] = -0.67 # Ioffe
         A[Par.ELO] = 0.002 # fit to Ioffe 34 meV lattice matched
         A[Par.Ec] = 0.060 # (= Cvbo + Cgap, Vurgaftman)
-        GaInAs = Material(name,Material.alloy(GaAs, InAs, A, x))
+        GaInAs = Material(name,[],GaAs, InAs, A, x)
         #GaInAs.params[Par.Ec] = 0 # set Ec relative to this material
         return GaInAs
     
@@ -172,5 +172,5 @@ class MaterialUtil():
         # Bowing paremeters:Unknown
         A = []
         Par.initList(A)
-        ZnMgO = Material(name,Material.alloy(ZnO,MgO,A,x))
+        ZnMgO = Material(name,[],ZnO,MgO,A,x)
         return ZnMgO
