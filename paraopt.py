@@ -27,14 +27,15 @@ class Paraopt(object):
         y0: Initial results of the evaluations at x0
         '''
         self.pmax = procmax
-        self.x = x0
-        self.y = y0
+        self.x = []
+        self.y = []
         self.tol = tolerance
         self.r = r
         self.maxits = maxiter
         self.t = -1
         self.iter = 0
         self.converged = 0
+        self.addpoints(x0, y0)
         
     def nextstep(self):
         '''

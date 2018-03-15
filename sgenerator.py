@@ -53,9 +53,10 @@ class Sgenerator():
            
     def genRanHilbertStructs(self,N,p):
         """
-        Generate N structures on the hilbert curve defined by p
+        Generate N structures on the Hilbert curve defined by p
         Number of dimensions is determined by # parameters to 
-        change
+        change. Includes the end-points of the Hilbert curve.
+        Returns the parameters scaled to the hyper cube space.
         """
         
         # Number of dimensions in Euclidian space
@@ -106,56 +107,71 @@ class Sgenerator():
         
         print 'Dim = {0}, p = {1}, imax = {2}, pmax = {3}'.format(ND,p,imax,pmax)
         
-        # for scaling of each dimension to the interval [0:pmax]:
-        arr_par = np.array(params)
-        arr_dpar = np.array(dparams)
-        parmin = arr_par - arr_dpar
-        parmax = arr_par + arr_dpar
+        self.hutil = HilbertUtil(hilbert_curve)
+        self.params = params
+        self.dparams = dparams
+        self.windex = windex
+        self.dopindex = dopindex
+        self.xindex = xindex
         
-        coordinates = []
+        d = []
         
-        hutil = HilbertUtil(hilbert_curve)
-
         for i in range(0,N):
             
             # pick a random point along the hilbert curve, and include
             # end points:
             if i == 0:
-                d = i
+                d.append(i)
             elif i == N-1:
-                d = imax
+                d.append(imax)
             else:
-                d = random.random()*imax
+                d.append(random.random()*imax)
+            
+        coordinates = self.gen_struct_from_hilbert_curve(d)
+        
+        return coordinates
+    
+    def gen_struct_from_hilbert_curve(self,newd):
+        '''
+        Generates new structures at the points along the
+        Hilbert curve given in newd, and returns their
+        scaled coordinates.
+        '''
+        
+        
+        dpar = np.array(self.dparams)
+        parmin = np.array(self.params) - dpar
+        coordinates = []
+        for i in range(0,len(newd)):
             
             # interpolate to get the coordingates:            
-            p_ipl = hutil.interp_coords_from_dist(d)
+            p_ipl = self.hutil.interp_coords_from_dist(newd[i])
             
             # un-scale it and create structure
-            p_unscaled = p_ipl*(parmax-parmin)/pmax + parmin
+            parnew = np.array(p_ipl)
             
+            par_unscaled = parnew*2*dpar/self.hutil.pmax + parmin
             # generate strucure:
             news = Structure(self.orig)
             pindex = 0
             
             # Layer widths:
-            for i in range(0,len(windex)):
-                news.layers[windex[i]].width = p_unscaled[pindex]
+            for i in range(0,len(self.windex)):
+                news.layers[self.windex[i]].width = par_unscaled[pindex]
                 pindex+=1
                 
             # Doping layers:
-            for i in range(0,len(dopindex)):
-                news.dopings[dopindex[i]] = p_unscaled[pindex]
+            for i in range(0,len(self.dopindex)):
+                news.dopings[self.dopindex[i]] = par_unscaled[pindex]
                 pindex +=1
                 
             # Alloy composition:
-            for i in range(0,len(xindex)):
-                print p_unscaled[pindex]
-                print xindex[i]
-                news.layers[xindex[i]].material.updateAlloy(p_unscaled[pindex])
+            for i in range(0,len(self.xindex)):
+                news.layers[self.xindex[i]].material.updateAlloy(par_unscaled[pindex])
                 pindex +=1
                 
             self.structures.append(news)
             
-            coordinates.append(p_unscaled)
-       
+            coordinates.append(parnew)
+            
         return coordinates
