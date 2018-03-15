@@ -4,13 +4,13 @@ Created on 15 Feb 2018
 @author: martin
 '''
 
-from classes import Structure, Sgenerator, MaterialPar as mp
+from classes import Structure, MaterialPar as mp
+from sgenerator import Sgenerator
 from interface import Inegf, NumPar as np
 from qclutil import MaterialUtil as mu
 from runplatf import Local
 from systemutil import SystemUtil as su
 import os
-#import cProfile
 
 if __name__ == '__main__':
     
@@ -72,6 +72,10 @@ if __name__ == '__main__':
     s.addLayerMW(3.1,AlGaAs)
     s.addLayerMW(18.0,GaAs)  # <--- this is layer 2!
     s.addLayerMW(1.8,AlGaAs)
+    s.addLayerMW(8.4,GaAs)
+    s.addLayerMW(3.1,AlGaAs)
+    s.addLayerMW(18.0,GaAs)
+    s.addLayerMW(1.8,AlGaAs)
     
     # define doping layer
     zstart = 2; zend = 2.2; dopdens = 2e17; layer = 2
@@ -87,9 +91,11 @@ if __name__ == '__main__':
     
     # define variations in composition (not implemented yet), layer widths,
     # and doping location/density:
-    dx = [0.0, 0.0, 0.0, 0.0]
-    dw = [1,1,1,1]
+    dx = [0.0, 0.1, 0.0, 0.1, 0.0, 0.1, 0.0, 0.1]
+    dw = [1,1,1,1,1,1,1,1]
     ddop = [0,0,0]
+    
+    print s.layers[1].width
     
     # create a structure generator instance, based on our structure s above:
     sg = Sgenerator(s,dw,dx,ddop)
@@ -97,9 +103,7 @@ if __name__ == '__main__':
     # generate N random structures with the distribution in parameters defined above:
     #sg.genRanStructs(N)
     
-    #coord = []
-    #cProfile.run("coord = sg.genRanHilbertStructs(N, 6)")
-    #print coord
+    # generate N random structures, along the Hilbert curve with p = 5
     coord = sg.genRanHilbertStructs(N, 5)
     
     for st in sg.structures:
@@ -116,6 +120,7 @@ if __name__ == '__main__':
     
     # the binaries (change to your bin folder):
     binpath = "/Users/martin/git/NEGFT8/bin/"
+    
     # the execution directory:
     path = "../demo"
     path = os.getcwd()+"/"+path
