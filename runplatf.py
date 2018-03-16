@@ -6,6 +6,7 @@ Created on 2 Feb 2018
 
 from systemutil import SystemUtil as su
 import time
+from debug import Debugger as dbg
 
 class Platform(object):
     '''
@@ -67,7 +68,7 @@ class Euler(Platform):
         out = p.communicate()
         
         if ("not found" in out[1]) and (proc.poll()!=None):
-            print "process ended!"
+            dbg.debug( "process ended!" )
             return False
         else:
             return True

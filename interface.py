@@ -39,7 +39,7 @@ class Inegf(Interface):
     '''
     
     # index of data in negft.dat
-    idat = {"eFd":0,"omega":1,"eFacd":2,"j":3,"gain":4,"dk":5,"konv":6}
+    idat = {"eFd":0,"omega":1,"eFacd":2,"j":3,"gain":4,"dk":5,"konv":6,"errdyn":7,"ierror":8}
 
     def __init__(self,binpath,pltfm,numpar,wellmaterial):
         '''
@@ -199,6 +199,10 @@ class Inegf(Interface):
         # get the gain of structure
         # TODO: now using last point, take maximum instead!
         strlist = out.split()
+        # check convergence
+        ierror = strlist[Inegf.idat.get("ierror")]
+        if(ierror[-1]=='1'):
+            return "NOT CONV"
         if self.merit==Interface.merits.get("max gain") :
             try:
                 out = strlist[Inegf.idat.get("gain")]
@@ -337,11 +341,11 @@ class Inegf(Interface):
             print "WARNING: Directory "+dirpath+" not found!"
         
     
-    
 class NumPar(object):
     '''
     Numerical parameters
     '''
+    # for NEGF:
     Nwann = 0
     Nzp = 1
     Nqp = 2
@@ -378,7 +382,19 @@ class NumPar(object):
     boolGW = 33
     boolEins = 34
     
-    Nparam = 35
+    # for sewself:
+    ldiff = 35
+    nlayers = 36
+    nwinj = 37
+    nwact = 38
+    bool_shortlong = 39
+    bool_inj = 40
+    bool_act = 41
+    bool_one = 42
+    inc0 = 43
+    incw = 44
+    
+    Nparam = 45
     paramList = []
     
     def __init__(self):
