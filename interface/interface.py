@@ -20,14 +20,16 @@ class Interface(object):
               "estimated gain":6,
               "custom figure of merit":7}
     
-    def __init__(self,binpath,pltfm,numpar):
+    def __init__(self,binpath,pltfm):
         self.binpath = binpath
         self.pltfm = pltfm
-        self.numpar = numpar
         self.merit = Interface.merits.get("max gain")
 
     def runStructures(self,structures,numpar,path):
         pass
     
     def gatherResults(self,structures,path):
+        pass
+    
+    def waitforproc(self, delay, message = None):
         pass

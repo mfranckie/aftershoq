@@ -7,6 +7,8 @@ Created on 12 Mar 2018
 from interface import Interface
 from classes import MaterialPar as mp
 import const
+from systemutil import SystemUtil as su
+import time
 
 class Isewself(Interface):
     '''
@@ -45,7 +47,7 @@ class Isewself(Interface):
         "lambda":0.080
         }
     
-    matpar = {
+    numpar = {
         "efield" : 0.0,
         "ldiff"  : 0.0,
         "nbswellinj":4,
@@ -59,38 +61,44 @@ class Isewself(Interface):
         "incw":2
         }
 
-    def __init__(self, binpath, pltfm, numpar, material_list):
+    def __init__(self, binpath, pltfm, material_list):
         '''
         Constructor
         '''
-        super(Isewself,self).__init__(binpath, pltfm, numpar)
+        super(Isewself,self).__init__(binpath, pltfm)
         self.material_list = material_list
+        self.processes = []
         
-    def runStructures(self,structures,numpar,path):
+    def runStructures(self,structures,path):
+        print "Creating parameter files, but running not implemented yet."
         for ss in structures:
-            self.initdir(ss)
+            self.initdir(ss,path)
             
     def initdir(self,structure,path):
-        spath = path + str(structure.sid)
+        spath = path + "/" + str(structure.sid)
+        su.mkdir(spath)
+        self.writeParameterFile(spath)
+        self.writeSewselfPar(spath)
+        self.writeStructFile(structure, spath)
     
     def gatherResults(self,structures,path):
-        pass
+        print "not implemented yet."
     
     def writeStructFile(self,structure,path):
         filepath = path + "/structure.txt"
         with open(filepath,'w') as f:
-            f.write(str(self.matpar["efield"]) + " # efield\n")
-            f.write(str(self.matpar["ldiff"]) + " # diffusion length\n")
+            f.write(str(self.numpar["efield"]) + " # efield\n")
+            f.write(str(self.numpar["ldiff"]) + " # diffusion length\n")
             f.write(str(len(structure.layers)) + " # number of layers\n")
-            f.write(str(self.matpar["nbswellinj"]) + " # nbswellinjector\n")
-            f.write(str(self.matpar["nbswellact"]) + " # nbswellactive\n")
-            f.write(str(self.matpar["coeffls"]) + " # coeff (longer/shorter structure)\n")
+            f.write(str(self.numpar["nbswellinj"]) + " # nbswellinjector\n")
+            f.write(str(self.numpar["nbswellact"]) + " # nbswellactive\n")
+            f.write(str(self.numpar["coeffls"]) + " # coeff (longer/shorter structure)\n")
             f.write("switches for structure length\n")
-            f.write(str(self.matpar["bool_inj"]) + " # injector only\n")
-            f.write(str(self.matpar["bool_act"]) + " # active only\n")
-            f.write(str(self.matpar["bool_one"]) + " # one period\n")
+            f.write(str(self.numpar["bool_inj"]) + " # injector only\n")
+            f.write(str(self.numpar["bool_act"]) + " # active only\n")
+            f.write(str(self.numpar["bool_one"]) + " # one period\n")
             f.write("material parameters\n")
-            f.write(str(self.matpar["matchoice"]) + " matchoice\n")
+            f.write(str(self.numpar["matchoice"]) + " matchoice\n")
             for mat in self.material_list:
                 f.write(str(mat) + " ")
                 f.write(str(mat.params[mp.Ec]) + " ")
@@ -100,8 +108,8 @@ class Isewself(Interface):
                     f.write(str(mat.x))
                 f.write("\n")
             f.write( "end discretisation of the potential\n" )
-            f.write( str(self.matpar["inc0"]) + " inc0\n" )
-            f.write( str(self.matpar["incw"]) + " incw\n" )
+            f.write( str(self.numpar["inc0"]) + " inc0\n" )
+            f.write( str(self.numpar["incw"]) + " incw\n" )
             f.write( "Structure (mat, thick (A), doping x 1e-18) \n" )
             i = 0
             for layer in structure.layers:
@@ -176,4 +184,16 @@ class Isewself(Interface):
             for key in order:
                 value = d.get(key)
                 f.write(str(value) + " " + str(key) + "\n")
+                
+    def waitforproc(self,delay,message=None):
+        pactive = True
+        while pactive:
+            if message is not None:
+                print message
+            pactive = False
+            for p in self.processes:
+                if self.pltfm.jobstatus(p):
+                    pactive=True
+                    #break
+            time.sleep(delay)
                         

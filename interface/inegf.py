@@ -22,7 +22,8 @@ class Inegf(Interface):
         '''
         Constructor
         '''
-        super(Inegf,self).__init__(binpath, pltfm, numpar)
+        super(Inegf,self).__init__(binpath, pltfm)
+        self.numpar = numpar
         self.progwann = binpath+"wannier8.out"
         self.prognegft = binpath+"negft8mpi.out"
         self.proghdiag = binpath+"hdiag8.out"
