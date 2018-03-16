@@ -11,9 +11,14 @@ from qclutil import MaterialUtil as mu
 from runplatf import Local
 from systemutil import SystemUtil as su
 import os
+from debug import Debugger as dbg
 
 if __name__ == '__main__':
     
+    # Setup debugger:
+    
+    dbg.open(dbg.verb_modes['verbose'],"debug.log")
+    dbg.debug("Debug file\n\n")
     
     sep = '\n----------------------------------------------\n'
     
@@ -87,15 +92,13 @@ if __name__ == '__main__':
     
     print sep
     print 'Generating N random structures:\n'
-    N = input('N = ?')
+    N = input('N = ?\n')
     
     # define variations in composition (not implemented yet), layer widths,
     # and doping location/density:
     dx = [0.0, 0.1, 0.0, 0.1, 0.0, 0.1, 0.0, 0.1]
     dw = [1,1,1,1,1,1,1,1]
     ddop = [0,0,0]
-    
-    print s.layers[1].width
     
     # create a structure generator instance, based on our structure s above:
     sg = Sgenerator(s,dw,dx,ddop)
@@ -114,6 +117,7 @@ if __name__ == '__main__':
     proceed = input("Proceed to create directory tree?\nYes = 1\nExit = 0")
     if proceed == 0:
         print sep + "User exit. Good bye!"
+        dbg.close()
         exit()
     
     # set numerical parameters:
@@ -137,8 +141,10 @@ if __name__ == '__main__':
     np.setDefault(numpar)
     
     # to change numerical paramters, use the following syntax:
-    numpar[np.Nnu] = 3
-    numpar[np.Nper] = 2
+    numpar[np.Nnu] = 1
+    numpar[np.Nper] = 1
+    numpar[np.Niter] = 1
+    numpar[np.Nhist] = 1
     
     # Define the platform, local or cluster (e. g. Euler cluster at ETH Zuerich)
     pltfm = Local()
@@ -156,9 +162,10 @@ if __name__ == '__main__':
     proceed = input("Yes = 1\nExit = 0")
     if proceed == 0:
         print sep + "User exit. Good bye!"
+        dbg.close()
         exit()
     # execute the model for simulating the structures:
-    model.runStructures(sg.structures, path)
+    model.runStructures(sg.structures[1:5], path)
     
     model.waitforproc(5, "negft running....")
     
@@ -168,5 +175,6 @@ if __name__ == '__main__':
     model.gatherResults(sg.structures, path)
     
     print sep + 'Program completed! Good bye!'
+    dbg.close()
     
     

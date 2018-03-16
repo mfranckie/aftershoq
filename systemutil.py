@@ -7,6 +7,7 @@ Created on 26 Jan 2018
 from subprocess import call, Popen, PIPE
 import os
 import time
+from debug import Debugger as dbg
 
 class SystemUtil(object):
     '''
@@ -55,12 +56,12 @@ class SystemUtil(object):
         if dirpath is None:
             dirpath = "./"
         
-        print "<<<< Dispatching program: " + str(progargs) + " from " + dirpath,
+        dbg.debug( "<<<< Dispatching program: " + str(progargs) + " from " + dirpath )
         
         process=Popen(progargs,cwd=dirpath,close_fds=True,stdout=PIPE,stderr=PIPE,stdin=PIPE)
         
-        print  "with pid="+str(process.pid)+" >>>>"
-        
+        dbg.debug(  " with pid="+str(process.pid)+" >>>>\n" )
+        dbg.flush()
         return process
 
     @staticmethod
@@ -71,10 +72,11 @@ class SystemUtil(object):
         if args is not None:
             [progargs.append(a) for a in args]
             
-        print "<<<< Running program: " + str(progargs)  + " from " + dirpath,
+        dbg.debug( "<<<< Running program: " + str(progargs)  + " from " + dirpath )
         
         p = Popen(progargs,cwd=dirpath,stdout=PIPE,stderr=PIPE,stdin=PIPE)
         
-        print  " with pid="+str(p.pid)+" >>>>"
+        dbg.debug( " with pid="+str(p.pid)+" >>>>\n" )
+        dbg.flush()
         return p
         
