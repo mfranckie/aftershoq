@@ -1,8 +1,8 @@
-from classes import Structure
+from structure.classes import Structure
 
 import random
 from hilbert import HilbertCurve
-from hilbertutil import HilbertUtil
+from utils.hilbertutil import HilbertUtil
 import numpy as np
 
 class Sgenerator():

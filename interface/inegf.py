@@ -5,10 +5,11 @@ Created on 16 Mar 2018
 '''
 
 from interface import Interface
-from classes import MaterialPar as Par
-from systemutil import SystemUtil as su
-from runplatf import Local
+from structure.classes import MaterialPar as Par
+from utils.systemutil import SystemUtil as su
+from numerics.runplatf import Local
 import time
+from utils.debug import Debugger as dbg
 
 class Inegf(Interface):
     '''
@@ -31,6 +32,9 @@ class Inegf(Interface):
         self.wellmat = wellmaterial
         self.processes= []
         
+    def __str__(self):
+        return "Inegf"
+        
     def initdir(self,ss,path):
         pathNegf=path+"/IV/"
         su.mkdir(pathNegf)
@@ -48,10 +52,12 @@ class Inegf(Interface):
             #proc = su.dispatch(self.progwann, "",spath)
             proc = self.pltfm.submitjob(self.progwann,[],spath,1,"00:10")
             self.processes.append(proc)
-        print "Starting Wannier program....."
+        dbg.debug("Starting Wannier program.....\n",dbg.verb_modes["verbose"],self)
+        dbg.flush()
         # TODO do not wait for all processes-start each strucrure when ready!
-        self.waitforproc(1, "Wannier prog. running....")
-        print "Starting negf...."
+        self.waitforproc(1)
+        dbg.debug("Starting negf....\n",dbg.verb_modes["verbose"],self)
+        dbg.flush()
         #del processes
         #processes = []
         for ss in structures:

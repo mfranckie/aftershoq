@@ -5,6 +5,7 @@ Created on 13 Mar 2018
 '''
 
 import numpy as np
+from utils.debug import Debugger as dbg
 
 class Paraopt(object):
     '''
@@ -129,3 +130,37 @@ class Paraopt(object):
                 self.converged = 1
                 return
         self.converged = 0
+    
+    
+    def minimize(self, model, sgenerator, path):
+        
+        dbg.debug("Starting minimization\n", dbg.verb_modes["verbose"],self)
+        niter = 0
+        while self.converged == 0:
+            niter += 1
+            dbg.debug("Iteration " + str(niter) + "\n", 
+                      dbg.verb_modes["verbose"],self)
+            
+            newx = self.nextstep()
+            sgenerator.gen_struct_from_hilbert_curve(newx)
+            model.runStructures(sgenerator.structures[-len(newx):], path)
+            model.waitforproc(0.1)
+            newy = []
+            xi = 0
+            model.gatherResults(sgenerator.structures,path)
+            for ss in sgenerator.structures[-len(newx):]:
+                try:
+                    val = -float(model.getMerit(ss,path))
+                    newy.append( val )
+                except( ValueError ):
+                    del newx[xi]
+                    xi -= 1
+                xi += 1
+        
+            self.addpoints(newx,newy)
+        
+        dbg.debug("Minimization finished with convergence: " + str(self.converged) + "\n", 
+                  dbg.verb_modes["verbose"],self)
+        dbg.flush()
+        return self.converged
+        

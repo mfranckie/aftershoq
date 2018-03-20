@@ -34,8 +34,10 @@ class Debugger(object):
         cls.file.close()
     
     @ classmethod
-    def debug(cls,message):
-        if cls.verbosity == cls.verb_modes["silent"]:
+    def debug(cls, message, level = 2, callclass = None):
+        if callclass is not None:
+            message = str(callclass) + ": " + message
+        if cls.verbosity < level:
             return
         elif cls.file == []:
             print message

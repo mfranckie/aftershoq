@@ -4,14 +4,17 @@ Created on 15 Feb 2018
 @author: martin
 '''
 
-from classes import Structure, MaterialPar as mp
-from sgenerator import Sgenerator
-from qclutil import MaterialUtil as mu
-from runplatf import Local
-from systemutil import SystemUtil as su
+from structure.classes import Structure, MaterialPar as mp
+from structure.sgenerator import Sgenerator
+from utils.qclutil import MaterialUtil as mu
+from numerics.runplatf import Local
+from utils.systemutil import SystemUtil as su
 import os
-from debug import Debugger as dbg
+from utils.debug import Debugger as dbg
 from interface.isewself import Isewself
+import numpy
+from numerics.paraopt import Paraopt
+from matplotlib import pyplot as pl
 
 import sys
 # change path as apropriate
@@ -21,9 +24,15 @@ sys.path.append(path_to_aftershoq + '/hilbert_curve/')
 
 if __name__ == '__main__':
     
-    # Setup debugger:
+    # the working directory:
+    path = "../../demo"
+    path = os.getcwd()+"/"+path
+    su.mkdir(path)
     
-    dbg.open(dbg.verb_modes['verbose'],"debug.log")
+    # Setup debugger:
+    dbg.open(dbg.verb_modes['verbose'],path+"/debug.log")
+    dbg.debug("Debug file \n\n")
+    dbg.flush()
     
     sep = '\n----------------------------------------------\n'
     
@@ -59,8 +68,8 @@ if __name__ == '__main__':
         print val + " = " + str(InAlAs.params[mp.valdict[val]])
     
     # create Al_0.15Ga_0.85As 
-    x = 0.15
-    AlGaAs = mu.createAlGaAs(x, "Al0.15Ga0.85As")
+    x = 0.20
+    AlGaAs = mu.createAlGaAs(x)
     print "\n" + str(AlGaAs) + ":\n"
     for val in mp.valdict:
         print val + " = " + str(AlGaAs.params[mp.valdict[val]])
@@ -78,17 +87,16 @@ if __name__ == '__main__':
     s.setIFR(eta, lam)
     
     # Add layers:
-    s.addLayerMW(8.4,GaAs)
-    s.addLayerMW(3.1,AlGaAs)
-    s.addLayerMW(18.0,GaAs)  # <--- this is layer 2!
-    s.addLayerMW(1.8,AlGaAs)
-    s.addLayerMW(8.4,GaAs)
-    s.addLayerMW(3.1,AlGaAs)
-    s.addLayerMW(18.0,GaAs)
-    s.addLayerMW(1.8,AlGaAs)
+    # Add layers:
+    s.addLayerMW(3.0, AlGaAs)
+    s.addLayerMW(20.0, AlGaAs)
+    s.addLayerMW(4.0,GaAs)
+    s.addLayerMW(2.0,AlGaAs) # <-- doped layer 3
+    s.addLayerMW(6.0,GaAs)
+    s.addLayerMW(20,AlGaAs)
     
     # define doping layer
-    zstart = 2; zend = 2.2; dopdens = 2e17; layer = 2
+    zstart = 0; zend = 2.0; dopdens = 2e18; layer = 3
     
     # add a doping layer
     s.addDoping(zstart, zend, dopdens, layer)
@@ -102,8 +110,8 @@ if __name__ == '__main__':
     
     # define variations in composition (not implemented yet), layer widths,
     # and doping location/density:
-    dx = [0.0, 0.1, 0.0, 0.1, 0.0, 0.1, 0.0, 0.1]
-    dw = [1,1,1,1,1,1,1,1]
+    dx = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    dw = [0,0,2,0,2,0]
     ddop = [0,0,0]
     
     # create a structure generator instance, based on our structure s above:
@@ -113,7 +121,7 @@ if __name__ == '__main__':
     #sg.genRanStructs(N)
     
     # generate N random structures, along the Hilbert curve with p = 5
-    coord = sg.genRanHilbertStructs(N, 5)
+    coords = sg.genRanHilbertStructs(N, 7)
     
     for st in sg.structures:
         print str(st.sid) + ' ' + str(st)
@@ -129,11 +137,7 @@ if __name__ == '__main__':
     # set numerical parameters:
     
     # the binaries (change to your bin folder):
-    binpath = "/Users/martin/git/NEGFT8/bin/"
-    
-    # the execution directory:
-    path = "../demo"
-    path = os.getcwd()+"/"+path
+    binpath = "/Users/martin/git/Sewself_JF/bin/"
     
     print 'Creating directory tree in: ' + path + '.\n'
     print 'Please change variable "binpath" to match your binaries!\n'
@@ -143,15 +147,16 @@ if __name__ == '__main__':
     
     # Define the platform, local or cluster (e. g. Euler cluster at ETH Zuerich)
     pltfm = Local()
-    #pltfm = Euler(6,"1:00")
+    #pltfm = Euler(1,"1:00")
     
     # sewself interface:
     material_list = [GaAs,AlGaAs]
     model = Isewself(binpath,pltfm,material_list)
     
+    
     # to change parameters, change the dictionaries in isewself:
-    model.sewselfpar["emin"] = 0.050
-    model.numpar["efield"] = 0.050
+    model.sewselfpar["emin"] = -0.0001
+    model.numpar["efield"] = 0.00
     # (material parameters are atuo-generated from materials in material_list)
     
     
@@ -161,14 +166,16 @@ if __name__ == '__main__':
     model.writeSewselfPar(path)
     
     # define the merit function as max gain/current density, from a dictionary of merit funcs.:
-    model.merit = model.merits.get("(max gain)/(current density)")
+    model.merit = model.merits.get("DeltaE_12")
+    model.target = 0.030
     
-    print sep + 'Starting simulations in directory tree?'
+    print sep + 'Starting simulations in directory tree? This will overwrite any previous results.'
     proceed = input("Yes = 1\nExit = 0")
     if proceed == 0:
         print sep + "User exit. Good bye!"
         dbg.close()
         exit()
+    
     # execute the model for simulating the structures:
     model.runStructures(sg.structures, path)
     
@@ -178,6 +185,45 @@ if __name__ == '__main__':
     
     # gather the results from the simulation of all structures:
     model.gatherResults(sg.structures, path)
+    
+    print sep + 'First results acheived. Proceed with optimization?'
+    proceed = input("Yes = 1\nExit = 0")
+    if proceed == 0:
+        print sep + "User exit. Good bye!"
+        dbg.close()
+        exit()
+    
+    # collect results from trial points
+    x0 = []
+    [x0.append( sg.hutil.interp_dist_from_coords( c ) ) for c in coords]
+    x0 = numpy.array(x0)
+    x0.sort()
+    x0 = x0.tolist()
+    print x0
+    y0 = []
+    xi = 0
+    for i in range(0,len(x0)):
+        try:
+            y0.append( -float(model.getMerit(sg.structures[i],path)) )
+        except( ValueError ):
+            del x0[xi]
+            xi-=1
+        xi +=1
+    
+    print 'Array of trial results:\n' + str(y0)
+
+    # create optimization object
+    tol, r, itmax, procmax = 18, 1.1, 100, 20
+    
+    opt = Paraopt(tol,r,itmax,procmax,x0,y0)
+    
+    conv = opt.minimize(model, sg, path)
+    
+    print "Optimization distances: \n" + str(opt.x)
+    print "Optimization values: \n"    + str(opt.y)
+    
+    pl.plot(opt.x,opt.y)
+    pl.show()
     
     print sep + 'Program completed! Good bye!'
     dbg.close()

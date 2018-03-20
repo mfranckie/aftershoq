@@ -7,7 +7,7 @@ Created on 26 Jan 2018
 from subprocess import call, Popen, PIPE
 import os
 import time
-from debug import Debugger as dbg
+from utils.debug import Debugger as dbg
 
 class SystemUtil(object):
     '''
@@ -56,11 +56,13 @@ class SystemUtil(object):
         if dirpath is None:
             dirpath = "./"
         
-        dbg.debug( "<<<< Dispatching program: " + str(progargs) + " from " + dirpath )
+        dbg.debug( "<<<< Dispatching program: " + str(progargs) + " from " + dirpath,
+                   dbg.verb_modes["chatty"], SystemUtil)
         
         process=Popen(progargs,cwd=dirpath,close_fds=True,stdout=PIPE,stderr=PIPE,stdin=PIPE)
         
-        dbg.debug(  " with pid="+str(process.pid)+" >>>>\n" )
+        dbg.debug(  " with pid="+str(process.pid)+" >>>>\n" ,
+                    dbg.verb_modes["chatty"])
         dbg.flush()
         return process
 
@@ -72,11 +74,13 @@ class SystemUtil(object):
         if args is not None:
             [progargs.append(a) for a in args]
             
-        dbg.debug( "<<<< Running program: " + str(progargs)  + " from " + dirpath )
+        dbg.debug( "<<<< Running program: " + str(progargs)  + " from " + dirpath ,
+                   dbg.verb_modes["chatty"], SystemUtil)
         
         p = Popen(progargs,cwd=dirpath,stdout=PIPE,stderr=PIPE,stdin=PIPE)
         
-        dbg.debug( " with pid="+str(p.pid)+" >>>>\n" )
+        dbg.debug( " with pid="+str(p.pid)+" >>>>\n" ,
+                   dbg.verb_modes["chatty"])
         dbg.flush()
         return p
         

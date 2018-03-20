@@ -4,7 +4,7 @@ Created on 29 Jan 2018
 @author: martin
 '''
 
-from classes import Material, MaterialPar as Par
+from structure.classes import Material, MaterialPar as Par
 
 class MaterialUtil():
     '''

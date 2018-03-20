@@ -4,11 +4,6 @@ Created on 26 Jan 2018
 @author: martin
 '''
 
-from classes import MaterialPar as Par
-from systemutil import SystemUtil as su
-import time
-from runplatf import Local
-
 class Interface(object):
     
     merits = {"max gain":0, 

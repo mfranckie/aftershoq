@@ -5,9 +5,9 @@ Created on 12 Mar 2018
 '''
 
 from interface import Interface
-from classes import MaterialPar as mp
-import const
-from systemutil import SystemUtil as su
+from structure.classes import MaterialPar as mp
+from utils import const
+from utils.systemutil import SystemUtil as su
 import time
 
 class Isewself(Interface):
@@ -68,24 +68,65 @@ class Isewself(Interface):
         super(Isewself,self).__init__(binpath, pltfm)
         self.material_list = material_list
         self.processes = []
+        self.buildmatself = binpath + "buildmatself_MAC"
+        self.sewself = binpath + "sewself.2.32_MAC"
+        self.structfilename = "structure.txt"
+        self.merits.update({'DeltaE_12' : 8, 'Elase' : 9})
+        
+    def __str__(self):
+        return "Sewself"
         
     def runStructures(self,structures,path):
-        print "Creating parameter files, but running not implemented yet."
         for ss in structures:
-            self.initdir(ss,path)
+            spath = path + "/" + str(ss.sid)
+            self.initdir(ss,spath)
+            self.run_buildmatself(ss, spath)
+        self.waitforproc(0.1)
+        for ss in structures:
+            spath = path + "/" + str(ss.sid)
+            self.run_sewself(ss, spath)
             
-    def initdir(self,structure,path):
-        spath = path + "/" + str(structure.sid)
+    def run_buildmatself(self,structure,spath):
+        su.dispatch(self.buildmatself, [self.structfilename], spath)
+        
+    def run_sewself(self,structure,spath):
+        commands = "w\nq\n"
+        proc = su.dispatch(self.sewself, [], spath)
+        [out, _] = proc.communicate(commands)
+        structure.output = out
+            
+    def initdir(self,structure,spath):
         su.mkdir(spath)
         self.writeParameterFile(spath)
         self.writeSewselfPar(spath)
         self.writeStructFile(structure, spath)
     
     def gatherResults(self,structures,path):
-        print "not implemented yet."
+        self.ebound = []
+        with open(path+'/results.log','w') as f:
+            f.write('# Results for structures:\nID | N times layer width | N times Mat | Merit\n')
+            for ss in structures:
+                f.write(str(ss.sid)+" ")
+                for layer in ss.layers:
+                    f.write(str(layer.width)+" ")
+                for layer in ss.layers:
+                    f.write(str(layer.material)+" ")
+                              
+                f.write(str(self.getMerit(ss, path)))
+                f.write("\n")
+                
+                levels = self.readEbound(path + "/" + str(ss.dirname))
+                ebounds = []
+                [ebounds.append(float(l)) for l in levels]
+                self.ebound.append(ebounds)
+                
+    def readEbound(self,path):
+        with open(path + '/Ebound.dat','r') as f:
+            line = f.read()
+            return line.split()[1:]
     
     def writeStructFile(self,structure,path):
-        filepath = path + "/structure.txt"
+        filepath = path + "/" + self.structfilename
         with open(filepath,'w') as f:
             f.write(str(self.numpar["efield"]) + " # efield\n")
             f.write(str(self.numpar["ldiff"]) + " # diffusion length\n")
@@ -113,7 +154,7 @@ class Isewself(Interface):
             f.write( "Structure (mat, thick (A), doping x 1e-18) \n" )
             i = 0
             for layer in structure.layers:
-                f.write(str(layer.material) + " " + str(layer.width) + " " )
+                f.write(str(layer.material) + " " + str(10*layer.width) + " " )
                 doping = 0
                 for dop in structure.dopings:
                     if dop[0]>=structure.layerPos(i):
@@ -184,6 +225,27 @@ class Isewself(Interface):
             for key in order:
                 value = d.get(key)
                 f.write(str(value) + " " + str(key) + "\n")
+                
+                
+    def getMerit(self,structure,path):
+        path = path + "/" + structure.dirname
+        if self.merit == self.merits["Elase"]:
+            output = structure.output.split(' ')
+            for il in range(0,len(output)):
+                if output[il] == 'Laser':
+                    return -abs(float(output[il+3]) - float(self.target))
+            return 0
+        elif self.merit == self.merits["DeltaE_12"]:
+            levels = self.readEbound(path)
+            ebound = []
+            [ebound.append(float(l)) for l in levels]
+            try:
+                return -abs(ebound[1]-ebound[0] - float(self.target))
+            except(ValueError,IndexError):
+                return 'ERROR'
+        else:
+            print "Merit function " + self.merit + "not implemented yet!"
+            return "ERROR"
                 
     def waitforproc(self,delay,message=None):
         pactive = True

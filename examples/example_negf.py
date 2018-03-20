@@ -4,25 +4,39 @@ Created on 15 Feb 2018
 @author: martin
 '''
 
-from classes import Structure, MaterialPar as mp
-from sgenerator import Sgenerator
-from interface import Inegf, NumPar as np
-from qclutil import MaterialUtil as mu
-from runplatf import Local
-from systemutil import SystemUtil as su
+from structure.classes import Structure, MaterialPar as mp
+from structure.sgenerator import Sgenerator
+from utils.qclutil import MaterialUtil as mu
+from numerics.runplatf import Local
+from utils.systemutil import SystemUtil as su
 import os
-from debug import Debugger as dbg
+from utils.debug import Debugger as dbg
+from interface.inegf import Inegf, NumPar
+import numpy
+from numerics.paraopt import Paraopt
+from matplotlib import pyplot as pl
+
+import sys
+# change path as apropriate
+path_to_aftershoq = os.getcwd()
+sys.path.append(path_to_aftershoq)
+sys.path.append(path_to_aftershoq + '/hilbert_curve/')
 
 if __name__ == '__main__':
     
-    # Setup debugger:
+    # the working directory:
+    path = "../../demo"
+    path = os.getcwd()+"/"+path
+    su.mkdir(path)
     
-    dbg.open(dbg.verb_modes['verbose'],"debug.log")
-    dbg.debug("Debug file\n\n")
+    # Setup debugger:
+    dbg.open(dbg.verb_modes['verbose'],path+"/debug.log")
+    dbg.debug("Debug file \n\n")
+    dbg.flush()
     
     sep = '\n----------------------------------------------\n'
     
-    print '------ Welcome to the demonstration of -------\n'
+    print '--- Welcome to the "sewself" demonstration of ---\n'
     print '               "AFTERSHOQ" \n\n'
     print '       Written by Martin Franckie 2018.'
     print '       Please give credit where credit'
@@ -54,8 +68,8 @@ if __name__ == '__main__':
         print val + " = " + str(InAlAs.params[mp.valdict[val]])
     
     # create Al_0.15Ga_0.85As 
-    x = 0.15
-    AlGaAs = mu.createAlGaAs(x, "Al0.15Ga0.85As")
+    x = 0.20
+    AlGaAs = mu.createAlGaAs(x)
     print "\n" + str(AlGaAs) + ":\n"
     for val in mp.valdict:
         print val + " = " + str(AlGaAs.params[mp.valdict[val]])
@@ -88,6 +102,7 @@ if __name__ == '__main__':
     # add a doping layer
     s.addDoping(zstart, zend, dopdens, layer)
     
+    print "Structure created : "
     print s
     
     print sep
@@ -96,8 +111,8 @@ if __name__ == '__main__':
     
     # define variations in composition (not implemented yet), layer widths,
     # and doping location/density:
-    dx = [0.0, 0.1, 0.0, 0.1, 0.0, 0.1, 0.0, 0.1]
-    dw = [1,1,1,1,1,1,1,1]
+    dx = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    dw = [0,0,2,0,2,0,0,0]
     ddop = [0,0,0]
     
     # create a structure generator instance, based on our structure s above:
@@ -107,7 +122,7 @@ if __name__ == '__main__':
     #sg.genRanStructs(N)
     
     # generate N random structures, along the Hilbert curve with p = 5
-    coord = sg.genRanHilbertStructs(N, 5)
+    coords = sg.genRanHilbertStructs(N, 7)
     
     for st in sg.structures:
         print str(st.sid) + ' ' + str(st)
@@ -125,56 +140,93 @@ if __name__ == '__main__':
     # the binaries (change to your bin folder):
     binpath = "/Users/martin/git/NEGFT8/bin/"
     
-    # the execution directory:
-    path = "../demo"
-    path = os.getcwd()+"/"+path
-    
     print 'Creating directory tree in: ' + path + '.\n'
     print 'Please change variable "binpath" to match your binaries!\n'
     
     # make the directory:
     su.mkdir(path)
     
-    # list of numerical parameters; to be expanded for future model interfaces
-    numpar = []
-    np.initList(numpar)
-    np.setDefault(numpar)
-    
-    # to change numerical paramters, use the following syntax:
-    numpar[np.Nnu] = 1
-    numpar[np.Nper] = 1
-    numpar[np.Niter] = 1
-    numpar[np.Nhist] = 1
-    
     # Define the platform, local or cluster (e. g. Euler cluster at ETH Zuerich)
     pltfm = Local()
-    #pltfm = Euler(6,"1:00")
+    #pltfm = Euler(1,"1:00")
     
-    # select model for transport and em raditaion simulations:
+    # negft interface:
+    numpar = []
+    NumPar.initList(numpar)
+    NumPar.setDefault(numpar)
     
-    # NEGF interface:
+    numpar[NumPar.Temp] = 300
+    numpar[NumPar.Niter] = 5
+    numpar[NumPar.Nhist] = 5
+    numpar[NumPar.gen] = 0.1
+    
     model = Inegf(binpath,pltfm,numpar,GaAs)
     
-    # define the merit function as max gain/current density, from a dictionary of merit funcs.:
-    model.merit = Inegf.merits.get("(max gain)/(current density)")
     
-    print sep + 'Starting simulations in directory tree?'
+    # to change parameters, change the dictionaries in isewself:
+    
+    # to create input files with default parameters:
+    
+    # define the merit function as max gain/current density, from a dictionary of merit funcs.:
+    model.merit = model.merits.get("max gain")
+    
+    print sep + 'Starting simulations in directory tree? This will overwrite any previous results.'
     proceed = input("Yes = 1\nExit = 0")
     if proceed == 0:
         print sep + "User exit. Good bye!"
         dbg.close()
         exit()
+    
     # execute the model for simulating the structures:
-    model.runStructures(sg.structures[1:5], path)
+    model.runStructures(sg.structures, path)
     
-    model.waitforproc(5, "negft running....")
+    print "NEGF is running"
+    model.waitforproc(1)
     
-    print sep + 'Gathering results to: ' + path + 'results.log'
+    print sep + 'Gathering results to: ' + path + '/results.log'
     
     # gather the results from the simulation of all structures:
     model.gatherResults(sg.structures, path)
     
+    print sep + 'First results acheived. Proceed with optimization?'
+    proceed = input("Yes = 1\nExit = 0")
+    if proceed == 0:
+        print sep + "User exit. Good bye!"
+        dbg.close()
+        exit()
+    
+    # collect results from trial points
+    x0 = []
+    [x0.append( sg.hutil.interp_dist_from_coords( c ) ) for c in coords]
+    x0 = numpy.array(x0)
+    x0.sort()
+    x0 = x0.tolist()
+    print x0
+    y0 = []
+    xi = 0
+    for i in range(0,len(x0)):
+        try:
+            y0.append( -float(model.getMerit(sg.structures[i],path)) )
+        except( ValueError ):
+            del x0[xi]
+            xi-=1
+        xi +=1
+    
+    print 'Array of trial results:\n' + str(y0)
+
+    # create optimization object
+    tol, r, itmax, procmax = 18, 1.1, 100, 2
+    
+    opt = Paraopt(tol,r,itmax,procmax,x0,y0)
+    
+    conv = opt.minimize(model, sg, path)
+    
+    print "Optimization distances: \n" + str(opt.x)
+    print "Optimization values: \n"    + str(opt.y)
+    
+    pl.plot(opt.x,opt.y)
+    pl.show()
+    
     print sep + 'Program completed! Good bye!'
     dbg.close()
-    
     

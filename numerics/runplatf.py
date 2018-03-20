@@ -4,9 +4,9 @@ Created on 2 Feb 2018
 @author: martin
 '''
 
-from systemutil import SystemUtil as su
+from utils.systemutil import SystemUtil as su
 import time
-from debug import Debugger as dbg
+from utils.debug import Debugger as dbg
 
 class Platform(object):
     '''
