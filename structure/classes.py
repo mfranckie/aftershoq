@@ -139,7 +139,6 @@ class Material:
         if(self.x is not None):
             self.x = x
             self.params = self.alloy(self.mat1,self.mat2,self.C,self.x)
-            self.name = str(self.mat1) + "_" + str(self.x) + str(self.mat2) + "_" + str(1-self.x)
         
     def __str__(self):
         return self.name

@@ -28,7 +28,7 @@ class MaterialUtil():
             name = "GaAs"
         paramsGaAs = []
         Par.initList(paramsGaAs)
-        paramsGaAs[0:11] = [0.067,0,1.599,22,0,0.0376,12.9,10.89,-7.2,4730,5317,0.04517]
+        paramsGaAs[0:11] = [0.067,0,1.519,22,0,0.0376,12.9,10.89,-7.2,4730,5317,0.04517]
         paramsGaAs[Par.lattconst] = 5.653
         GaAs = Material(name,paramsGaAs)
         return GaAs
@@ -40,7 +40,7 @@ class MaterialUtil():
         paramsAlAs = []
         Par.initList(paramsAlAs)
         paramsAlAs[Par.meff] = 0.15
-        paramsAlAs[Par.Ec] = 1.05
+        paramsAlAs[Par.Ec] = 0.99
         paramsAlAs[Par.Eg] = 3.099
         paramsAlAs[Par.ELO] = 0.050
         paramsAlAs[Par.Ep] = 22
@@ -117,9 +117,14 @@ class MaterialUtil():
         AlAs = cls.createAlAs()
         A = []
         Par.initList(A)
-        A[Par.Ec] = -0.185
-        A[Par.Eg] = 0.5
+        #A[Par.Ec] = -0.185
+        A[Par.Eg] = -0.127 + 1.310*x
         AlGaAs = Material(name,[],AlAs,GaAs,A,x)
+        #DEg = AlGaAs.params[Par.Eg] - GaAs.params[Par.Eg]
+        if x < 0.42:
+            AlGaAs.params[Par.Ec] = 0.831*x
+        else:
+            AlGaAs.params[Par.Ec] = 0.332 + 0.054*x
         return AlGaAs
     
     @staticmethod
