@@ -4,23 +4,26 @@ Created on 15 Feb 2018
 @author: martin
 '''
 
+import sys
+import os
+import numpy
+
+# change path as apropriate
+path_to_aftershoq = os.getcwd()
+sys.path.append(path_to_aftershoq)
+sys.path.append(path_to_aftershoq + '/hilbert_curve/')
+
+
 from structure.classes import Structure, MaterialPar as mp
 from structure.sgenerator import Sgenerator
 from utils.qclutil import MaterialUtil as mu
 from numerics.runplatf import Local
 from utils.systemutil import SystemUtil as su
-import os
 from utils.debug import Debugger as dbg
 from interface.inegf import Inegf, NumPar
-import numpy
 from numerics.paraopt import Paraopt
 from matplotlib import pyplot as pl
 
-import sys
-# change path as apropriate
-path_to_aftershoq = os.getcwd()
-sys.path.append(path_to_aftershoq)
-sys.path.append(path_to_aftershoq + '/hilbert_curve/')
 
 if __name__ == '__main__':
     
@@ -36,7 +39,7 @@ if __name__ == '__main__':
     
     sep = '\n----------------------------------------------\n'
     
-    print '--- Welcome to the "sewself" demonstration of ---\n'
+    print '--- Welcome to the "NEGF" demonstration of ---\n'
     print '               "AFTERSHOQ" \n\n'
     print '       Written by Martin Franckie 2018.'
     print '       Please give credit where credit'
@@ -109,7 +112,7 @@ if __name__ == '__main__':
     print 'Generating N random structures:\n'
     N = input('N = ?\n')
     
-    # define variations in composition (not implemented yet), layer widths,
+    # define variations in composition, layer widths,
     # and doping location/density:
     dx = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
     dw = [0,0,2,0,2,0,0,0]
@@ -159,13 +162,10 @@ if __name__ == '__main__':
     numpar[NumPar.Niter] = 5
     numpar[NumPar.Nhist] = 5
     numpar[NumPar.gen] = 0.1
+    numpar[NumPar.Nh] = 1
+    numpar[NumPar.omega0] = 0.010
     
     model = Inegf(binpath,pltfm,numpar,GaAs)
-    
-    
-    # to change parameters, change the dictionaries in isewself:
-    
-    # to create input files with default parameters:
     
     # define the merit function as max gain/current density, from a dictionary of merit funcs.:
     model.merit = model.merits.get("max gain")

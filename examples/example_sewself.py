@@ -3,24 +3,24 @@ Created on 15 Feb 2018
 
 @author: martin
 '''
+import sys
+import os
+import numpy
+# change path as apropriate
+path_to_aftershoq = os.getcwd()
+sys.path.append(path_to_aftershoq)
+sys.path.append(path_to_aftershoq + '/hilbert_curve/')
 
 from structure.classes import Structure, MaterialPar as mp
 from structure.sgenerator import Sgenerator
 from utils.qclutil import MaterialUtil as mu
 from numerics.runplatf import Local
 from utils.systemutil import SystemUtil as su
-import os
 from utils.debug import Debugger as dbg
 from interface.isewself import Isewself
-import numpy
 from numerics.paraopt import Paraopt
 from matplotlib import pyplot as pl
 
-import sys
-# change path as apropriate
-path_to_aftershoq = os.getcwd()
-sys.path.append(path_to_aftershoq)
-sys.path.append(path_to_aftershoq + '/hilbert_curve/')
 
 if __name__ == '__main__':
     
@@ -108,7 +108,7 @@ if __name__ == '__main__':
     print 'Generating N random structures:\n'
     N = input('N = ?\n')
     
-    # define variations in composition (not implemented yet), layer widths,
+    # define variations in composition, layer widths,
     # and doping location/density:
     dx = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
     dw = [0,0,2,0,2,0]
@@ -213,7 +213,8 @@ if __name__ == '__main__':
     print 'Array of trial results:\n' + str(y0)
 
     # create optimization object
-    tol, r, itmax, procmax = 18, 1.1, 100, 20
+    print "imax = " + str(sg.hutil.imax)
+    tol, r, itmax, procmax = 0.001*sg.hutil.imax, 1.5, 100, 20
     
     opt = Paraopt(tol,r,itmax,procmax,x0,y0)
     

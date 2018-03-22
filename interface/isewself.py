@@ -110,7 +110,7 @@ class Isewself(Interface):
                 for layer in ss.layers:
                     f.write(str(layer.width)+" ")
                 for layer in ss.layers:
-                    f.write(str(layer.material)+" ")
+                    f.write(str(layer.material.x)+" ")
                               
                 f.write(str(self.getMerit(ss, path)))
                 f.write("\n")

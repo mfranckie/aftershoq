@@ -70,7 +70,7 @@ class Paraopt(object):
         si = np.argsort(R)
         t = np.argmax(R)+1
         
-        p = min(len(self.x)+1,self.pmax)
+        p = min(k+1,self.pmax)
         
         for i in range(0,p):
             t = si[k-i]+1
