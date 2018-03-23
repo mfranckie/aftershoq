@@ -43,7 +43,6 @@ class Inegf(Interface):
         self.writeNegftInp(path, "./",pathNegf)
         
     def runStructures(self,structures,path):
-        #processes = []
         local = Local()
         for ss in structures:
             spath = path+"/"+str(ss.sid)
@@ -63,8 +62,12 @@ class Inegf(Interface):
         for ss in structures:
             spath = path+"/"+str(ss.sid)
             # replacing default value of Nper in scatt3.inp
-            local.submitandwait("sed",['-i',"--in-place=''",'2s/1/'+str(self.numpar[NumPar.Nper])+'/', "scatt3.inp"],spath)
-            local.submitandwait("cp",["scatt3.inp","IV/"], spath)
+            proc = local.submitandwait("sed",['-i',"--in-place=''",'2s/1/'+str(self.numpar[NumPar.Nper])+'/', "scatt3.inp"],spath)
+            # to make sure file is closed:
+            proc.communicate()
+            proc = local.submitandwait("cp",["scatt3.inp","IV/"], spath)
+            proc.communicate()
+            
             proc = self.pltfm.submitjob(self.prognegft,[],spath+"/IV/")
             #proc = su.dispatch(self.prognegft, "",spath+"/IV/")
             self.processes.append(proc)
@@ -81,6 +84,10 @@ class Inegf(Interface):
                     pactive=True
                     #break
             time.sleep(delay)
+        # close all finished processes:
+        for p in self.processes:
+            p.communicate()
+            del p
     
     def gatherResults(self, structures, path):
         '''
