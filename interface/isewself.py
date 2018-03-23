@@ -152,14 +152,16 @@ class Isewself(Interface):
             f.write( str(self.numpar["inc0"]) + " inc0\n" )
             f.write( str(self.numpar["incw"]) + " incw\n" )
             f.write( "Structure (mat, thick (A), doping x 1e-18) \n" )
-            i = 0
+            index = 0
             for layer in structure.layers:
                 f.write(str(layer.material) + " " + str(10*layer.width) + " " )
                 doping = 0
                 for dop in structure.dopings:
-                    if dop[0]>=structure.layerPos(i):
+                    if dop[0] >= structure.layerPos(index) and dop[1] <= structure.layerPos(index) + layer.width:
                         doping += dop[2]
+                    #doping += structure.dopings[0][2]
                 f.write( str( doping*1e-18 ) + "\n")
+                index += 1
 
 
     
@@ -233,7 +235,7 @@ class Isewself(Interface):
             output = structure.output.split(' ')
             for il in range(0,len(output)):
                 if output[il] == 'Laser':
-                    return -abs(float(output[il+3]) - float(self.target))
+                    return abs(float(output[il+3]) - float(self.target))
             return 0
         elif self.merit == self.merits["DeltaE_12"]:
             levels = self.readEbound(path)
