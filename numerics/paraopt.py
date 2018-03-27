@@ -55,6 +55,8 @@ class Paraopt(object):
             else:
                 mulist.append(abs(self.y[j]-self.y[j-1])/(self.x[j]-self.x[j-1]))
         mu = max(mulist)
+        if(mu == 0):
+            mu = 1
         
         R.append( 2*(self.x[1]-self.x[0]) - 4*self.y[1]/self.r/mu )
         for j in range(2,k+1):

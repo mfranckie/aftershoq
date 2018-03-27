@@ -86,7 +86,7 @@ class Inegf(Interface):
             time.sleep(delay)
         # close all finished processes:
         for p in self.processes:
-            p.communicate()
+            p.wait()
             del p
     
     def gatherResults(self, structures, path):
@@ -191,7 +191,11 @@ class Inegf(Interface):
         # TODO: now using last point, take maximum instead!
         strlist = out.split()
         # check convergence
-        ierror = strlist[Inegf.idat.get("ierror")]
+        try:
+            ierror = strlist[Inegf.idat.get("ierror")]
+        except(IndexError):
+            print "WARNING: Could not read file: " + path + "/negft.dat"
+            return "ERROR"
         if(ierror[-1]=='1'):
             return "NOT CONV"
         if self.merit==Interface.merits.get("max gain") :
