@@ -19,7 +19,7 @@ class Inegf(Interface):
     # index of data in negft.dat
     idat = {"eFd":0,"omega":1,"eFacd":2,"j":3,"gain":4,"dk":5,"konv":6,"errdyn":7,"ierror":8}
 
-    def __init__(self,binpath,pltfm,numpar,wellmaterial):
+    def __init__(self,binpath,pltfm,numpar,wellmaterial,einspath = "./"):
         '''
         Constructor
         '''
@@ -31,6 +31,7 @@ class Inegf(Interface):
         self.progbandplot = binpath+"bandplot8.out"
         self.wellmat = wellmaterial
         self.processes= []
+        self.einspath = einspath
         
     def __str__(self):
         return "Inegf"
@@ -40,7 +41,7 @@ class Inegf(Interface):
         su.mkdir(pathNegf)
         self.writeWannier(ss,path)
         self.writeMaterial(self.wellmat, "# test of function 29/1 2018",path)
-        self.writeNegftInp(path, "./",pathNegf)
+        self.writeNegftInp(path, self.einspath ,pathNegf)
         
     def runStructures(self,structures,path):
         local = Local()
