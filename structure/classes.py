@@ -4,7 +4,7 @@ Created on 26 Jan 2018
 @author: martin
 '''
 
-class MaterialPar():
+class MaterialPar:
     meff = 0
     Ec = 1
     Eg = 2
@@ -41,7 +41,7 @@ class MaterialPar():
 class Layer:
     def __init__(self,width,material,eta,lam):
         self.width = width
-        self.material = Material(material.name, material.params, material.mat1, material.mat2, material.C, material.x)
+        self.material = material.copy()
         self.lam = lam
         self.eta = eta
         
@@ -124,7 +124,7 @@ class Structure:
     layers=[]
     dopings=[]
 
-class Material:
+class Material(object):
     def __init__(self,name,params,mat1=None,mat2=None,C=None,x=None):
         self.name = name
         self.params = params
@@ -134,6 +134,9 @@ class Material:
         self.x = x
         if x is not None:
             self.updateAlloy(x)
+            
+    def copy(self):
+        return Material(self.name, self.params, self.mat1, self.mat2, self.C, self.x)
             
     def updateAlloy(self,x):
         if(self.x is not None):
