@@ -8,6 +8,7 @@ from subprocess import call, Popen, PIPE
 import os
 import time
 from utils.debug import Debugger as dbg
+from tempfile import TemporaryFile as tmp
 
 class SystemUtil(object):
     '''
@@ -46,7 +47,14 @@ class SystemUtil(object):
             time.sleep()
         
     @staticmethod
-    def dispatch(prog,args,dirpath=None):
+    def dispatch(prog,args,dirpath=None, infile = None, outfile = None, errfile = None):
+        
+        if infile is None:
+            infile = tmp()
+        if outfile is None:
+            outfile = tmp()
+        if errfile is None:
+            errfile = tmp()
         
         progargs=[prog]
         
@@ -59,28 +67,9 @@ class SystemUtil(object):
         dbg.debug( "<<<< Dispatching program: " + str(progargs) + " from " + dirpath,
                    dbg.verb_modes["chatty"], SystemUtil)
         
-        process=Popen(progargs,cwd=dirpath,close_fds=True,stdout=PIPE,stderr=PIPE,stdin=PIPE)
+        process=Popen(progargs,cwd=dirpath,close_fds=True,stdout=outfile,stderr=errfile,stdin=infile)
         
         dbg.debug(  " with pid="+str(process.pid)+" >>>>\n" ,
                     dbg.verb_modes["chatty"])
         dbg.flush()
         return process
-
-    @staticmethod
-    def runprogram(prog,args=None,dirpath=None):
-        progargs = [prog]
-        if dirpath is None:
-            dirpath = "./"
-        if args is not None:
-            [progargs.append(a) for a in args]
-            
-        dbg.debug( "<<<< Running program: " + str(progargs)  + " from " + dirpath ,
-                   dbg.verb_modes["chatty"], SystemUtil)
-        
-        p = Popen(progargs,cwd=dirpath,stdout=PIPE,stderr=PIPE,stdin=PIPE)
-        
-        dbg.debug( " with pid="+str(p.pid)+" >>>>\n" ,
-                   dbg.verb_modes["chatty"])
-        dbg.flush()
-        return p
-        

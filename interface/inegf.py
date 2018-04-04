@@ -10,6 +10,7 @@ from utils.systemutil import SystemUtil as su
 from numerics.runplatf import Local
 import time
 from utils.debug import Debugger as dbg
+import subprocess
 
 class Inegf(Interface):
     '''
@@ -132,8 +133,7 @@ class Inegf(Interface):
             commands = str(zshift)+"\n"+str(omega0)+"\n"+str(omegaf)+"\n"+str(Nomega)
             commands += "\n"+str(Nper) +"\n"+str(gamma)+"\n"+str(Nk)+"\n"+str(Ek)
         
-        local=Local()
-        proc = local.submitjob(self.proghdiag, [], path)
+        proc = su.dispatch(self.proghdiag, [], path,infile = subprocess.PIPE)
         proc.communicate(commands)
         su.waitforproc(proc, 0.1)
         return proc
@@ -174,15 +174,14 @@ class Inegf(Interface):
             raise Exception("Parameter not valid: plot local data = "+localdata)
         commands += str(zmin) + "\n" + str(zmax) + "\n" + str(pmin) + "\n" + str(pmax) + "\n" + str(square) + "\n" + str(renorm) + "\n"
         
-        local = Local()
-        proc = local.submitjob(self.progbandplot, [], path)
+        proc = su.dispatch(self.progbandplot, [], path, infile = subprocess.PIPE)
         proc.communicate(commands)
         return proc
 
     def getMerit(self,structure,path):
         path = path + "/" + structure.dirname + "/IV"
         try:
-            proc = su.runprogram("tail", ["-n","1","negft.dat"], path)
+            proc = su.dispatch("tail", ["-n","1","negft.dat"], path, outfile=subprocess.PIPE)
         except OSError:
             print "\nWARNING: Could not find directory: " + path
             return "ERROR"

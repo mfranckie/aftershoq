@@ -64,7 +64,7 @@ class Euler(Platform):
         for info in self.procinfo:
             if info[0]==proc.pid:
                 jobname = info[1]
-        p = su.runprogram("bjobs",["-J",jobname])
+        p = su.dispatch("bjobs",["-J",jobname])
         out = p.communicate()
         
         if ("not found" in out[1]) and (proc.poll()!=None):
@@ -83,7 +83,7 @@ class Local(Platform):
         return proc
     
     def submitandwait(self, prog,  args, dirpath):
-        proc = su.runprogram(prog, args, dirpath)
+        proc = su.dispatch(prog, args, dirpath)
         while proc.poll() == None:
             time.sleep(0.1)
         return proc
