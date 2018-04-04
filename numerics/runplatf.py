@@ -7,6 +7,7 @@ Created on 2 Feb 2018
 from utils.systemutil import SystemUtil as su
 import time
 from utils.debug import Debugger as dbg
+import subprocess
 
 class Platform(object):
     '''
@@ -64,7 +65,7 @@ class Euler(Platform):
         for info in self.procinfo:
             if info[0]==proc.pid:
                 jobname = info[1]
-        p = su.dispatch("bjobs",["-J",jobname])
+        p = su.dispatch("bjobs",["-J",jobname],errfile=subprocess.PIPE)
         out = p.communicate()
         
         if ("not found" in out[1]) and (proc.poll()!=None):
