@@ -77,10 +77,11 @@ if __name__ == '__main__':
         m.append(alingaas.params[mp.meff])
         va.append(alingaas.params[mp.Valloy])
     
+    # reproducing plot from Ohtani APL 2013:
     pl.plot(x,m)
     ax1 = pl.gca()
     ax2 = ax1.twinx()
-    ax2.plot(x,ec)
+    ax2.plot(x,ec,'r')
     pl.figure(2)
     pl.plot(x,va)
     
@@ -107,7 +108,7 @@ if __name__ == '__main__':
     for i in range(0,1000):
         z = float(i)*s.length/float(1000)*4
         zarr.append(z)
-        while z > s.length:
+        while z >= s.length:
             z -= s.length
         pot.append(s.layers[s.layerIndex(z)].material.params[mp.Ec])
     
