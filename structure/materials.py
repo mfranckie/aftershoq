@@ -5,6 +5,8 @@ Created on 29 Mar 2018
 '''
 from structure.classes import Material, MaterialPar as mp
 
+# Binaries:
+
 class GaAs(Material):
     
     def __init__(self,name = None):
@@ -109,12 +111,14 @@ class MgO(Material):
     def copy(self):
         return MgO(self.name)
 
+# Ternaries:
+
 class AlGaAs(Material):
     '''
     classdocs
     '''
 
-    def __init__(self,name,x=None):
+    def __init__(self,name = None, x=None):
         if name is None:
             name = "AlGaAs"
         mat1 = AlAs()
@@ -138,7 +142,7 @@ class AlGaAs(Material):
     
 class InGaAs(Material):
     
-    def __init__(self,name,x = None):
+    def __init__(self,name = None, x = None):
         if name is None:
             name = "GaInAs"
         if x is None:
@@ -161,7 +165,7 @@ class InGaAs(Material):
         
 class InAlAs(Material):
     
-    def __init__(self,name,x = None):
+    def __init__(self,name = None, x = None):
         
         if name is None:
             name = "AlInAs"
@@ -181,10 +185,11 @@ class InAlAs(Material):
     def copy(self):
         return InAlAs(self.name,self.x)
         
-        
+
+
 class ZnMgO(Material):
     
-    def __init__(self,name,x = None):
+    def __init__(self,name = None,x = None):
         if name is None:
             name = "Zn_"+str(x)+"Mg_"+str(1-x)+"O"
         mat1 = ZnO()
@@ -196,3 +201,51 @@ class ZnMgO(Material):
         
     def copy(self):
         return ZnMgO(self.name,self.x)
+    
+    
+# Quqternaries;
+    
+class AlInGaAs(Material):
+        
+        '''
+        Quaternary alloy composed of AlInAs and GaInAs
+        Default: Lattice matched to InP (Al_0.48InAs)_x (In_0.53GaAs)_(1-x)
+        Material parameters from Ohtani APL (2013)
+        Note: General case is not implemented yet!
+        
+        Using a linear interpolation of the alloy scattering potential.
+        ''' 
+        
+        def __init__(self, x, name = None, y = None, z = None):
+            
+            if name is None:
+                name = "Al_"+str(x) + "Ga_"+ str(1-x) + "InAs"
+            
+            if y is None:
+                y = 0.48
+            elif y != 0.48:
+                print "General case is not implemented, use y = 0.48 or None!"
+                
+            if z is None:
+                z = 0.53
+            elif z != 0.53:
+                print "General case is not implemented, use z = 0.53 or None!"
+            
+            mat1 = InAlAs()
+            mat2 = InGaAs()
+            
+            A = []
+            mp.initList(A)
+            A[mp.Eg] = 0.22
+            A[mp.meff] = -0.016
+            super(AlInGaAs,self).__init__(name,[],mat1,mat2,A,x)
+            
+        def copy(self):
+            return AlInGaAs(self.x, self.name)
+        
+        def updateAlloy(self, x):
+            Material.updateAlloy(self, x)
+            self.params[mp.Valloy] = self.mat1.params[mp.Valloy]*x + \
+                self.mat2.params[mp.Valloy]*(1-x)
+            self.params[mp.Ec] = 0.73*(0.712*x - 0.22*x*(1-x)) + self.mat2.params[mp.Ec]
+        
