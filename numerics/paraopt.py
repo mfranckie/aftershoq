@@ -134,8 +134,11 @@ class Paraopt(object):
         self.converged = 0
     
     
-    def minimize(self, model, sgenerator, path):
+    def minimize(self, model, sgenerator, pathwd, pathresults = None):
         
+        if pathresults is None:
+            pathresults = pathwd
+            
         dbg.debug("Starting minimization\n", dbg.verb_modes["verbose"],self)
         niter = 0
         while self.converged == 0:
@@ -145,14 +148,14 @@ class Paraopt(object):
             
             newx = self.nextstep()
             sgenerator.gen_struct_from_hilbert_curve(newx)
-            model.runStructures(sgenerator.structures[-len(newx):], path)
+            model.runStructures(sgenerator.structures[-len(newx):], pathwd)
             model.waitforproc(0.1)
             newy = []
             xi = 0
-            model.gatherResults(sgenerator.structures,path)
+            model.gatherResults(sgenerator.structures, pathwd, pathresults)
             for ss in sgenerator.structures[-len(newx):]:
                 try:
-                    val = -float(model.getMerit(ss,path))
+                    val = -float(model.getMerit(ss,pathwd))
                     newy.append( val )
                 except( ValueError ):
                     del newx[xi]

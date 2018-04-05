@@ -13,7 +13,6 @@ path_to_aftershoq = os.getcwd()
 sys.path.append(path_to_aftershoq)
 sys.path.append(path_to_aftershoq + '/hilbert_curve/')
 
-
 from structure.classes import Structure, MaterialPar as mp
 from structure.sgenerator import Sgenerator
 from utils.qclutil import MaterialUtil as mu
@@ -32,8 +31,13 @@ if __name__ == '__main__':
     path = os.getcwd()+"/"+path
     su.mkdir(path)
     
+    # results directory:
+    pathresults = "../../demo/results/"
+    
+    su.mkdir(pathresults)
+    
     # Setup debugger:
-    dbg.open(dbg.verb_modes['verbose'],path+"/debug.log")
+    dbg.open(dbg.verb_modes['verbose'],pathresults+"/debug.log")
     dbg.debug("Debug file \n\n")
     dbg.flush()
     
@@ -71,7 +75,7 @@ if __name__ == '__main__':
         print val + " = " + str(InAlAs.params[mp.valdict[val]])
     
     # create Al_0.15Ga_0.85As 
-    x = 0.20
+    x = 0.25
     AlGaAs = mu.createAlGaAs(x)
     print "\n" + str(AlGaAs) + ":\n"
     for val in mp.valdict:
@@ -107,11 +111,12 @@ if __name__ == '__main__':
     
     print "Structure created : "
     print s
+    for l in s.layers:
+        print l.material.params[mp.Ec]
     
     print sep
     print 'Generating N random structures:\n'
     N = input('N = ?\n')
-    
     # define variations in composition, layer widths,
     # and doping location/density:
     dx = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
@@ -158,11 +163,15 @@ if __name__ == '__main__':
     NumPar.initList(numpar)
     NumPar.setDefault(numpar)
     
+    numpar[NumPar.Nnu] = 1
+    numpar[NumPar.Nwann] = 1
+    numpar[NumPar.NE] = 10
+    numpar[NumPar.Nk] = 10
     numpar[NumPar.Temp] = 300
-    numpar[NumPar.Niter] = 5
-    numpar[NumPar.Nhist] = 5
-    numpar[NumPar.gen] = 0.1
-    numpar[NumPar.Nh] = 1
+    numpar[NumPar.Niter] = 1
+    numpar[NumPar.Nhist] = 1
+    numpar[NumPar.gen] = 100
+    numpar[NumPar.Nh] = 0
     numpar[NumPar.omega0] = 0.010
     
     model = Inegf(binpath,pltfm,numpar,GaAs)
@@ -183,10 +192,10 @@ if __name__ == '__main__':
     print "NEGF is running"
     model.waitforproc(1)
     
-    print sep + 'Gathering results to: ' + path + '/results.log'
+    print sep + 'Gathering results to: ' + pathresults + '/results.log'
     
     # gather the results from the simulation of all structures:
-    model.gatherResults(sg.structures, path)
+    model.gatherResults(sg.structures, path, pathresults)
     
     print sep + 'First results acheived. Proceed with optimization?'
     proceed = input("Yes = 1\nExit = 0")
@@ -215,14 +224,15 @@ if __name__ == '__main__':
     print 'Array of trial results:\n' + str(y0)
 
     # create optimization object
-    tol, r, itmax, procmax = 18, 1.1, 100, 2
+    tol, r, itmax, procmax = 18, 1.1, 20, 2
     
     opt = Paraopt(tol,r,itmax,procmax,x0,y0)
     
-    conv = opt.minimize(model, sg, path)
+    conv = opt.minimize(model, sg, path, pathresults)
     
     print "Optimization distances: \n" + str(opt.x)
     print "Optimization values: \n"    + str(opt.y)
+    
     
     pl.plot(opt.x,opt.y)
     pl.show()
