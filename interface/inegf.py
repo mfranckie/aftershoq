@@ -91,14 +91,14 @@ class Inegf(Interface):
             p.wait()
             del p
     
-    def gatherResults(self, structures, path):
+    def gatherResults(self, structures, pathwd, pathresults = None):
         '''
-        Write results to path/results.log and run hdiag and bandplot
-        in path/i/IV/eins/x/ for each i and x. Stores WS resutls as a
+        Write results to pathresults/results.log and run hdiag and bandplot
+        in pathwd/i/IV/eins/x/ for each i and x. Stores WS resutls as a
         new attribute levels[directory][WS level][data field] in each 
         Structure object in the list structures.
         '''
-        with open(path+'/results.log','w') as f:
+        with open(pathresults+'/results.log','w') as f:
             f.write('# Results for structures:\nID | N times layer width | N times Mat | Merit\n')
             for ss in structures:
                 f.write(str(ss.sid)+" ")
@@ -107,11 +107,11 @@ class Inegf(Interface):
                 for layer in ss.layers:
                     f.write(str(layer.material.x)+" ")
                               
-                f.write(str(self.getMerit(ss, path)))
+                f.write(str(self.getMerit(ss, pathwd)))
                 f.write("\n")
                 
                 ss.wslevels = []
-                spath = path + "/" + str(ss.sid)
+                spath = pathwd + "/" + str(ss.sid)
                 try:
                     dirlist = su.listdirs(spath+"/IV/eins/")
                 except OSError:
@@ -180,38 +180,48 @@ class Inegf(Interface):
 
     def getMerit(self,structure,path):
         path = path + "/" + structure.dirname + "/IV"
+        
+        results = []
+        
         try:
-            proc = su.dispatch("tail", ["-n","1","negft.dat"], path, outfile=subprocess.PIPE)
+            
+            with open(path+"/negft.dat",'r') as f:
+                for line in f:
+                    if '#' in line or line.split()[Inegf.idat.get("ierror")] == '1':
+                        continue
+                    results.append(line.split())
+                if results == []:
+                    return "NO CONV"
+            f.closed
+            
         except OSError:
             print "\nWARNING: Could not find directory: " + path
             return "ERROR"
-        else:        
-            [out,_] = proc.communicate()
+        except ValueError:
+            print "\nWarning: Error when getting results from: " + path
+            return "ERROR"
+        
+        values = []
+        for i in range(0, len(Inegf.idat)):
+            datval = []
+            for row in results:
+                datval.append(float(row[i]))
+            values.append(datval)
+        
         # get the gain of structure
         # TODO: now using last point, take maximum instead!
-        strlist = out.split()
-        # check convergence
-        try:
-            ierror = strlist[Inegf.idat.get("ierror")]
-        except(IndexError):
-            print "WARNING: Could not read file: " + path + "/negft.dat"
-            return "ERROR"
-        if(ierror[-1]=='1'):
-            return "NOT CONV"
         if self.merit==Interface.merits.get("max gain") :
-            try:
-                out = strlist[Inegf.idat.get("gain")]
-            except IndexError:
-                print "Error in result for structure: " + str(structure.sid)+"!"
-                out = "ERROR"
+
+            out = max(values[Inegf.idat.get("gain")])
+            
         elif self.merit == Interface.merits.get("(max gain)/(current density)"):
-            try:
-                gain = float(strlist[Inegf.idat.get("gain")])
-                j = float(strlist[Inegf.idat.get("j")])
-                out = str(gain/j)
-            except (IndexError, ValueError):
-                print "Error in result for structure: " + str(structure.sid)+"!"
-                out = "ERROR"
+            
+            gain = values[Inegf.idat.get("gain")]
+            j = values[Inegf.idat.get("j")]
+            gainj = []
+            [gainj.append(gain[i]/j[i]) for i in range(0,len(gain))]
+            out = max(gainj)
+                
         else:
             print "No such merit function!"
         
