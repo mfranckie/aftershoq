@@ -98,6 +98,10 @@ class Inegf(Interface):
         new attribute levels[directory][WS level][data field] in each 
         Structure object in the list structures.
         '''
+        
+        if(pathresults is None):
+            pathresults = pathwd
+        
         with open(pathresults+'/results.log','w') as f:
             f.write('# Results for structures:\nID | N times layer width | N times Mat | Merit\n')
             for ss in structures:
