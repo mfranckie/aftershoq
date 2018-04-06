@@ -61,17 +61,18 @@ class Structure:
         # default dirname
         self.dirname = str(self.sid)
         self.length = 0
+        self.dopings = []
         if orig is None:
             self.Nl = 0;
             self.layers = []
-            self.dopings = []
         else:
             self.Nl = 0
             self.layers = []
             for l in orig.layers:
                 self.addLayer(Layer(l.width,l.material,l.eta,l.lam))
-            self.dopings = orig.dopings[:]
-        
+            for dl in orig.dopings:
+                self.addDoping(dl[0], dl[1], dl[2])
+ 
     def copy(self,structure):
         self.layers = []
         for l in range(0,structure.Nl):

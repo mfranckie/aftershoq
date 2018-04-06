@@ -81,7 +81,7 @@ class Sgenerator():
         # TODO: extend to multiple doping layers
         for i in range(0,len(self.orig.dopings[0])):
             if self.ddop[i] > 0:
-                params.append(self.orig.dopoings[0][i])
+                params.append(self.orig.dopings[0][i])
                 dparams.append(self.ddop[i])
                 dopindex.append(i)
                 ND +=1
@@ -128,9 +128,7 @@ class Sgenerator():
                 d.append(random.random()*imax)
             
         coordinates = self.gen_struct_from_hilbert_curve(d)
-        
-        return coordinates
-    
+       
     def gen_struct_from_hilbert_curve(self,newd):
         '''
         Generates new structures at the points along the
@@ -161,11 +159,21 @@ class Sgenerator():
                 pindex+=1
                 
             # Doping layers:
-            for i in range(0,len(self.dopindex)):
-                news.dopings[self.dopindex[i]] = par_unscaled[pindex]
+	    z0 = news.dopings[0][0]
+	    zend = news.dopings[0][1]
+ 	    doping = news.dopings[0][2]
+	    center = (z0 + zend)/2
+	    width = (zend - z0)/2
+	    cwd = [center, width, doping]
+	    for i in range(0,len(self.dopindex)):
+		cwd[self.dopindex[i]] = par_unscaled[pindex]
                 pindex +=1
-                
-            # Alloy composition:
+	    z0 = cwd[0] - cwd[1]
+	    zend = cwd[0] + cwd[1]
+	    doping = cwd[2]
+	    news.dopings[0] = [z0,zend,doping]
+
+	    # Alloy composition:
             for i in range(0,len(self.xindex)):
                 news.layers[self.xindex[i]].material.updateAlloy(par_unscaled[pindex])
                 pindex +=1
