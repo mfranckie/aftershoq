@@ -7,6 +7,19 @@ import numpy as np
 
 class Sgenerator():
     def __init__(self,origstruct,dw,dx,ddop=None):
+        '''
+        Constructor which takes:
+        origstruct: original structure to modify, with N layers
+        dw: list of length N with one range of widths for each layer
+            The widths will vary in the interval w0-dw to w0+dw
+        dx: list of length N with one range of composition for each layer
+            The comp. will vary in the interval x0-dx to x0+dx
+        ddop: (optional) a list of the structure [dpos, dw, ddens]
+            where dops gives the range of positions, dw the range of
+            doping layer widths, and ddens the range of doping densities.
+        
+        '''
+        
         self.dx = dx
         self.dw = dw
         self.orig = origstruct
@@ -128,6 +141,8 @@ class Sgenerator():
                 d.append(random.random()*imax)
             
         coordinates = self.gen_struct_from_hilbert_curve(d)
+        
+        return coordinates
        
     def gen_struct_from_hilbert_curve(self,newd):
         '''
@@ -159,21 +174,21 @@ class Sgenerator():
                 pindex+=1
                 
             # Doping layers:
-	    z0 = news.dopings[0][0]
-	    zend = news.dopings[0][1]
- 	    doping = news.dopings[0][2]
-	    center = (z0 + zend)/2
-	    width = (zend - z0)/2
-	    cwd = [center, width, doping]
-	    for i in range(0,len(self.dopindex)):
-		cwd[self.dopindex[i]] = par_unscaled[pindex]
+            z0 = news.dopings[0][0]
+            zend = news.dopings[0][1]
+            doping = news.dopings[0][2]
+            center = (z0 + zend)/2
+            width = (zend - z0)/2
+            cwd = [center, width, doping]
+            for i in range(0,len(self.dopindex)):
+                cwd[self.dopindex[i]] = par_unscaled[pindex]
                 pindex +=1
-	    z0 = cwd[0] - cwd[1]
-	    zend = cwd[0] + cwd[1]
-	    doping = cwd[2]
-	    news.dopings[0] = [z0,zend,doping]
-
-	    # Alloy composition:
+            z0 = cwd[0] - cwd[1]
+            zend = cwd[0] + cwd[1]
+            doping = cwd[2]
+            news.dopings[0] = [z0,zend,doping]
+            
+            # Alloy composition:
             for i in range(0,len(self.xindex)):
                 news.layers[self.xindex[i]].material.updateAlloy(par_unscaled[pindex])
                 pindex +=1
