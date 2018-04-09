@@ -118,7 +118,7 @@ class Inegf(Interface):
                 spath = pathwd + "/" + str(ss.sid)
                 try:
                     dirlist = su.listdirs(spath+"/IV/eins/")
-                except OSError:
+                except (OSError, IOError):
                     print "WARNING: could not find directory: " + spath+"/IV/eins/"
                     continue
                 dirs = dirlist[0].split()
@@ -198,7 +198,7 @@ class Inegf(Interface):
                     return "NO CONV"
             f.closed
             
-        except OSError:
+        except (OSError, IOError):
             print "\nWARNING: Could not find directory: " + path
             return "ERROR"
         except ValueError:
