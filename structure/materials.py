@@ -160,6 +160,9 @@ class InGaAs(Material):
         A[mp.Ec] = 0.060 # (= Cvbo + Cgap, Vurgaftman)
         super(InGaAs,self).__init__(name,[],mat1, mat2, A, x)
         
+        if x == 0.47:
+            self.params[mp.Eg] = 0.789
+        
     def copy(self):
         return InGaAs(self.name,self.x)
         
@@ -169,8 +172,7 @@ class InAlAs(Material):
         
         if name is None:
             name = "AlInAs"
-        if x is None:
-            x = 0.48
+        
         mat1 = AlAs()
         mat2 = InAs()
         A = []
@@ -180,7 +182,15 @@ class InAlAs(Material):
         A[mp.Ep] = -4.81
         A[mp.Vdef] = -1.4
         A[mp.Ec] = 0.094 # (= Cvbo + Cgap, Vurgaftman)
+        if x is None:
+            x = 0.48
+            
         super(InAlAs,self).__init__(name,[],mat1, mat2, A, x)
+        
+        if x == 0.48:
+            self.params[mp.Ec] = 0.032294
+            self.params[mp.meff] = 0.080
+            self.params[mp.Eg] = 1.404
         
     def copy(self):
         return InAlAs(self.name,self.x)
