@@ -110,7 +110,26 @@ class MgO(Material):
         
     def copy(self):
         return MgO(self.name)
+    
+class MgOzoterac(Material):
+    
+    def __init__(self,name = 'MgOzoterac'):
+        params = []
+        mp.initList(params)
+        params[mp.meff] = 0.22
+        params[mp.Ec] = 1.3 # Deliverable D1.3 1/9/2017
+        params[mp.Eg] = 5.3 # Deliverable D1.3 1/9/2017
+        params[mp.ELO] = 0.089
+        params[mp.Ep] = 21.5
+        params[mp.eps0] = 9.6
+        params[mp.epsinf] = 2.98
+        params[mp.Vdef] = -4.3
+        params[mp.lattconst] = 4.21
+        super(MgOzoterac,self).__init__(name,params)
 
+    def copy(self):
+        return MgOzoterac(self.name)
+        
 # Ternaries:
 
 class AlGaAs(Material):
