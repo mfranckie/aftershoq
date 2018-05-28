@@ -39,7 +39,7 @@ class Isewlab(Interface):
         "interface-step"          : 0.01,
         "interface-diffusion"     : 0.0,  # DIFFUSION -- SEGREG
         "mesh-style"              : 'fixed-step',
-        "phony-left-barrier"      : 'NO', # AUTO, USER, NO
+        "phony-left-barrier"      : 'AUTO', # AUTO, USER, NO
         "phony-right-barrier"     : 'AUTO', #AUTO, USER, NO
         "has-box-wall"            : 'TRUE',# has box wall -- NEED TO BE TRUE
         "auto-box-wall"           : 'TRUE', # auto discontinuity
@@ -218,11 +218,15 @@ class Isewlab(Interface):
         '''
         super(Isewlab,self).__init__(binpath, pltfm)
         self.processes = []
-        self.sewlab = binpath + "sewlab_MAC"
+        self.sewlab = binpath
         self.samplefilename = "structure.sample"
         self.structurename = 'AGS'
         self.scriptfilename = 'script.c'
         self.resultfile = "results.txt"
+        self.popfile = 'pop.txt'
+        self.dipolefile = 'dipoles.txt'
+        self.ratefile = 'rates.txt'
+        self.energiesfile = 'energies.txt'
         self.merits.update({'DeltaE_12' : 8, 'Elase' : 9})
         
     def __str__(self):
@@ -244,7 +248,13 @@ class Isewlab(Interface):
         self.writeScriptFile(spath)
     
     def gatherResults(self,structures,path):
-        self.ebound = []
+        for s in structures:
+            s.results = self.readResults(s, path)
+            s.populations = self.readPop(s, path)
+            s.dipoles = self.readDipoles(s, path)
+            s.energies = self.readEnergies(s, path)
+            s.rates = self.readRates(s, path)
+            
         with open(path+'/results.log','w') as f:
             f.write('# Results for structures:\nID | N times layer width | N times Mat | Merit\n')
             for ss in structures:
@@ -256,6 +266,49 @@ class Isewlab(Interface):
                               
                 f.write(str(self.getMerit(ss, path)))
                 f.write("\n")
+            
+    def readResults(self, s, path):
+        results = []
+        with open(path + s.dirname + "/" + self.resultfile, 'r') as f:
+            for line in f:
+                vals = []
+                [vals.append(float(val)) for val in line.split()]
+                results.append( vals )
+        return results
+    
+    def readPop(self, s, path):
+        results = []
+        with open(path + s.dirname + "/" + self.popfile, 'r') as f:
+            for line in f:
+                vals = []
+                [vals.append(float(val)) for val in line.split()]
+                results.append( vals )
+        return results
+    
+    def readDipoles(self, s, path):
+        results = []
+        with open(path + s.dirname + "/" + self.dipolefile, 'r') as f:
+            for line in f:
+                vals = []
+                [vals.append(float(val)) for val in line.split()]
+                results.append( vals )
+        return results
+    
+    def readRates(self, s, path):
+        results = []
+        with open(path + s.dirname + "/" + self.ratefile, 'r') as f:
+            for line in f:
+                vals = []
+                [vals.append(float(val)) for val in line.split()]
+                results.append( vals )
+        return results
+    
+    def readEnergies(self, s, path):
+        results = []
+        with open(path + s.dirname + "/" + self.energiesfile, 'r') as f:
+            for line in f:
+                results.append( float(line) )
+        return results
     
     def writeSampleFile(self,structure,path):
         filepath = path + "/" + self.samplefilename
@@ -469,16 +522,26 @@ class Isewlab(Interface):
             f.write(';\n')
             f.write('\n// Potential And Self Basis\n')
             f.write('pot = (Buildpot mqw Using params);\n')
+            f.write( "Sweep efield from ")
+            f.write( str( self.numpar['efield0'] ) + " to " )
+            f.write( str( self.numpar['Nefield']*self.numpar['defield']) )
+            f.write(" step " + str( self.numpar["defield"] ) + "\n" )
             f.write('bpot = (Bias pot To efield);\n')
             f.write('sol = (Selftransport bpot Using params --no-superself --no-kinetic-balance)\n')
             f.write('Save sol.basis "Basis_Spec.txt":"wf_dwf"\n')
             f.write('Save mqw "MQW.txt":"sewself"\n')
             f.write('sol.Lifetimes\n')
-            f.write('Write sol.J (Stats Max sol.GainLorentz) (Stats MaxLoc sol.GainLorentz) ')
+            f.write('Write efield sol.J (Stats Max sol.GainLorentz) (Stats MaxLoc sol.GainLorentz) ')
             f.write('To "')
             f.write(self.resultfile)
             f.write('"\n')
+            f.write('Save sol "pop.txt":"populations"\n')
+            f.write('Save sol "rates.txt":"rates"\n')
+            f.write('Save sol "energies.txt":"energies"\n')
+            f.write('Save sol "dipoles.txt":"dipoles"\n')
             f.write('Save sol.GainLorentz "gain.itx"\n')
+            f.write("Endsweep\n")
+            f.write("Quit")
                 
     def getMerit(self,structure,path):
         path = path + "/" + structure.dirname
@@ -488,10 +551,9 @@ class Isewlab(Interface):
             output = output.split()
             return abs(float(output[2]) - float(self.target))
         elif self.merit == self.merits["max gain"]:
-            proc = su.dispatch('tail', ['-n','1',self.resultfile], path)
-            [output, _] = proc.communicate()
-            output = output.split()
-            return float(output[1])
+            gain = []
+            [gain.append(float(l[2])) for l in structure.results]
+            return max(gain)
         else:
             print "Merit function " + str(self.merit) + "not implemented yet!"
             return "ERROR"
