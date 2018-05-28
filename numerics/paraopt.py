@@ -16,7 +16,7 @@ class Paraopt(object):
     '''
 
 
-    def __init__(self, tolerance, r, maxiter, procmax, x0, y0):
+    def __init__(self, tolerance, r, maxiter, procmax, x0 = [], y0 = []):
         '''
         tolerance: optimization will converge after Delta x < tolerance.
         r: parameter of the optimization scheme.
@@ -36,7 +36,35 @@ class Paraopt(object):
         self.t = -1
         self.iter = 0
         self.converged = 0
-        self.addpoints(x0, y0)
+        if(len(x0) > 0 and len(y0) > 0):
+            self.addpoints(x0, y0)
+        
+    def addEvaldPoints(self, model, sg, path, coords):
+        '''
+        Convert the evaluated points in N-dim. paramtere space in the 
+        structure generator "sg", already evaluated with the Inteface 
+        "model", to points along the Hilbert curve and add them.
+        '''
+        # collect results from trial points
+        x0 = []
+        [x0.append( sg.hutil.interp_dist_from_coords( c ) ) for c in coords]
+        x0 = np.array(x0)
+        x0.sort()
+        x0 = x0.tolist()
+        
+        y0 = []
+        xi = 0
+        for i in range(0,len(x0)):
+            try:
+                y0.append( -float(model.getMerit(sg.structures[i],path)) )
+            except( ValueError ):
+                del x0[xi]
+                xi-=1
+            xi +=1
+            
+        self.addpoints(x0,y0)
+        
+        return x0,y0
         
     def nextstep(self):
         '''
@@ -168,4 +196,20 @@ class Paraopt(object):
                   dbg.verb_modes["verbose"],self)
         dbg.flush()
         return self.converged
+    
+    def minimize_parameters(self, model, hutil):
+        
+        niter = 0
+        while self.converged == 0:
+            niter += 1
+            
+            newx = self.nextstep()
+            newy = []
+            for xx in newx:
+                newy.append( -float(model.getMerit(hutil.interp_coords_from_dist(xx)/float(2**hutil.p))) )
+        
+            self.addpoints(newx,newy)
+        
+        return self.converged
+        
         
