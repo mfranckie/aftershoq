@@ -90,6 +90,14 @@ class Inegf(Interface):
         for p in self.processes:
             p.wait()
             del p
+            
+    def checkactive(self):
+        pactive = False
+        for p in self.processes:
+                if self.pltfm.jobstatus(p):
+                    pactive=True
+        return pactive
+        
     
     def gatherResults(self, structures, pathwd, pathresults = None):
         '''
@@ -105,15 +113,6 @@ class Inegf(Interface):
         with open(pathresults+'/results.log','w') as f:
             f.write('# Results for structures:\nID | N times layer width | N times Mat | Merit\n')
             for ss in structures:
-                f.write(str(ss.sid)+" ")
-                for layer in ss.layers:
-                    f.write(str(layer.width)+" ")
-                for layer in ss.layers:
-                    f.write(str(layer.material.x)+" ")
-                              
-                f.write(str(self.getMerit(ss, pathwd)))
-                f.write("\n")
-                
                 ss.wslevels = []
                 spath = pathwd + "/" + str(ss.sid)
                 try:
@@ -125,9 +124,20 @@ class Inegf(Interface):
                 
                 for folder in dirs:
                     einspath = spath+"/IV/eins/"+folder
-                    self.runHdiag(einspath,omega0=-1)
+                    omega0 = self.numpar[NumPar.omega0]
+                    omegaf = self.numpar[NumPar.domega]
+                    self.runHdiag(einspath,omega0=omega0,omegaf=omegaf, gamma=0.001)
                     self.runBandplot(einspath, ss)
                     ss.wslevels.append(self.getWSdata(einspath))
+                
+                f.write(str(ss.sid)+" ")
+                for layer in ss.layers:
+                    f.write(str(layer.width)+" ")
+                for layer in ss.layers:
+                    f.write(str(layer.material.x)+" ")
+                              
+                f.write(str(self.getMerit(ss, pathwd)))
+                f.write("\n")
                 
                 
     def runHdiag(self, path, zshift=0, omega0=0, omegaf=1, Nomega = 1000, Nper=1, gamma = 0.0001, Nk = 0, Ek = -1):
@@ -225,6 +235,26 @@ class Inegf(Interface):
             gainj = []
             [gainj.append(gain[i]/j[i]) for i in range(0,len(gain))]
             out = max(gainj)
+                
+        elif self.merit == self.merits.get("estimated gain") :
+            try:
+                dirlist = su.listdirs(path+"/eins/")
+            except (OSError, IOError):
+                print "WARNING: could not find directory: " + spath+"/IV/eins/"
+                return "ERROR"
+            dirs = dirlist[0].split()
+            maxgain = []
+            for folder in dirs:
+                einspath = path+"/eins/"+folder
+                with open(einspath+"/gainFGR.dat") as f:
+                    for line in f:
+                        linestr = line.split()
+                        try:
+                            maxgain.append( float( linestr[1] ) )
+                        except( IndexError ):
+                            pass
+            out = max(maxgain)
+            
                 
         else:
             print "No such merit function!"

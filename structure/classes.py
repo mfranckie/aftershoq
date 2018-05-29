@@ -53,7 +53,7 @@ class Layer:
 
 class Structure:
     
-    sid = -1
+    sid = 0
     
     def __init__(self, orig=None):
         self.sid = Structure.sid

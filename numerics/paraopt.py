@@ -191,6 +191,7 @@ class Paraopt(object):
                 xi += 1
         
             self.addpoints(newx,newy)
+            self.writeresults(pathresults, "hilbert.log")
         
         dbg.debug("Minimization finished with convergence: " + str(self.converged) + "\n", 
                   dbg.verb_modes["verbose"],self)
@@ -212,4 +213,7 @@ class Paraopt(object):
         
         return self.converged
         
+    def writeresults(self, pathresults, filename):
+        with open(pathresults + "/" + filename, 'w') as f:
+            [f.write( str( self.x[i] ) + " " + str( self.y[i] ) +"\n") for i in range(0,len(self.x))]
         
