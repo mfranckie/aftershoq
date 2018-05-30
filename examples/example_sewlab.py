@@ -136,7 +136,7 @@ if __name__ == '__main__':
     # set numerical parameters:
     
     # the binaries (change to your bin folder):
-    binpath = "/usr/local/bin/"
+    binpath = "/usr/local/bin/sewlab_MAC"
     
     print 'Creating directory tree in: ' + path + '.\n'
     print 'Please change variable "binpath" to match your binaries!\n'

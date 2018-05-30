@@ -25,8 +25,8 @@ from matplotlib import pyplot as pl
 if __name__ == '__main__':
     
     # the working directory:
-    path = "../../demo"
-    path = os.getcwd()+"/"+path
+    path = "/Users/martin/git/Run/QWIP/samples/"
+    #path = os.getcwd()+"/"+path
     su.mkdir(path)
     
     # Setup debugger:
@@ -68,7 +68,7 @@ if __name__ == '__main__':
         print val + " = " + str(InAlAs.params[mp.valdict[val]])
     
     # create Al_0.15Ga_0.85As 
-    x = 0.20
+    x = 0.02
     AlGaAs = mu.createAlGaAs(x)
     print "\n" + str(AlGaAs) + ":\n"
     for val in mp.valdict:
@@ -90,13 +90,13 @@ if __name__ == '__main__':
     # Add layers:
     s.addLayerMW(3.0, AlGaAs)
     s.addLayerMW(20.0, AlGaAs)
-    s.addLayerMW(4.0,GaAs)
+    s.addLayerMW(7.0,GaAs)
     s.addLayerMW(2.0,AlGaAs) # <-- doped layer 3
-    s.addLayerMW(6.0,GaAs)
+    s.addLayerMW(7.0,GaAs)
     s.addLayerMW(20,AlGaAs)
     
     # define doping layer
-    zstart = 0; zend = 2.0; dopdens = 2e18; layer = 3
+    zstart = 0; zend = 2.0; dopdens = 2e17; layer = 3
     
     # add a doping layer
     s.addDoping(zstart, zend, dopdens, layer)
@@ -110,8 +110,8 @@ if __name__ == '__main__':
     
     # define variations in composition, layer widths,
     # and doping location/density:
-    dx = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-    dw = [0,0,2,0,2,0]
+    dx = [0.0, 0.01, 0.0, 0.01, 0.0, 0.01]
+    dw = [0,0,2,2,2,0]
     ddop = [0,0,0]
     
     # create a structure generator instance, based on our structure s above:
@@ -156,7 +156,7 @@ if __name__ == '__main__':
     
     # to change parameters, change the dictionaries in isewself:
     model.sewselfpar["emin"] = -0.0001
-    model.numpar["efield"] = 0.00
+    model.numpar["efield"] = -0.0
     # (material parameters are atuo-generated from materials in material_list)
     
     
@@ -166,8 +166,10 @@ if __name__ == '__main__':
     model.writeSewselfPar(path)
     
     # define the merit function as max gain/current density, from a dictionary of merit funcs.:
-    model.merit = model.merits.get("DeltaE_12")
-    model.target = 0.030
+    model.merit = model.merits.get("QWIP")
+    model.target = 19.7
+    model.numpar['lattice_temp'] = 77
+    model.numpar['el_temp'] = 120
     
     print sep + 'Starting simulations in directory tree? This will overwrite any previous results.'
     proceed = input("Yes = 1\nExit = 0")
@@ -214,7 +216,7 @@ if __name__ == '__main__':
 
     # create optimization object
     print "imax = " + str(sg.hutil.imax)
-    tol, r, itmax, procmax = 0.001*sg.hutil.imax, 1.5, 100, 20
+    tol, r, itmax, procmax = 0.001*sg.hutil.imax, 1.1, 100, 2
     
     opt = Paraopt(tol,r,itmax,procmax,x0,y0)
     

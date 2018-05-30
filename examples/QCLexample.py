@@ -4,21 +4,27 @@ Created on 15 Feb 2018
 @author: martin
 '''
 
+import os
+import sys
+# change path as apropriate
+path_to_aftershoq = os.getcwd()
+sys.path.append(path_to_aftershoq)
+sys.path.append(path_to_aftershoq + '/hilbert_curve/')
+
 from structure.classes import Structure, MaterialPar as mp
+from structure.materials import *
 from structure.sgenerator import Sgenerator
 from interface.inegf import Inegf, NumPar as np
 from utils.qclutil import MaterialUtil as mu
 from numerics.runplatf import Local
 from utils.systemutil import SystemUtil as su
-import os
-import sys
 from utils.debug import Debugger as dbg
 from interface.isewself import Isewself
 from numerics.paraopt import Paraopt
 import numpy
 
-#sys.path.append('/path-to-aftershoq/')
-#sys.path.append('/path-to-aftershoq/hilbert_curve/')
+
+
 
 if __name__ == '__main__':
     
@@ -40,40 +46,42 @@ if __name__ == '__main__':
     
     # create materials GaAs, AlAs, InAs:
     
-    stringen = "hej"
-    print stringen[-1]
-    try:
-        sf = float(stringen)
-    except(ValueError):
-        print "error occured"
-        print "delete..."
+    gaas = GaAs()
+    print str(gaas) + ":\n"
+    for val in mp.valdict:
+        print val + " = " + str(gaas.params[mp.valdict[val]])
     
-    GaAs = mu.createGaAs()
-    AlAs = mu.createAlAs()
-    InAs = mu.createInAs()
+    alas = AlAs()
+    print "\n" + str(alas) + ":\n"
+    for val in mp.valdict:
+        print val + " = " + str(alas.params[mp.valdict[val]])
+        
+    inas = InAs()
+    print "\n" + str(inas) + ":\n"
+    for val in mp.valdict:
+        print val + " = " + str(inas.params[mp.valdict[val]])
     
     # create InGaAs/InAlAs lattice matched to InP:
     
     x = 0.47
     lmname = "In" + str(x) + "Ga" + str(1-x) + "As"
-    InGaAsLM = mu.createGaInAs(x,lmname)
-    print str(InGaAsLM) + ":\n"
+    InGaAsLM = InGaAs(lmname, x)
+    print "\n" + str(InGaAsLM) + ":\n"
     for val in mp.valdict:
         print val + " = " + str(InGaAsLM.params[mp.valdict[val]])
     
     x = 0.48
     lmname = "In" + str(x) + "Al" + str(1-x) + "As"
-    InAlAs = mu.createAlInAs(x,lmname)
-    print "\n" + str(InAlAs) + ":\n"
+    InAlAsLM = InAlAs(lmname,x)
+    print "\n" + str(InAlAsLM) + ":\n"
     for val in mp.valdict:
-        print val + " = " + str(InAlAs.params[mp.valdict[val]])
+        print val + " = " + str(InAlAsLM.params[mp.valdict[val]])
     
     # create Al_0.15Ga_0.85As 
-    x = 0.15
-    AlGaAs = mu.createAlGaAs(x)
-    print "\n" + str(AlGaAs) + ":\n"
+    algaas = AlGaAs(x = 0.15)
+    print "\n" + str(algaas) + ":\n"
     for val in mp.valdict:
-        print val + " = " + str(AlGaAs.params[mp.valdict[val]])
+        print val + " = " + str(algaas.params[mp.valdict[val]])
     
     print sep
     print 'Creating a structure from generated materials:\n'
@@ -88,14 +96,14 @@ if __name__ == '__main__':
     s.setIFR(eta, lam)
     
     # Add layers:
-    s.addLayerMW(8.4,GaAs)
-    s.addLayerMW(3.1,AlGaAs)
-    s.addLayerMW(18.0,GaAs)  # <--- this is layer 2!
-    s.addLayerMW(1.8,AlGaAs)
-    s.addLayerMW(8.4,GaAs)
-    s.addLayerMW(3.1,AlGaAs)
-    s.addLayerMW(18.0,GaAs)
-    s.addLayerMW(1.8,AlGaAs)
+    s.addLayerMW(8.4,gaas)
+    s.addLayerMW(3.1,algaas)
+    s.addLayerMW(18.0,gaas)  # <--- this is layer 2!
+    s.addLayerMW(1.8,algaas)
+    s.addLayerMW(8.4,gaas)
+    s.addLayerMW(3.1,algaas)
+    s.addLayerMW(18.0,gaas)
+    s.addLayerMW(1.8,algaas)
     
     # define doping layer
     zstart = 2; zend = 2.2; dopdens = 2e17; layer = 2

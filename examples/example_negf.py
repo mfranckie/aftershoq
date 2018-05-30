@@ -15,7 +15,7 @@ sys.path.append(path_to_aftershoq + '/hilbert_curve/')
 
 from structure.classes import Structure, MaterialPar as mp
 from structure.sgenerator import Sgenerator
-from utils.qclutil import MaterialUtil as mu
+from structure.materials import *
 from numerics.runplatf import Local
 from utils.systemutil import SystemUtil as su
 from utils.debug import Debugger as dbg
@@ -27,7 +27,7 @@ from matplotlib import pyplot as pl
 if __name__ == '__main__':
     
     # the working directory:
-    path = "../../demo"
+    path = "../../demo/test_FGR"
     path = os.getcwd()+"/"+path
     su.mkdir(path)
     
@@ -54,32 +54,35 @@ if __name__ == '__main__':
     
     # create materials GaAs, AlAs, InAs:
     
-    GaAs = mu.createGaAs()
-    AlAs = mu.createAlAs()
-    InAs = mu.createInAs()
+    gaas = GaAs()
+    
+    for val in mp.valdict:
+        print val + " = " + str(gaas.params[mp.valdict[val]])
+        
+    alas = AlAs()
+    print "ALAs ELO = " + str( alas.params[mp.ELO] )
+    inas = InAs()
+    print "\n"
     
     # create InGaAs/InAlAs lattice matched to InP:
     
-    x = 0.47
-    lmname = "In" + str(x) + "Ga" + str(1-x) + "As"
-    InGaAsLM = mu.createGaInAs(x,lmname)
+    InGaAsLM = InGaAs()
     print str(InGaAsLM) + ":\n"
     for val in mp.valdict:
         print val + " = " + str(InGaAsLM.params[mp.valdict[val]])
     
-    x = 0.48
-    lmname = "In" + str(x) + "Al" + str(1-x) + "As"
-    InAlAs = mu.createAlInAs(x,lmname)
-    print "\n" + str(InAlAs) + ":\n"
+    InAlAsLM = InAlAs()
+    print "\n" + str(InAlAsLM) + ":\n"
     for val in mp.valdict:
-        print val + " = " + str(InAlAs.params[mp.valdict[val]])
+        print val + " = " + str(InAlAsLM.params[mp.valdict[val]])
+    
+    print "\nCBO = " + str(InAlAsLM.params[mp.Ec] - InGaAsLM.params[mp.Ec]) + "\n"
     
     # create Al_0.15Ga_0.85As 
-    x = 0.25
-    AlGaAs = mu.createAlGaAs(x)
-    print "\n" + str(AlGaAs) + ":\n"
+    algaas = AlGaAs(x = 0.15)
+    print "\n" + str(algaas) + ":\n"
     for val in mp.valdict:
-        print val + " = " + str(AlGaAs.params[mp.valdict[val]])
+        print val + " = " + str(algaas.params[mp.valdict[val]])
     
     print sep
     print 'Creating a structure from generated materials:\n'
@@ -94,14 +97,14 @@ if __name__ == '__main__':
     s.setIFR(eta, lam)
     
     # Add layers:
-    s.addLayerMW(8.4,GaAs)
-    s.addLayerMW(3.1,AlGaAs)
-    s.addLayerMW(18.0,GaAs)  # <--- this is layer 2!
-    s.addLayerMW(1.8,AlGaAs)
-    s.addLayerMW(8.4,GaAs)
-    s.addLayerMW(3.1,AlGaAs)
-    s.addLayerMW(18.0,GaAs)
-    s.addLayerMW(1.8,AlGaAs)
+    s.addLayerMW(8.4,gaas)
+    s.addLayerMW(3.1,algaas)
+    s.addLayerMW(18.0,gaas)  # <--- this is layer 2!
+    s.addLayerMW(1.8,algaas)
+    s.addLayerMW(8.4,gaas)
+    s.addLayerMW(3.1,algaas)
+    s.addLayerMW(12.0,gaas)
+    s.addLayerMW(1.8,algaas)
     
     # define doping layer
     zstart = 2; zend = 2.2; dopdens = 2e17; layer = 2
@@ -120,7 +123,7 @@ if __name__ == '__main__':
     # define variations in composition, layer widths,
     # and doping location/density:
     dx = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-    dw = [0,0,2,0,2,0,0,0]
+    dw = [2,0,2,0,2,0,2,0]
     ddop = [0,0,0]
     
     # create a structure generator instance, based on our structure s above:
@@ -163,21 +166,24 @@ if __name__ == '__main__':
     NumPar.initList(numpar)
     NumPar.setDefault(numpar)
     
-    numpar[NumPar.Nnu] = 1
-    numpar[NumPar.Nwann] = 1
-    numpar[NumPar.NE] = 10
-    numpar[NumPar.Nk] = 10
+    numpar[NumPar.Nnu] = 4
+    numpar[NumPar.Nwann] = 4
+    numpar[NumPar.NE] = 200
+    numpar[NumPar.Nk] = 200
     numpar[NumPar.Temp] = 300
-    numpar[NumPar.Niter] = 1
-    numpar[NumPar.Nhist] = 1
-    numpar[NumPar.gen] = 100
+    numpar[NumPar.Niter] = 30
+    numpar[NumPar.Nhist] = 30
+    numpar[NumPar.gen] = 5e-2
     numpar[NumPar.Nh] = 0
-    numpar[NumPar.omega0] = 0.010
+    numpar[NumPar.omega0] = 0.001
+    numpar[NumPar.domega] = 0.030
+    numpar[NumPar.Nomega] = 1
     
-    model = Inegf(binpath,pltfm,numpar,GaAs)
+    model = Inegf(binpath,pltfm,numpar,gaas)
     
     # define the merit function as max gain/current density, from a dictionary of merit funcs.:
-    model.merit = model.merits.get("max gain")
+    #model.merit = model.merits.get("max gain")
+    model.merit = model.merits.get("estimated gain")
     
     print sep + 'Starting simulations in directory tree? This will overwrite any previous results.'
     proceed = input("Yes = 1\nExit = 0")
@@ -205,6 +211,7 @@ if __name__ == '__main__':
         exit()
     
     # collect results from trial points
+    '''
     x0 = []
     [x0.append( sg.hutil.interp_dist_from_coords( c ) ) for c in coords]
     x0 = numpy.array(x0)
@@ -220,13 +227,14 @@ if __name__ == '__main__':
             del x0[xi]
             xi-=1
         xi +=1
-    
-    print 'Array of trial results:\n' + str(y0)
-
+    '''
     # create optimization object
     tol, r, itmax, procmax = 18, 1.1, 20, 2
+    opt = Paraopt(tol,r,itmax,procmax)
+    x0,y0 = opt.addEvaldPoints(model,sg,path,coords)
     
-    opt = Paraopt(tol,r,itmax,procmax,x0,y0)
+    print 'Array of trial results:\n' + str(y0)
+    print 'evaluated at:\n' + str(x0)
     
     conv = opt.minimize(model, sg, path, pathresults)
     

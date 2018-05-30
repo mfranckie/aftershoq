@@ -14,8 +14,8 @@ import random as rm
 if __name__ == '__main__':
     
     print "Welcome to the test case for multi-variate optimization."
-    ND = 2
-    NDconst = 1
+    ND = 5
+    NDconst = 0
     p = 6;
     
     
@@ -23,14 +23,15 @@ if __name__ == '__main__':
     hc = HilbertCurve( p, ND+NDconst )
     hutil = HilbertUtil(hc)
     
-    Ntest = 20
+    Ntest = 100
     Nits = 0
     Nconv = 0
-    Nr = 1
+    Nr = 10
     tol = 0.001
+    Nproc = 10
     
-    rmin = 1
-    rmax = 0.6
+    rmin = 0.3
+    rmax = 2
     r_res = []
     rspace = np.linspace(rmin, rmax, Nr)
     
@@ -49,7 +50,7 @@ if __name__ == '__main__':
         
             [y0.append( -float(model.getMerit( hutil.interp_coords_from_dist(d)/float(scale) )) ) for d in x0]
             
-            opt = Paraopt(tolerance=tol*hutil.imax, maxiter=1000, procmax=1, r=r, x0=x0, y0=y0)
+            opt = Paraopt(tolerance=tol*hutil.imax, maxiter=1000, procmax=Nproc, r=r, x0=x0, y0=y0)
             
             opt.minimize_parameters(model, hutil)
             
@@ -136,6 +137,3 @@ if __name__ == '__main__':
     
     
     pl.show()
-    
-
-    #pl.show()

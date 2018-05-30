@@ -201,7 +201,8 @@ class Inegf(Interface):
             
             with open(path+"/negft.dat",'r') as f:
                 for line in f:
-                    if '#' in line or line.split()[Inegf.idat.get("ierror")] == '1':
+                    if '#' in line or line.split()[Inegf.idat.get("ierror")] == '1'\
+                            or line.split()[Inegf.idat.get("konv")] == 'NaN':
                         continue
                     results.append(line.split())
                 if results == []:
@@ -240,7 +241,7 @@ class Inegf(Interface):
             try:
                 dirlist = su.listdirs(path+"/eins/")
             except (OSError, IOError):
-                print "WARNING: could not find directory: " + spath+"/IV/eins/"
+                print "WARNING: could not find directory: " + path+"/IV/eins/"
                 return "ERROR"
             dirs = dirlist[0].split()
             maxgain = []

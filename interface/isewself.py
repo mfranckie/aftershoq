@@ -49,6 +49,8 @@ class Isewself(Interface):
     
     numpar = {
         "efield" : 0.0,
+        "lattice_temp" : 77,
+        "el_temp" : 120,
         "ldiff"  : 0.0,
         "nbswellinj":4,
         "nbswellact":4,
@@ -71,7 +73,8 @@ class Isewself(Interface):
         self.buildmatself = binpath + "buildmatself_MAC"
         self.sewself = binpath + "sewself.2.32_MAC"
         self.structfilename = "structure.txt"
-        self.merits.update({'DeltaE_12' : 8, 'Elase' : 9})
+        self.merits.update({'DeltaE_12' : 8, 'Elase' : 9, 'QWIP' : 10})
+        self.merits.update({'absorption': 11})
         
     def __str__(self):
         return "Sewself"
@@ -90,7 +93,13 @@ class Isewself(Interface):
         su.dispatch(self.buildmatself, [self.structfilename], spath)
         
     def run_sewself(self,structure,spath):
-        commands = "w\nq\n"
+        commands  = "e\n"   # compute self-consitent potential
+        commands += str(self.numpar.get('lattice_temp')) + "\n"
+        commands += str(self.numpar.get('el_temp')) + "\n"
+        commands += "d\n"   # compute abosrption from ground state
+        commands += "c\n"   # compute qwip absorption from upper states
+        commands += "a\n2\n1\n0\n" # compute dipole and lifetime between two states
+        commands +=  "q\n"
         proc = su.dispatch(self.sewself, [], spath)
         [out, _] = proc.communicate(commands)
         structure.output = out
@@ -123,7 +132,12 @@ class Isewself(Interface):
     def readEbound(self,path):
         with open(path + '/Ebound.dat','r') as f:
             line = f.read()
-            return line.split()[1:]
+        return line.split()[1:]
+    
+    def readAbsorption(self,path):
+        with open(path + '/absorption.dat') as f:
+            line = f.read()
+        return line.split('\n')[0:-1]
     
     def writeStructFile(self,structure,path):
         filepath = path + "/" + self.structfilename
@@ -231,7 +245,28 @@ class Isewself(Interface):
                 
     def getMerit(self,structure,path):
         path = path + "/" + structure.dirname
-        if self.merit == self.merits["Elase"]:
+        if self.merit == self.merits["absorption"]:
+            line = self.readAbsorption(path)
+            dE = 1e-3
+            maxabs = 0
+            for i in range(0,len(line)):
+                f = float(line[i].split()[0])
+                if f > float(self.target) - dE:
+                    maxabs = max(float(line[i].split()[1]), maxabs)
+                elif f > float(self.target) + dE:
+                    break
+            return maxabs
+        
+        elif self.merit == self.merits["QWIP"]:
+            output = structure.output.split(' ')
+            for il in range(0,len(output)):
+                if output[il] == 'E21':
+                    E21 = float(output[il + 2])
+                    z = float(output[il + 6])
+                    return -abs(E21 - float(self.target))*10 + z
+            return 0
+        
+        elif self.merit == self.merits["Elase"]:
             output = structure.output.split(' ')
             for il in range(0,len(output)):
                 if output[il] == 'Laser':
