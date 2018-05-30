@@ -540,7 +540,7 @@ class Isewlab(Interface):
             f.write('Save sol "dipoles.txt":"dipoles"\n')
             f.write('Save sol.GainLorentz "gain.itx"\n')
             f.write("Endsweep\n")
-            f.write("Quit")
+            f.write("Quit\n")
                 
     def getMerit(self,structure,path):
         path = path + "/" + structure.dirname
