@@ -524,7 +524,7 @@ class Isewlab(Interface):
             f.write('pot = (Buildpot mqw Using params);\n')
             f.write( "Sweep efield from ")
             f.write( str( self.numpar['efield0'] ) + " to " )
-            f.write( str( self.numpar['Nefield']*self.numpar['defield']) )
+            f.write( str( self.numpar['efield0'] + (self.numpar['Nefield']-1)*self.numpar['defield']) )
             f.write(" step " + str( self.numpar["defield"] ) + "\n" )
             f.write('bpot = (Bias pot To efield);\n')
             f.write('sol = (Selftransport bpot Using params --no-superself --no-kinetic-balance)\n')
