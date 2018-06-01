@@ -538,7 +538,7 @@ class Isewlab(Interface):
             f.write('Save sol "rates.txt":"rates"\n')
             f.write('Save sol "energies.txt":"energies"\n')
             f.write('Save sol "dipoles.txt":"dipoles"\n')
-            f.write('Save sol.GainLorentz "gain.itx"\n')
+            f.write('Save sol.GainLorentz "gain"!efield!".itx"\n')
             f.write("Endsweep\n")
             f.write("Quit\n")
                 
