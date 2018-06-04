@@ -85,7 +85,7 @@ if __name__ == '__main__':
     # when using sewlab, doping will cover entire layer.
     # to make a different doping thickness, create a 
     # separate doping layer.
-    mystruct.addDoping(0, 10.5, 2e16, 3)
+    mystruct.addDoping(0, 16.5, 2e16, 7)
     
     print "Structure created : "
     print mystruct
@@ -99,7 +99,7 @@ if __name__ == '__main__':
     pltfm = Local()
     #pltfm = Euler(1,"1:00")
     
-    # sewlab interface:
+    # sewlab interface: (add parameter version '4.6.X' if you are not running the default 4.6.4
     model = Isewlab(binpath,pltfm, gaas)
     
     # to change parameters, change the dictionaries in Isewlab:
@@ -127,7 +127,7 @@ if __name__ == '__main__':
     model.writeSampleFile(mystruct, path)
     model.writeScriptFile(path)
     
-    print sep + 'Starting simulations in directory tree. This will overwrite any previous results.'
+    print sep + 'Starting simulations in directory tree (sewlab version ' + model.version + ' ). This will overwrite any previous results.'
     
     # for looping over bias points:
     for i in range(0,Nefield):

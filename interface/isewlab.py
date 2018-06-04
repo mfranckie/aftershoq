@@ -288,6 +288,12 @@ class Isewlab(Interface):
             
     def saveBands(self, s, path, wavescale, square):
         spath = path + s.dirname
+        if self.version == '4.6.4':
+            splitchar = ","
+        elif self.version == '4.6.5':
+            splitchar = " "
+        else:
+            splitchar = ","
         for dir in su.listdirs(spath):
             fwave = open(spath + "/" + dir + "/" + self.wavefile, 'r')
             fpot = open(spath + "/" + dir + "/" + self.potfile, 'r')
@@ -295,18 +301,18 @@ class Isewlab(Interface):
             
             for _ in range(0, 3):
                 fpot.readline()
-            E = fwave.readline().split()
+            E = fwave.readline().split(splitchar)
             
             for lwave in fwave:
                 lpot = fpot.readline().split()
-                lwave = lwave.split()
-                fbands.write(lwave[0] + " " + lpot[1])
+                lwavesplit = lwave.split(splitchar)
+                fbands.write(lwavesplit[0] + " " + lpot[1])
                 for iwave in range(1, len(E)):
                     if square:
-                        value = float( lwave[iwave] )*float( lwave[iwave] )*wavescale \
+                        value = float( lwavesplit[iwave] )*float( lwavesplit[iwave] )*wavescale \
                             + float(E[iwave])
                     else:
-                        value = float( lwave[iwave] )*wavescale + float(E[iwave])
+                        value = float( lwavesplit[iwave] )*wavescale + float(E[iwave])
                     fbands.write(" " + str( value ))
                 fbands.write("\n")
                 
@@ -320,11 +326,14 @@ class Isewlab(Interface):
         results = []
         spath = path + s.dirname
         for dir in su.listdirs(spath):
-            with open(spath + "/" + dir + "/" + self.resultfile, 'r') as f:
-                for line in f:
-                    vals = []
-                    [vals.append(float(val)) for val in line.split()]
-                    results.append( vals )
+            try:
+                with open(spath + "/" + dir + "/" + self.resultfile, 'r') as f:
+                    for line in f:
+                        vals = []
+                        [vals.append(float(val)) for val in line.split()]
+                        results.append( vals )
+            except(IOError):
+                print "WARNING: Error in directory: " + spath + "/" + dir
         # sort the results according to efield:
         results = np.array(results)
         k = results[results[:,0].argsort()]
@@ -335,12 +344,15 @@ class Isewlab(Interface):
         spath = path + s.dirname
         for dir in su.listdirs(spath):
             tmp = []
-            with open(spath + "/" + dir + "/" + self.popfile, 'r') as f:
-                for line in f:
-                    vals = []
-                    [vals.append(float(val)) for val in line.split()]
-                    tmp.append( vals )
-            results.append( tmp )
+            try:
+                with open(spath + "/" + dir + "/" + self.popfile, 'r') as f:
+                    for line in f:
+                        vals = []
+                        [vals.append(float(val)) for val in line.split()]
+                        tmp.append( vals )
+                results.append( tmp )
+            except(IOError):
+                print "WARNING: Error in directory: " + spath + "/" + dir
         return results
     
     def readDipoles(self, s, path):
@@ -348,12 +360,15 @@ class Isewlab(Interface):
         spath = path + s.dirname
         for dir in su.listdirs(spath):
             tmp = []
-            with open(spath + "/" + dir + "/" + self.dipolefile, 'r') as f:
-                for line in f:
-                    vals = []
-                    [vals.append(float(val)) for val in line.split()]
-                    tmp.append( vals )
-            results.append( tmp )
+            try:
+                with open(spath + "/" + dir + "/" + self.dipolefile, 'r') as f:
+                    for line in f:
+                        vals = []
+                        [vals.append(float(val)) for val in line.split()]
+                        tmp.append( vals )
+                results.append( tmp )
+            except(IOError):
+                print "WARNING: Error in directory: " + spath + "/" + dir
         return results
     
     def readRates(self, s, path):
@@ -361,12 +376,15 @@ class Isewlab(Interface):
         spath = path + s.dirname
         for dir in su.listdirs(spath):
             tmp = []
-            with open(spath + "/" + dir + "/" + self.ratefile, 'r') as f:
-                for line in f:
-                    vals = []
-                    [vals.append(float(val)) for val in line.split()]
-                    tmp.append( vals )
-            results.append( tmp )
+            try:
+                with open(spath + "/" + dir + "/" + self.ratefile, 'r') as f:
+                    for line in f:
+                        vals = []
+                        [vals.append(float(val)) for val in line.split()]
+                        tmp.append( vals )
+                results.append( tmp )
+            except(IOError):
+                print "WARNING: Error in directory: " + spath + "/" + dir
         return results
     
     def readEnergies(self, s, path):
@@ -374,10 +392,13 @@ class Isewlab(Interface):
         spath = path + s.dirname
         for dir in su.listdirs(spath):
             tmp = []
-            with open(spath + "/" + dir + "/" + self.energiesfile, 'r') as f:
-                for line in f:
-                    tmp.append( float(line) )
-            results.append( tmp )
+            try:
+                with open(spath + "/" + dir + "/" + self.energiesfile, 'r') as f:
+                    for line in f:
+                        tmp.append( float(line) )
+                results.append( tmp )
+            except(IOError):
+                print "WARNING: Error in directory: " + spath + "/" + dir
         return results
     
     def writeSampleFile(self,structure,path):
@@ -606,12 +627,7 @@ class Isewlab(Interface):
                 if flag[1] is True:
                     f.write(' --' + flag[0])
             f.write(')\n')
-            if self.version == '4.6.4':
-                f.write('Save sol.basis "' + self.wavefile + '":"wf"\n')
-            elif self.version == '4.6.5':
-                f.write('Save sol.basis "' + self.wavefile + '":"wf_dwf"\n')
-            else:
-                f.write('Save sol.basis "' + self.wavefile + '":"wf"\n')
+            f.write('Save sol.basis "' + self.wavefile + '":"wf"\n')
             f.write('Save bpot "' + self.potfile + '"\n')
             f.write('Write efield sol.J (Stats Max sol.GainLorentz) (Stats MaxLoc sol.GainLorentz) ')
             f.write('To "')
