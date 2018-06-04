@@ -13,19 +13,23 @@ sys.path.append(path_to_aftershoq + '/hilbert_curve/')
 
 from structure.classes import Structure, MaterialPar as mp
 from structure.sgenerator import Sgenerator
-from utils.qclutil import MaterialUtil as mu
+from structure.materials import GaAs, AlGaAs
 from numerics.runplatf import Local
 from utils.systemutil import SystemUtil as su
 from utils.debug import Debugger as dbg
 from interface.isewlab import Isewlab
 from numerics.paraopt import Paraopt
 from matplotlib import pyplot as pl
+import numpy as np
 
 
 if __name__ == '__main__':
     
+    # the binaries (change to your bin folder):
+    binpath = "/usr/local/bin/sewlab_MAC"
+    
     # the working directory:
-    path = "../../demo"
+    path = "../../demo/"
     path = os.getcwd()+"/"+path
     su.mkdir(path)
     
@@ -45,184 +49,113 @@ if __name__ == '__main__':
     print 'Creating semiconductor materials and alloys:\n'
     print '       ( All CBO relative to GaAs )\n'
     
-    # create materials GaAs, AlAs, InAs:
+    # create materials:
+    # create GaAs:
+    gaas = GaAs()
     
-    GaAs = mu.createGaAs()
-    GaAs.params[mp.Eg] = 1.16
-    AlAs = mu.createAlAs()
-    InAs = mu.createInAs()
-    
-    # create InGaAs/InAlAs lattice matched to InP:
-    
-    x = 0.47
-    lmname = "In" + str(x) + "Ga" + str(1-x) + "As"
-    InGaAsLM = mu.createGaInAs(x,lmname)
-    print str(InGaAsLM) + ":\n"
-    for val in mp.valdict:
-        print val + " = " + str(InGaAsLM.params[mp.valdict[val]])
-    
-    x = 0.48
-    lmname = "In" + str(x) + "Al" + str(1-x) + "As"
-    InAlAs = mu.createAlInAs(x,lmname)
-    print "\n" + str(InAlAs) + ":\n"
-    for val in mp.valdict:
-        print val + " = " + str(InAlAs.params[mp.valdict[val]])
     
     # create Al_0.15Ga_0.85As 
-    x = 0.20
-    AlGaAs = mu.createAlGaAs(x)
-    AlGaAs.params[mp.Eg] = 1.90
-    print "\n" + str(AlGaAs) + ":\n"
+    algaas = AlGaAs(x = 0.15)
+    print "\n" + str(algaas) + ":\n"
     for val in mp.valdict:
-        print val + " = " + str(AlGaAs.params[mp.valdict[val]])
+        print val + " = " + str(algaas.params[mp.valdict[val]])
     
     print sep
     print 'Creating a structure from generated materials:\n'
     print '[width, material, eta, lambda]'
     
     # creating a two quantum-well structure
-    s = Structure()
+    mystruct = Structure()
     
     # set interface roughness parameters for all interfaces:
     eta = 0.1
     lam = 2.0
-    s.setIFR(eta, lam)
+    mystruct.setIFR(eta, lam)
     
     # Add layers:
-    s.addLayerMW(5.1,AlGaAs)
-    s.addLayerMW(9.3,GaAs)
-    s.addLayerMW(1.0,AlGaAs)
-    s.addLayerMW(10.5,GaAs)
-    s.addLayerMW(3.3,AlGaAs)
-    s.addLayerMW(8.7,GaAs)
-    s.addLayerMW(4.2,AlGaAs)
-    s.addLayerMW(16.5,GaAs)
+    mystruct.addLayerMW(5.1,algaas)
+    mystruct.addLayerMW(9.3,gaas)
+    mystruct.addLayerMW(1.0,algaas)
+    mystruct.addLayerMW(10.5,gaas)
+    mystruct.addLayerMW(3.3,algaas)
+    mystruct.addLayerMW(8.7,gaas)
+    mystruct.addLayerMW(4.2,algaas)
+    mystruct.addLayerMW(16.5,gaas)
 
-    s.addDoping(0, 16.5, 2e16, 7)
+    # when using sewlab, doping will cover entire layer.
+    # to make a different doping thickness, create a 
+    # separate doping layer.
+    mystruct.addDoping(0, 10.5, 2e16, 3)
     
     print "Structure created : "
-    print s
+    print mystruct
     
     print sep
-    print 'Generating N random structures:\n'
-    N = input('N = ?\n')
-    
-    # define variations in composition, layer widths,
-    # and doping location/density:
-    dx = [0.0, 0.0, 0.0, 0.0, 0.0, 0, 0, 0]
-    dw = [0,0,2,0,2,0,0,0]
-    ddop = [0,0,0]
-    
-    # create a structure generator instance, based on our structure s above:
-    sg = Sgenerator(s,dw,dx,ddop)
-    
-    # generate N random structures with the distribution in parameters defined above:
-    #sg.genRanStructs(N)
-    
-    # generate N random structures, along the Hilbert curve with p = 5
-    coords = sg.genRanHilbertStructs(N, 7)
-    
-    for st in sg.structures:
-        print str(st.sid) + ' ' + str(st)
-        
-    print sep
-    
-    proceed = input("Proceed to create directory tree?\nYes = 1\nExit = 0")
-    if proceed == 0:
-        print sep + "User exit. Good bye!"
-        dbg.close()
-        exit()
-    
-    # set numerical parameters:
-    
-    # the binaries (change to your bin folder):
-    binpath = "/usr/local/bin/sewlab_MAC"
     
     print 'Creating directory tree in: ' + path + '.\n'
     print 'Please change variable "binpath" to match your binaries!\n'
-    
-    # make the directory:
-    su.mkdir(path)
     
     # Define the platform, local or cluster (e. g. Euler cluster at ETH Zuerich)
     pltfm = Local()
     #pltfm = Euler(1,"1:00")
     
-    # sewself interface:
-    material_list = [GaAs,AlGaAs]
-    model = Isewlab(binpath,pltfm)
+    # sewlab interface:
+    model = Isewlab(binpath,pltfm, gaas)
+    
+    # to change parameters, change the dictionaries in Isewlab:
+    
+    # determines the ammount of output produced (also: "Verbose")
     model.numpar["verbosity"] = "Silent"
-    model.numpar["efield0"] = -11
     
-    # to change parameters, change the dictionaries in isewlab:
-        
+    # The electric field in the simulation
+    efield0 = -1
+    defield = -2
+    Nefield = 5
+    model.numpar["efield0"] = efield0
     
-    # to create input files with default parameters:
+    # Set the elecron and lattice temperatures
+    Te = 100 # Kelvin
+    Tl = 77  # Kelvin
+    model.setTe(Te)         # electron temperature (set to 1500 K if kinetic balance is used)
+    model.setTlattice(Tl)   # lattice tempreature (~cryostat temperature)
     
+    model.useKinBal(False) # Use of kinetic balance?
+    model.useSuperself(False) # Use of superself?
+    model.computeLight(False) # Use of light computations (power, photon-driven current)
     
-    # define the merit function as max gain/current density, from a dictionary of merit funcs.:
+    # to create input files with default parameters (automatically done via runStructures() below):
+    model.writeSampleFile(mystruct, path)
+    model.writeScriptFile(path)
     
+    print sep + 'Starting simulations in directory tree. This will overwrite any previous results.'
     
-    print sep + 'Starting simulations in directory tree? This will overwrite any previous results.'
-    proceed = input("Yes = 1\nExit = 0")
-    if proceed == 0:
-        print sep + "User exit. Good bye!"
-        dbg.close()
-        exit()
+    # for looping over bias points:
+    for i in range(0,Nefield):
+        model.numpar["efield0"] = efield0 + defield*i
     
-    # execute the model for simulating the structures:
-    model.runStructures(sg.structures, path)
-    
-    model.waitforproc(5, "sewlab is running....")
+        # execute the model for simulating the structures and wait:
+        # (Comment out these next two lines if you just want to gather results which were already simulated)
+        model.runStructures( [mystruct], path )
+        model.waitforproc(5, "sewlab is running.... iteration = " + str( i ))
     
     print sep + 'Gathering results to: ' + path + '/results.log'
     
     # gather the results from the simulation of all structures:
-    model.gatherResults(sg.structures, path)
+    model.gatherResults( [mystruct], path )
     
-    model.merit = model.merits.get("max gain")
-    print model.merit
-    print model.merits
-    model.target = 0.20
+    print sep + 'Results acheived!'
     
-    print sep + 'First results acheived. Proceed with optimization?'
-    proceed = input("Yes = 1\nExit = 0")
-    if proceed == 0:
-        print sep + "User exit. Good bye!"
-        dbg.close()
-        exit()
-    
-    # collect results from trial points
-    x0 = []
-    [x0.append( sg.hutil.interp_dist_from_coords( c ) ) for c in coords]
-    x0 = numpy.array(x0)
-    x0.sort()
-    x0 = x0.tolist()
-    print x0
-    y0 = []
-    xi = 0
-    for i in range(0,len(x0)):
-        try:
-            y0.append( -float(model.getMerit(sg.structures[i],path)) )
-        except( ValueError ):
-            del x0[xi]
-            xi-=1
-        xi +=1
-    
-    print 'Array of trial results:\n' + str(y0)
-
-    # create optimization object
-    tol, r, itmax, procmax = 18, 1.1, 100, 2
-    
-    opt = Paraopt(tol,r,itmax,procmax,x0,y0)
-    
-    conv = opt.minimize(model, sg, path)
-    
-    print "Optimization distances: \n" + str(opt.x)
-    print "Optimization values: \n"    + str(opt.y)
-    
-    pl.plot(opt.x,opt.y)
+    # now, the results for each bias are stored in mystruct.results, .dipoles, .energies, .populations, and .rates
+    results = np.array( mystruct.results )
+    descr = ['E (kV/cm)', 'j (A/cm^2)', 'Max gain (1/cm)', 'Peak energy. (meV)']
+    print descr
+    print results
+    # plots the I-V:
+    pl.plot(-results[:,0], results[:,1],'-*')
+    pl.xlabel("Electric field (kV/cm)")
+    pl.ylabel("Current density (A/cm^2)")
     pl.show()
+    
     
     print sep + 'Program completed! Good bye!'
     dbg.close()

@@ -9,6 +9,7 @@ from structure.classes import MaterialPar as mp
 from utils import const
 from utils.systemutil import SystemUtil as su
 import time
+import numpy as np
 
 class Isewlab(Interface):
     '''
@@ -209,10 +210,19 @@ class Isewlab(Interface):
     show_options = {
         "underline-eigenstates" : 'TRUE'
     }
+    
+    script_params = {
+        "no-kinetic-balance" : True,
+        "no-superself" : True,
+        "compute-light" : False,
+        "direct-scattering" : False,
+        "edge-gain-line" : False,
+        "no-ando-dephasing" : False
+    }
 
 
 
-    def __init__(self, binpath, pltfm):
+    def __init__(self, binpath, pltfm, wellmaterial):
         '''
         Constructor
         '''
@@ -228,6 +238,7 @@ class Isewlab(Interface):
         self.ratefile = 'rates.txt'
         self.energiesfile = 'energies.txt'
         self.merits.update({'DeltaE_12' : 8, 'Elase' : 9})
+        self.transport_params["hlo-energy"] = wellmaterial.params[mp.ELO]
         
     def __str__(self):
         return "Sewself"
@@ -235,6 +246,8 @@ class Isewlab(Interface):
     def runStructures(self,structures,path):
         for ss in structures:
             spath = path + "/" + str(ss.dirname)
+            su.mkdir(spath)
+            spath = spath + "/" + str( abs( self.numpar["efield0"] ) ) + "/" 
             self.initdir(ss,spath)
             self.run_sewlab(ss, spath)
                 
@@ -269,45 +282,66 @@ class Isewlab(Interface):
             
     def readResults(self, s, path):
         results = []
-        with open(path + s.dirname + "/" + self.resultfile, 'r') as f:
-            for line in f:
-                vals = []
-                [vals.append(float(val)) for val in line.split()]
-                results.append( vals )
-        return results
+        spath = path + s.dirname
+        for dir in su.listdirs(spath):
+            with open(spath + "/" + dir + "/" + self.resultfile, 'r') as f:
+                for line in f:
+                    vals = []
+                    [vals.append(float(val)) for val in line.split()]
+                    results.append( vals )
+        # sort the results according to efield:
+        results = np.array(results)
+        k = results[results[:,0].argsort()]
+        return k
     
     def readPop(self, s, path):
         results = []
-        with open(path + s.dirname + "/" + self.popfile, 'r') as f:
-            for line in f:
-                vals = []
-                [vals.append(float(val)) for val in line.split()]
-                results.append( vals )
+        spath = path + s.dirname
+        for dir in su.listdirs(spath):
+            tmp = []
+            with open(spath + "/" + dir + "/" + self.popfile, 'r') as f:
+                for line in f:
+                    vals = []
+                    [vals.append(float(val)) for val in line.split()]
+                    tmp.append( vals )
+            results.append( tmp )
         return results
     
     def readDipoles(self, s, path):
         results = []
-        with open(path + s.dirname + "/" + self.dipolefile, 'r') as f:
-            for line in f:
-                vals = []
-                [vals.append(float(val)) for val in line.split()]
-                results.append( vals )
+        spath = path + s.dirname
+        for dir in su.listdirs(spath):
+            tmp = []
+            with open(spath + "/" + dir + "/" + self.dipolefile, 'r') as f:
+                for line in f:
+                    vals = []
+                    [vals.append(float(val)) for val in line.split()]
+                    tmp.append( vals )
+            results.append( tmp )
         return results
     
     def readRates(self, s, path):
         results = []
-        with open(path + s.dirname + "/" + self.ratefile, 'r') as f:
-            for line in f:
-                vals = []
-                [vals.append(float(val)) for val in line.split()]
-                results.append( vals )
+        spath = path + s.dirname
+        for dir in su.listdirs(spath):
+            tmp = []
+            with open(spath + "/" + dir + "/" + self.ratefile, 'r') as f:
+                for line in f:
+                    vals = []
+                    [vals.append(float(val)) for val in line.split()]
+                    tmp.append( vals )
+            results.append( tmp )
         return results
     
     def readEnergies(self, s, path):
         results = []
-        with open(path + s.dirname + "/" + self.energiesfile, 'r') as f:
-            for line in f:
-                results.append( float(line) )
+        spath = path + s.dirname
+        for dir in su.listdirs(spath):
+            tmp = []
+            with open(spath + "/" + dir + "/" + self.energiesfile, 'r') as f:
+                for line in f:
+                    tmp.append( float(line) )
+            results.append( tmp )
         return results
     
     def writeSampleFile(self,structure,path):
@@ -369,7 +403,8 @@ class Isewlab(Interface):
                     discont = structure.layers[0].material.params[mp.Ec]
                 discont = discont - l.material.params[mp.Ec]
                 f.write('discont = ' + str(discont) + "; " )
-                if abs(structure.layerPos(index)-structure.dopings[0][0]) < l.width:
+                deltadop = structure.layerPos(index)-structure.dopings[0][0]
+                if deltadop < l.width and deltadop >= 0:
                     f.write('doping = ' + str(structure.dopings[0][2]*1e-18) + ";")
                 f.write(' }\n')
                 index += 1
@@ -522,12 +557,19 @@ class Isewlab(Interface):
             f.write(';\n')
             f.write('\n// Potential And Self Basis\n')
             f.write('pot = (Buildpot mqw Using params);\n')
-            f.write( "Sweep efield from ")
-            f.write( str( self.numpar['efield0'] ) + " to " )
-            f.write( str( self.numpar['efield0'] + (self.numpar['Nefield']-1)*self.numpar['defield']) )
-            f.write(" step " + str( self.numpar["defield"] ) + "\n" )
+            # If you want to sweep
+            # WARNING: Sewlab might crash and stop the sweep!
+            if( self.numpar['Nefield'] > 1 ):
+                f.write( "Sweep efield from ")
+                f.write( str( self.numpar['efield0'] ) + " to " )
+                f.write( str( self.numpar['efield0'] + (self.numpar['Nefield']-1)*self.numpar['defield']) )
+                f.write(" step " + str( self.numpar["defield"] ) + "\n" )
             f.write('bpot = (Bias pot To efield);\n')
-            f.write('sol = (Selftransport bpot Using params --no-superself --no-kinetic-balance)\n')
+            f.write('sol = (Selftransport bpot Using params')
+            for flag in self.script_params.items():
+                if flag[1] is True:
+                    f.write(' --' + flag[0])
+            f.write(')\n')
             f.write('Save sol.basis "wavef.txt":"wf"\n')
             f.write('sol.Lifetimes\n')
             f.write('Write efield sol.J (Stats Max sol.GainLorentz) (Stats MaxLoc sol.GainLorentz) ')
@@ -539,7 +581,8 @@ class Isewlab(Interface):
             f.write('Save sol "energies.txt":"energies"\n')
             f.write('Save sol "dipoles.txt":"dipoles"\n')
             f.write('Save sol.GainLorentz "gain"!efield!".itx"\n')
-            f.write("Endsweep\n")
+            if( self.numpar['Nefield'] > 1 ):
+                f.write("Endsweep\n")
             f.write("Quit\n")
                 
     def getMerit(self,structure,path):
@@ -568,4 +611,30 @@ class Isewlab(Interface):
                     pactive=True
                     #break
             time.sleep(delay)
+            
+    def setTe(self, Te):
+        self.Te = Te
+        self.numpar["temp"] = Te
+        self.transport_params["initial-temperature"] = Te
+        
+    def setTlattice(self, TL):
+        self.TL = TL
+        self.transport_params["hlo-temperature"] = TL
+        
+    def useKinBal(self, bool):
+        if( bool == True ):
+            self.script_params["no-kinetic-balance"] = False
+        else:
+            self.script_params["no-kinetic-balance"] = True
+            
+    def useSuperself(self, bool):
+        if( bool == True ):
+            self.script_params["no-superself"] = False
+        else:
+            self.script_params["no-superself"] = True
                         
+    def computeLight(self, bool):
+        if( bool == True ):
+            self.script_params["compute-light"] = True
+        else:
+            self.script_params["compute-light"] = False
