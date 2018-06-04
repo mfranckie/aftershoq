@@ -222,11 +222,12 @@ class Isewlab(Interface):
 
 
 
-    def __init__(self, binpath, pltfm, wellmaterial):
+    def __init__(self, binpath, pltfm, wellmaterial, version = '4.6.4'):
         '''
         Constructor
         '''
         super(Isewlab,self).__init__(binpath, pltfm)
+        self.version = version
         self.processes = []
         self.sewlab = binpath
         self.samplefilename = "structure.sample"
@@ -237,6 +238,10 @@ class Isewlab(Interface):
         self.dipolefile = 'dipoles.txt'
         self.ratefile = 'rates.txt'
         self.energiesfile = 'energies.txt'
+        self.wavefile = 'wavef.txt'
+        self.potfile = 'pot.itx'
+        self.dopingfile = 'doping.itx'
+        self.bandplotfile = 'bandplot.txt'
         self.merits.update({'DeltaE_12' : 8, 'Elase' : 9})
         self.transport_params["hlo-energy"] = wellmaterial.params[mp.ELO]
         
@@ -260,13 +265,14 @@ class Isewlab(Interface):
         self.writeSampleFile(structure, spath)
         self.writeScriptFile(spath)
     
-    def gatherResults(self,structures,path):
+    def gatherResults(self,structures,path, wavescale = 1, square = True):
         for s in structures:
             s.results = self.readResults(s, path)
             s.populations = self.readPop(s, path)
             s.dipoles = self.readDipoles(s, path)
             s.energies = self.readEnergies(s, path)
             s.rates = self.readRates(s, path)
+            self.saveBands(s, path, wavescale, square)
             
         with open(path+'/results.log','w') as f:
             f.write('# Results for structures:\nID | N times layer width | N times Mat | Merit\n')
@@ -279,6 +285,36 @@ class Isewlab(Interface):
                               
                 f.write(str(self.getMerit(ss, path)))
                 f.write("\n")
+            
+    def saveBands(self, s, path, wavescale, square):
+        spath = path + s.dirname
+        for dir in su.listdirs(spath):
+            fwave = open(spath + "/" + dir + "/" + self.wavefile, 'r')
+            fpot = open(spath + "/" + dir + "/" + self.potfile, 'r')
+            fbands = open(spath + "/" + dir + "/" + self.bandplotfile, 'w')
+            
+            for _ in range(0, 3):
+                fpot.readline()
+            E = fwave.readline().split()
+            
+            for lwave in fwave:
+                lpot = fpot.readline().split()
+                lwave = lwave.split()
+                fbands.write(lwave[0] + " " + lpot[1])
+                for iwave in range(1, len(E)):
+                    if square:
+                        value = float( lwave[iwave] )*float( lwave[iwave] )*wavescale \
+                            + float(E[iwave])
+                    else:
+                        value = float( lwave[iwave] )*wavescale + float(E[iwave])
+                    fbands.write(" " + str( value ))
+                fbands.write("\n")
+                
+            fwave.close()
+            fpot.close()
+            fbands.close()
+                
+            
             
     def readResults(self, s, path):
         results = []
@@ -570,16 +606,22 @@ class Isewlab(Interface):
                 if flag[1] is True:
                     f.write(' --' + flag[0])
             f.write(')\n')
-            f.write('Save sol.basis "wavef.txt":"wf"\n')
-            f.write('sol.Lifetimes\n')
+            if self.version == '4.6.4':
+                f.write('Save sol.basis "' + self.wavefile + '":"wf"\n')
+            elif self.version == '4.6.5':
+                f.write('Save sol.basis "' + self.wavefile + '":"wf_dwf"\n')
+            else:
+                f.write('Save sol.basis "' + self.wavefile + '":"wf"\n')
+            f.write('Save bpot "' + self.potfile + '"\n')
             f.write('Write efield sol.J (Stats Max sol.GainLorentz) (Stats MaxLoc sol.GainLorentz) ')
             f.write('To "')
             f.write(self.resultfile)
             f.write('"\n')
-            f.write('Save sol "pop.txt":"populations"\n')
-            f.write('Save sol "rates.txt":"rates"\n')
-            f.write('Save sol "energies.txt":"energies"\n')
-            f.write('Save sol "dipoles.txt":"dipoles"\n')
+            f.write('Save sol "' + self.popfile + '":"populations"\n')
+            f.write('Save sol "' + self.ratefile + '":"rates"\n')
+            f.write('Save sol "' + self.energiesfile + '":"energies"\n')
+            f.write('Save sol "' + self.dipolefile + '":"dipoles"\n')
+            f.write('Save bpot.doping "' + self.dopingfile + '"\n')
             f.write('Save sol.GainLorentz "gain"!efield!".itx"\n')
             if( self.numpar['Nefield'] > 1 ):
                 f.write("Endsweep\n")
