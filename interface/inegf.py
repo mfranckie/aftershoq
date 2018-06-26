@@ -119,7 +119,7 @@ class Inegf(Interface):
         return pactive
         
     
-    def gatherResults(self, structures, pathwd, pathresults = None):
+    def gatherResults(self, structures, pathwd, pathresults = None, runprog = True):
         '''
         Write results to pathresults/results.log and run hdiag and bandplot
         in pathwd/s.dirname/self.datpath/eins/x/ for each i and x. Stores WS resutls as a
@@ -140,14 +140,14 @@ class Inegf(Interface):
                 except (OSError, IOError):
                     print "WARNING: could not find directory: " + spath+self.datpath+"eins/"
                     continue
-                dirs = dirlist[0].split()
-                
+                dirs = dirlist
                 for folder in dirs:
                     einspath = spath+self.datpath + "eins/"+folder
                     omega0 = self.numpar["omega0"]
                     omegaf = self.numpar["domega"]
-                    self.runHdiag(einspath,omega0=omega0,omegaf=omegaf, gamma=0.001)
-                    self.runBandplot(einspath, ss)
+                    if runprog:
+        	        self.runHdiag(einspath,omega0=omega0,omegaf=omegaf, gamma=0.001)
+                        self.runBandplot(einspath, ss)
                     ss.wslevels.append(self.getWSdata(einspath))
                 
                 f.write(str(ss.dirname)+" ")
