@@ -52,12 +52,13 @@ class Inegf(Interface):
         self.wellmat = wellmaterial
         self.processes= []
         self.einspath = einspath
+        self.datpath = "/IV/"
         
     def __str__(self):
         return "Inegf"
         
     def initdir(self,ss,path):
-        pathNegf=path+"/IV/"
+        pathNegf=path+self.datpath
         su.mkdir(pathNegf)
         self.writeWannier(ss,path)
         self.writeMaterial(self.wellmat, "# test of function 29/1 2018",path)
@@ -85,12 +86,12 @@ class Inegf(Interface):
             # replacing default value of Nper in scatt3.inp
             proc = local.submitandwait("sed",['-i',"--in-place=''",'2s/1/'+str(self.numpar["Nper"])+'/', "scatt3.inp"],spath)
             # to make sure file is closed:
-            proc.communicate()
-            proc = local.submitandwait("cp",["scatt3.inp","IV/"], spath)
-            proc.communicate()
+            out, err = proc.communicate()
+            proc = local.submitandwait("cp",["scatt3.inp","." + self.datpath], spath)
+            out, err = proc.communicate()
             
-            proc = self.pltfm.submitjob(self.prognegft,[],spath+"/IV/")
-            #proc = su.dispatch(self.prognegft, "",spath+"/IV/")
+            proc = self.pltfm.submitjob(self.prognegft,[],spath+self.datpath)
+            
             self.processes.append(proc)
         return self.processes
         
@@ -121,7 +122,7 @@ class Inegf(Interface):
     def gatherResults(self, structures, pathwd, pathresults = None):
         '''
         Write results to pathresults/results.log and run hdiag and bandplot
-        in pathwd/i/IV/eins/x/ for each i and x. Stores WS resutls as a
+        in pathwd/s.dirname/self.datpath/eins/x/ for each i and x. Stores WS resutls as a
         new attribute levels[directory][WS level][data field] in each 
         Structure object in the list structures.
         '''
@@ -135,14 +136,14 @@ class Inegf(Interface):
                 ss.wslevels = []
                 spath = pathwd + "/" + str(ss.dirname)
                 try:
-                    dirlist = su.listdirs(spath+"/IV/eins/")
+                    dirlist = su.listdirs(spath+self.datpath+"eins/")
                 except (OSError, IOError):
-                    print "WARNING: could not find directory: " + spath+"/IV/eins/"
+                    print "WARNING: could not find directory: " + spath+self.datpath+"eins/"
                     continue
                 dirs = dirlist[0].split()
                 
                 for folder in dirs:
-                    einspath = spath+"/IV/eins/"+folder
+                    einspath = spath+self.datpath + "eins/"+folder
                     omega0 = self.numpar["omega0"]
                     omegaf = self.numpar["domega"]
                     self.runHdiag(einspath,omega0=omega0,omegaf=omegaf, gamma=0.001)
@@ -212,7 +213,7 @@ class Inegf(Interface):
         return proc
 
     def getMerit(self,structure,path):
-        path = path + "/" + structure.dirname + "/IV"
+        path = path + "/" + structure.dirname + self.datpath
         
         results = []
         
@@ -260,7 +261,7 @@ class Inegf(Interface):
             try:
                 dirlist = su.listdirs(path+"/eins/")
             except (OSError, IOError):
-                print "WARNING: could not find directory: " + path+"/IV/eins/"
+                print "WARNING: could not find directory: " + path+self.datpath+"eins/"
                 return "ERROR"
             dirs = dirlist[0].split()
             maxgain = []
