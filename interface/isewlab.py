@@ -17,24 +17,6 @@ class Isewlab(Interface):
     '''
     # dictionary with name and default value
     
-    numpar = {
-        "efield0" : 0.0,
-        "defield" : 0.0,
-        "Nefield" : 0.0,
-        "temp"   : 100,
-        "ldiff"  : 0.0,
-        "nbswellinj":4,
-        "nbswellact":4,
-        "coeffls":1,
-        "bool_inj":0,
-        "bool_act":0,
-        "bool_one":1,
-        "matchoice":1,
-        "inc0":5,
-        "incw":2,
-        "verbosity" : "Verbose"
-    }
-    
     buildpot_params = {
         "bulk-step"               : 1,
         "interface-step"          : 0.01,
@@ -227,6 +209,19 @@ class Isewlab(Interface):
         Constructor
         '''
         super(Isewlab,self).__init__(binpath, pltfm)
+        self.numpar.update({ 
+            "ldiff"  : 0.0,
+            "nbswellinj":4,
+            "nbswellact":4,
+            "coeffls":1,
+            "bool_inj":0,
+            "bool_act":0,
+            "bool_one":1,
+            "matchoice":1,
+            "inc0":5,
+            "incw":2,
+            "verbosity" : "Verbose"
+            })
         self.version = version
         self.processes = []
         self.sewlab = binpath
@@ -242,7 +237,9 @@ class Isewlab(Interface):
         self.potfile = 'pot.itx'
         self.dopingfile = 'doping.itx'
         self.bandplotfile = 'bandplot.txt'
-        self.merits.update({'DeltaE_12' : 8, 'Elase' : 9})
+        self.merits.update({
+            'DeltaE_12' : 8, 'Elase' : 9
+            })
         self.transport_params["hlo-energy"] = wellmaterial.params[mp.ELO]
         
     def __str__(self):
@@ -610,7 +607,7 @@ class Isewlab(Interface):
             f.write(str(self.numpar['efield0']))
             f.write(';\n')
             f.write('temp = ')
-            f.write(str(self.numpar['temp']))
+            f.write(str(self.numpar['Tlattice']))
             f.write(';\n')
             f.write('\n// Potential And Self Basis\n')
             f.write('pot = (Buildpot mqw Using params);\n')
@@ -672,7 +669,7 @@ class Isewlab(Interface):
             
     def setTe(self, Te):
         self.Te = Te
-        self.numpar["temp"] = Te
+        self.numpar["Te"] = Te
         self.transport_params["initial-temperature"] = Te
         
     def setTlattice(self, TL):

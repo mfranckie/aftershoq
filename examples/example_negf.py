@@ -19,15 +19,16 @@ from structure.materials import *
 from numerics.runplatf import Local
 from utils.systemutil import SystemUtil as su
 from utils.debug import Debugger as dbg
-from interface.inegf import Inegf, NumPar
+from interface.inegf import Inegf
 from numerics.paraopt import Paraopt
 from matplotlib import pyplot as pl
+from utils.qcls import EV2416
 
 
 if __name__ == '__main__':
     
     # the working directory:
-    path = "../../demo/test_FGR"
+    path = "../../demo/EV2416/"
     path = os.getcwd()+"/"+path
     su.mkdir(path)
     
@@ -88,7 +89,8 @@ if __name__ == '__main__':
     print 'Creating a structure from generated materials:\n'
     print '[width, material, eta, lambda]'
     
-    # creating a two quantum-well structure
+    # creating a quantum-well structure
+    '''
     s = Structure()
     
     # set interface roughness parameters for all interfaces:
@@ -111,6 +113,9 @@ if __name__ == '__main__':
     
     # add a doping layer
     s.addDoping(zstart, zend, dopdens, layer)
+    '''
+    
+    s = EV2416()
     
     print "Structure created : "
     print s
@@ -162,24 +167,21 @@ if __name__ == '__main__':
     #pltfm = Euler(1,"1:00")
     
     # negft interface:
-    numpar = []
-    NumPar.initList(numpar)
-    NumPar.setDefault(numpar)
     
-    numpar[NumPar.Nnu] = 4
-    numpar[NumPar.Nwann] = 4
-    numpar[NumPar.NE] = 200
-    numpar[NumPar.Nk] = 200
-    numpar[NumPar.Temp] = 300
-    numpar[NumPar.Niter] = 30
-    numpar[NumPar.Nhist] = 30
-    numpar[NumPar.gen] = 5e-2
-    numpar[NumPar.Nh] = 0
-    numpar[NumPar.omega0] = 0.001
-    numpar[NumPar.domega] = 0.030
-    numpar[NumPar.Nomega] = 1
+    model = Inegf(binpath,pltfm,gaas)
     
-    model = Inegf(binpath,pltfm,numpar,gaas)
+    model.numpar["Nstates"] = 4
+    model.numpar["NE"] = 200
+    model.numpar["Nk"] = 200
+    model.numpar["Tlattice"] = 300
+    model.numpar["maxits"] = 30
+    model.numpar["Nhist"] = 30
+    model.numpar["gen"] = 5e-2
+    model.numpar["Nh"] = 0
+    model.numpar["omega0"] = 0.001
+    model.numpar["domega"] = 0.030
+    model.numpar["Nomega"] = 1
+    model.numpar["efield0"] = 0.030
     
     # define the merit function as max gain/current density, from a dictionary of merit funcs.:
     #model.merit = model.merits.get("max gain")

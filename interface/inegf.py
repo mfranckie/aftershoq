@@ -17,15 +17,34 @@ class Inegf(Interface):
     classdocs
     '''
     
+    negf_numpar = {
+        "Npint" : 5,
+        "cshift" : 0,
+        "Lbound" : 1.E-3,
+        "Ubound" : 1.E-4,
+        "Blochtol" :1.E-6, 
+        "Nh" : 0,
+        "Igauge": 1,
+        "Eminsub" : 0,
+        "Emaxadd": 0,
+        "gen" : 1.E-4,
+        "Iconv": 2,
+        "Bei":0.8,
+        "Nhist": 40,
+        "boolPrinc" : False,
+        "boolEins" : False
+        }
+    
     # index of data in negft.dat
     idat = {"eFd":0,"omega":1,"eFacd":2,"j":3,"gain":4,"dk":5,"konv":6,"errdyn":7,"ierror":8}
 
-    def __init__(self,binpath,pltfm,numpar,wellmaterial,einspath = "./"):
+    def __init__(self,binpath,pltfm,wellmaterial,einspath = "./"):
         '''
         Constructor
         '''
         super(Inegf,self).__init__(binpath, pltfm)
-        self.numpar = numpar
+        self.numpar.update(self.negf_numpar)
+        self.numpar["maxits"] = 40
         self.progwann = binpath+"wannier8.out"
         self.prognegft = binpath+"negft8mpi.out"
         self.proghdiag = binpath+"hdiag8.out"
@@ -47,7 +66,7 @@ class Inegf(Interface):
     def runStructures(self,structures,path):
         local = Local()
         for ss in structures:
-            spath = path+"/"+str(ss.sid)
+            spath = path+"/"+str(ss.dirname)
             su.mkdir(spath)
             self.initdir(ss, spath)
             #proc = su.dispatch(self.progwann, "",spath)
@@ -62,9 +81,9 @@ class Inegf(Interface):
         #del processes
         #processes = []
         for ss in structures:
-            spath = path+"/"+str(ss.sid)
+            spath = path+"/"+str(ss.dirname)
             # replacing default value of Nper in scatt3.inp
-            proc = local.submitandwait("sed",['-i',"--in-place=''",'2s/1/'+str(self.numpar[NumPar.Nper])+'/', "scatt3.inp"],spath)
+            proc = local.submitandwait("sed",['-i',"--in-place=''",'2s/1/'+str(self.numpar["Nper"])+'/', "scatt3.inp"],spath)
             # to make sure file is closed:
             proc.communicate()
             proc = local.submitandwait("cp",["scatt3.inp","IV/"], spath)
@@ -114,7 +133,7 @@ class Inegf(Interface):
             f.write('# Results for structures:\nID | N times layer width | N times Mat | Merit\n')
             for ss in structures:
                 ss.wslevels = []
-                spath = pathwd + "/" + str(ss.sid)
+                spath = pathwd + "/" + str(ss.dirname)
                 try:
                     dirlist = su.listdirs(spath+"/IV/eins/")
                 except (OSError, IOError):
@@ -124,13 +143,13 @@ class Inegf(Interface):
                 
                 for folder in dirs:
                     einspath = spath+"/IV/eins/"+folder
-                    omega0 = self.numpar[NumPar.omega0]
-                    omegaf = self.numpar[NumPar.domega]
+                    omega0 = self.numpar["omega0"]
+                    omegaf = self.numpar["domega"]
                     self.runHdiag(einspath,omega0=omega0,omegaf=omegaf, gamma=0.001)
                     self.runBandplot(einspath, ss)
                     ss.wslevels.append(self.getWSdata(einspath))
                 
-                f.write(str(ss.sid)+" ")
+                f.write(str(ss.dirname)+" ")
                 for layer in ss.layers:
                     f.write(str(layer.width)+" ")
                 for layer in ss.layers:
@@ -161,7 +180,7 @@ class Inegf(Interface):
             # read 3 lines of comments
             for _ in range(0,3):
                 ff.next()
-            for _ in range(0,self.numpar[NumPar.Nnu]):
+            for _ in range(0,self.numpar["Nstates"]):
                 line = ff.next().split()
                 data = []
                 data.append(path)
@@ -317,21 +336,21 @@ class Inegf(Interface):
                     f.write(str(d[0])+" "+str(d[1])+" "+"{0:E}".format(d[2])+" "+ str(1)+" # region " + str(il) +"\n")
                     il = il+1
                 f.write(str(struct.layers[0].eta) + " " + str(struct.layers[0].lam) + " # eta, lambda\n")
-                f.write(str(self.numpar[NumPar.Nwann]) + "\t\t# Number of Wannier states per period to be calculated\n")
-                f.write(str(self.numpar[NumPar.Nzp]) + "\t\t# Number of z points per period for wave functions\n")
-                f.write(str(self.numpar[NumPar.Nqp]) + "\t\t# Number of q points\n")
-                f.write(str(self.numpar[NumPar.Nper])+ "\t\t# Number of periods for wave functions in output\n")
+                f.write(str(self.numpar["Nstates"]) + "\t\t# Number of Wannier states per period to be calculated\n")
+                f.write(str(self.numpar["Nz"]) + "\t\t# Number of z points per period for wave functions\n")
+                f.write(str(self.numpar["Nq"]) + "\t\t# Number of q points\n")
+                f.write(str(self.numpar["Nper"])+ "\t\t# Number of periods for wave functions in output\n")
                 f.write("# The following parameters may treat numerical problems - usually unchanged\n")
-                f.write(str(self.numpar[NumPar.Npint])+"\t\t# increases the internally used number of periods\n")
-                f.write(str(self.numpar[NumPar.cshift])+"\t\t# shift between symmetry point and center of period\n")
-                f.write(str(self.numpar[NumPar.Lbound]) +" " + str(self.numpar[NumPar.Ubound])+ "\t\t# lower bound for energies/gaps of minibands\n")
-                f.write(str(self.numpar[NumPar.Blochtol])+ "\t\t# Tolerance for accuracy of solution for Blochfunction\n")
+                f.write(str(self.numpar["Npint"])+"\t\t# increases the internally used number of periods\n")
+                f.write(str(self.numpar["cshift"])+"\t\t# shift between symmetry point and center of period\n")
+                f.write(str(self.numpar["Lbound"]) +" " + str(self.numpar["Ubound"])+ "\t\t# lower bound for energies/gaps of minibands\n")
+                f.write(str(self.numpar["Blochtol"])+ "\t\t# Tolerance for accuracy of solution for Blochfunction\n")
             f.closed
         except IOError:
             print "WARNING: Directory "+dirpath+" not found!"
         
     def writeNegftInp(self,pathwann,patheins,dirpath=None):
-        if self.numpar[NumPar.boolEins]:
+        if self.numpar["boolEins"]:
             readeins = ".TRUE."
         else:
             readeins = ".FALSE."
@@ -341,36 +360,36 @@ class Inegf(Interface):
             path = dirpath+"/negft7.inp"
         try:
             with open(path,"w") as f:
-                f.write(str(self.numpar[NumPar.Nper])+" "+str(self.numpar[NumPar.Nnu])+" "+str(self.numpar[NumPar.NE]) + " " + str(self.numpar[NumPar.Nk]))
+                f.write(str(self.numpar["Nper"])+" "+str(self.numpar["Nstates"])+" "+str(self.numpar["NE"]) + " " + str(self.numpar["Nk"]))
                 f.write(" # Nper, Nnu, NE, Nk\n")
-                f.write(str(self.numpar[NumPar.Nh])+" "+str(self.numpar[NumPar.Igauge]))
+                f.write(str(self.numpar["Nh"])+" "+str(self.numpar["Igauge"]))
                 f.write(" #\n")
-                f.write(str(self.numpar[NumPar.Temp]))
+                f.write(str(self.numpar["Tlattice"]))
                 f.write(" #\n")
-                f.write(str(self.numpar[NumPar.eFd0])+" "+str(self.numpar[NumPar.deFd])+" "+str(self.numpar[NumPar.NeFd])+" ")
+                f.write(str(self.numpar["efield0"])+" "+str(self.numpar["defield"])+" "+str(self.numpar["Nefield"])+" ")
                 f.write(" #\n")
-                f.write(str(self.numpar[NumPar.eFacd0])+" "+str(self.numpar[NumPar.deFacd])+" "+str(self.numpar[NumPar.NeFacd])+" ")
+                f.write(str(self.numpar["efac0"])+" "+str(self.numpar["defac"])+" "+str(self.numpar["Nefac"])+" ")
                 f.write(" #\n")
-                f.write(str(self.numpar[NumPar.omega0])+" "+str(self.numpar[NumPar.domega])+" "+str(self.numpar[NumPar.Nomega])+" ")
+                f.write(str(self.numpar["omega0"])+" "+str(self.numpar["domega"])+" "+str(self.numpar["Nomega"])+" ")
                 f.write(" #\n")
-                f.write(str(self.numpar[NumPar.Emaxadd])+ " " + str(self.numpar[NumPar.Eminsub])+" #\n")
-                f.write(str(self.numpar[NumPar.gen])+ " #\n")
-                f.write(str(self.numpar[NumPar.Niter])+" "+str(self.numpar[NumPar.Iconf])+" "+str(self.numpar[NumPar.Bei])+" " \
-                        + str(self.numpar[NumPar.Nhist]) + " #\n")
+                f.write(str(self.numpar["Emaxadd"])+ " " + str(self.numpar["Eminsub"])+" #\n")
+                f.write(str(self.numpar["gen"])+ " #\n")
+                f.write(str(self.numpar["maxits"])+" "+str(self.numpar["Iconv"])+" "+str(self.numpar["Bei"])+" " \
+                        + str(self.numpar["Nhist"]) + " #\n")
                 f.write(pathwann + "/\n")
                 f.write(readeins+"\n")
                 f.write(patheins+"\n")
-                if(self.numpar[NumPar.boolMF]):
+                if(self.numpar["use-poisson"]):
                     f.write(".TRUE.")
                 else:
                     f.write(".FALSE.")
                 f.write(" #\n")
-                if(self.numpar[NumPar.boolPrinc]):
+                if(self.numpar["boolPrinc"]):
                     f.write(".TRUE.")
                 else:
                     f.write(".FALSE.")
                 f.write(" #\n")
-                if(self.numpar[NumPar.boolGW]):
+                if(self.numpar["use-e-e"]):
                     f.write(".TRUE.")
                 else:
                     f.write(".FALSE.")
@@ -379,85 +398,4 @@ class Inegf(Interface):
             f.closed
         except IOError:
             print "WARNING: Directory "+dirpath+" not found!"
-            
-            
-# TODO: implement as dictionary instead!
-class NumPar(object):
-    '''
-    Numerical parameters
-    '''
-    # for NEGF:
-    Nwann = 0
-    Nzp = 1
-    Nqp = 2
-    Nper = 3
-    Npint = 4
-    cshift = 5
-    Lbound = 6
-    Ubound = 7
-    Blochtol = 8
-    NE = 9
-    Nk = 10
-    eFd0 = 11
-    deFd = 12
-    NeFd = 13
-    omega0 = 14
-    domega = 15
-    Nomega = 16
-    eFacd0 = 17
-    deFacd = 18
-    NeFacd = 19
-    Nnu = 20
-    Nh = 21
-    Igauge= 22
-    Temp = 23
-    Eminsub = 24
-    Emaxadd = 25
-    gen = 26
-    Niter = 27
-    Iconf= 28
-    Bei=29
-    Nhist = 30
-    boolMF = 31
-    boolPrinc = 32
-    boolGW = 33
-    boolEins = 34
-
-    Nparam = 35
-    paramList = []
-    
-    def __init__(self):
-        self.initList(self.paramList)
-        self.setDefault()
-    
-    def setParam(self,param,value):
-        self.paramList[param] = value
-        
-    @classmethod
-    def setDefault(cls,C):
-        C[cls.Lbound] = 1.E-3
-        C[cls.Ubound] = 1.E-4
-        C[cls.Blochtol] =  1.E-6 
-        C[cls.Npint] = 5
-        C[cls.boolMF]=1
-        C[cls.Temp]=300
-        C[cls.eFacd0] = 0.00001
-        C[cls.NeFacd] = 1
-        C[cls.omega0],C[cls.domega],C[cls.Nomega] = 0.001,0,1
-        C[cls.gen] = 1E-4
-        C[cls.Niter],C[cls.Iconf],C[cls.Bei],C[cls.Nhist]=40, 2, 0.8, 40
-        C[cls.Igauge] = 1
-        C[cls.Nper] = 1
-        C[cls.Nzp] = 400
-        C[cls.Nqp] = 400
-        C[cls.Nwann] = 5
-        C[cls.Nnu] = 5
-        C[cls.eFd0],C[cls.deFd],C[cls.NeFd] = 0.050, 0.010, 1
-        C[cls.NE],C[cls.Nk] = 1000,1000
-        
-    
-    @classmethod
-    def initList(cls,C):
-        for _ in range(1,cls.Nparam+1):
-            C.append(0)
     
