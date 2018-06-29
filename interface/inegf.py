@@ -35,6 +35,13 @@ class Inegf(Interface):
         "boolEins" : False
         }
     
+    hdiag_numpar = {
+        "fgr_omega0" : 0,
+        "fgr_omegaf" : 0.1,
+        "fgr_Nomega" : 1000,
+        "fgr_gamma"  : 0.005
+        }
+    
     # index of data in negft.dat
     idat = {"eFd":0,"omega":1,"eFacd":2,"j":3,"gain":4,"dk":5,"konv":6,"errdyn":7,"ierror":8}
 
@@ -44,6 +51,7 @@ class Inegf(Interface):
         '''
         super(Inegf,self).__init__(binpath, pltfm)
         self.numpar.update(self.negf_numpar)
+        self.numpar.update(self.hdiag_numpar)
         self.numpar["maxits"] = 40
         self.progwann = binpath+"wannier8.out"
         self.prognegft = binpath+"negft8mpi.out"
@@ -143,10 +151,12 @@ class Inegf(Interface):
                 dirs = dirlist
                 for folder in dirs:
                     einspath = spath+self.datpath + "eins/"+folder
-                    omega0 = self.numpar["omega0"]
-                    omegaf = self.numpar["domega"]
+                    omega0 = self.numpar["fgr_omega0"]
+                    omegaf = self.numpar["fgr_omegaf"]
+                    Nomega = self.numpar["fgr_Nomega"]
+                    gamma  = self.numpar["fgr_gamma"]
                     if runprog:
-        	        self.runHdiag(einspath,omega0=omega0,omegaf=omegaf, gamma=0.001)
+                        self.runHdiag(einspath,omega0=omega0,omegaf=omegaf, Nomega = Nomega, gamma=gamma)
                         self.runBandplot(einspath, ss)
                     ss.wslevels.append(self.getWSdata(einspath))
                 

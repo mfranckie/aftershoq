@@ -19,7 +19,7 @@ class Interface(object):
     numpar = {"efield0":0,
               "defield":0.001,
               "Nefield":1,
-              "omega0":0,
+              "omega0":0.001,
               "domega":0.001,
               "Nomega":21,
               "efac0": 0,
