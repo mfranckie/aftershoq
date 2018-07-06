@@ -33,7 +33,13 @@ class HilbertUtil(object):
         # only one coordinate can move at a time = differ from an integer
         dd = np.max(dx)
         
-        d = self.hilbert_curve.distance_from_coordinates(intx.astype(int)) + dd
+        try:
+            d = self.hilbert_curve.distance_from_coordinates(intx.astype(int)) + dd
+        except( ValueError ):
+            for i in range(len(intx)):
+                while intx[i] > 2**self.p-1:
+                    intx[i]-=1
+            d = self.hilbert_curve.distance_from_coordinates(intx.astype(int)) + dd
         
         return d
     
@@ -51,3 +57,48 @@ class HilbertUtil(object):
         x = hmap1 + dp*ddin
         
         return x
+    
+    def scale_coordinates(self, x, ranges):
+        '''
+        Returns the scaled coordinates on the interval [xmin,xmax], 
+        where "ranges" contains the [min,max] values for each parameter in x.
+        '''
+        
+        xscaled = []
+        if np.ndim(x) == 1:
+            d1 = np.shape(x)[0]
+            d2 = 1
+        else:
+            (d1,d2) = np.shape(x)
+        x = np.reshape(x, (d1, d2))
+        for i in range(d1):
+            xi = []
+            for iparam in range(d2):
+                xmin = ranges[iparam][0]
+                xmax= ranges[iparam][1]
+                xs = x[i][iparam]*(xmax-xmin)/float(self.pmax) + xmin
+                xi.append(xs)
+            xscaled.append(xi)
+        return xscaled
+    
+    def unscale_coordinates(self, x, ranges):
+        '''
+        Returns the unscaled coordinates on the interval [0,pmax] , where "ranges" contains the [min,max]
+        values for each parameter in x.
+        '''
+        xscaled = []
+        if np.ndim(x) == 1:
+            d1 = np.shape(x)[0]
+            d2 = 1
+        else:
+            (d1,d2) = np.shape(x)
+        x = np.reshape(x, (d1, d2))
+        for i in range(d1):
+            xi = []
+            for iparam in range(d2):
+                xmin = ranges[iparam][0]
+                xmax= ranges[iparam][1]
+                xs = (float(x[i][iparam])-float(xmin))/(float(xmax)-float(xmin))*float(self.pmax)
+                xi.append(xs)
+            xscaled.append(xi)
+        return xscaled

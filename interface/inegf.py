@@ -5,12 +5,14 @@ Created on 16 Mar 2018
 '''
 
 from interface import Interface
-from structure.classes import MaterialPar as Par
+from structure.classes import MaterialPar as Par, Structure
 from utils.systemutil import SystemUtil as su
 from numerics.runplatf import Local
 import time
 from utils.debug import Debugger as dbg
 import subprocess
+from matplotlib import pyplot as pl
+import numpy as np
 
 class Inegf(Interface):
     '''
@@ -142,6 +144,7 @@ class Inegf(Interface):
             f.write('# Results for structures:\nID | N times layer width | N times Mat | Merit\n')
             for ss in structures:
                 ss.wslevels = []
+                ss.merit = self.getMerit(ss, pathwd)
                 spath = pathwd + "/" + str(ss.dirname)
                 try:
                     dirlist = su.listdirs(spath+self.datpath+"eins/")
@@ -273,9 +276,8 @@ class Inegf(Interface):
             except (OSError, IOError):
                 print "WARNING: could not find directory: " + path+self.datpath+"eins/"
                 return "ERROR"
-            dirs = dirlist[0].split()
             maxgain = []
-            for folder in dirs:
+            for folder in dirlist:
                 einspath = path+"/eins/"+folder
                 with open(einspath+"/gainFGR.dat") as f:
                     for line in f:
@@ -410,3 +412,143 @@ class Inegf(Interface):
         except IOError:
             print "WARNING: Directory "+dirpath+" not found!"
     
+    def loadStructures(self, origs, path):
+        '''
+        Load structures from directory tree. Assumes the following structure: 
+        path/sid/wannier8.inp/, where sid is the structure id (integer)
+        @origs: model structure, where layer widths will be replaced by read 
+        widths, for each structure
+        @path: path to root directory of tree.
+        '''
+        
+        structures = []
+        dirs = su.listdirs(path)
+        for folder in dirs:
+            s = Structure(origs)
+            with open(path+"/"+folder+"/wannier8.inp", 'r') as wannier:
+                s.sid = int( folder )
+                s.dirname = str( s.sid )
+                Nl = int( wannier.readline() )
+                Ncomm = 5
+                for _ in range(Ncomm):
+                    wannier.readline()
+                for i in range(Nl):
+                    lw = float( wannier.readline().split()[0] )
+                    s.layers[i].width = lw
+            structures.append(s)
+        return structures
+    
+    def plotbands(self, structure, path, einspath = None):
+        '''
+        Plot the band structure and Wannier-Stark states for a structure. 
+        Must first have run gatherResults() for structure.
+        
+        Parameters
+        
+        structure: Structure for which to plot the bands.
+        path: The path to the base of the tree
+        einspath (optional): specifies which parameters to plot for 
+        '''
+        
+        path = path + "/" + structure.dirname + "/" + self.datpath + "/eins/"
+        
+        if einspath == None:
+            dirlist = su.listdirs(path)
+        else:
+            dirlist = [einspath]
+            
+        Nplots = len(dirlist)
+        Nrows = int( np.sqrt(Nplots) )
+        Ncols = int( Nplots/Nrows + 0.5 )
+            
+        z_all = []
+        Ec_all = []
+        wavef_all = []
+        
+        iplot = 1
+        
+        for dir in dirlist:
+            with open(path + "/" + dir + "/bandplot.dat", 'r') as bandplot:
+                
+                eFd = float( bandplot.readline().split()[2] )
+                for _ in range(2):
+                    bandplot.readline()   # read comments
+                nnu = int( bandplot.readline().split()[1] )
+                nz  = int( bandplot.readline().split()[2] )
+                
+                
+                z = []
+                Ec = []
+                wavef = []
+                [wavef.append([]) for _ in range(nnu)]
+                for l in bandplot:
+                    data = l.split()
+                    z.append( float( data[0] ) )
+                    Ec.append( float( data[1] ) )
+                    for nu in range(2, len(data) ):
+                        wavef[nu-2].append( float( data[nu] ) )
+                
+                z_all.append(z)
+                Ec_all.append(Ec)
+                wavef_all.append(wavef)
+                
+                if Nplots > 1:
+                    pl.subplot(Nrows, Ncols, iplot)
+                    iplot += 1
+                pl.plot(z, Ec)
+                for nu in range(0, nnu):
+                    pl.plot(z, wavef[nu] , hold = True)
+                
+                
+    
+        return z_all, Ec_all, wavef_all
+    
+    def plotGainFGR(self, structure, path, einspath = None):
+        '''
+        Plot the gain calculated from Fermi's golden rule for a structure.
+        Must first have run gatherResults() for structure.
+        
+        Parameters
+        
+        structure: Structure for which to plot the bands.
+        path: The path to the base of the tree
+        einspath (optional): specifies which parameters to plot for 
+        '''
+        
+        path = path + "/" + structure.dirname + "/" + self.datpath + "/eins/"
+        
+        if einspath == None:
+            dirlist = su.listdirs(path)
+        else:
+            dirlist = [einspath]
+            
+        Nplots = len(dirlist)
+        Nrows = int( np.sqrt(Nplots) )
+        Ncols = int( Nplots/Nrows + 0.5 )
+            
+        om_all = []
+        g_all = []
+        
+        iplot = 1
+        
+        for dir in dirlist:
+            with open(path + "/" + dir + "/gainFGR.dat", 'r') as gain:
+                
+                gain.readline()   # one comment line
+                
+                om = []
+                g = []
+                for l in gain:
+                    data = l.split()
+                    om.append( float( data[0] ) )
+                    g.append( float( data[1] ) )
+                    
+                om_all.append(om)
+                g_all.append(g)
+                
+                if Nplots > 1:
+                    pl.subplot(Nrows, Ncols, iplot)
+                    iplot += 1
+                pl.plot(om, g)
+                
+        return om_all, g_all

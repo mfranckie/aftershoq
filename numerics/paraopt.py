@@ -5,9 +5,10 @@ Created on 13 Mar 2018
 '''
 
 import numpy as np
+from optimizer import Optimizer1D
 from utils.debug import Debugger as dbg
 
-class Paraopt(object):
+class Paraopt(Optimizer1D):
     '''
     Class for 1D function minimization with multiple parallel processors.
     After Strongin and Sergeyev "Global Optimization with Non-Convex
@@ -17,27 +18,18 @@ class Paraopt(object):
 
 
     def __init__(self, tolerance, r, maxiter, procmax, x0 = [], y0 = []):
-        '''
-        tolerance: optimization will converge after Delta x < tolerance.
-        r: parameter of the optimization scheme.
-        maxiter: optimization will terminate after maxiter iterations.
-        procmax: maximum number of processors that can be used. This
-                is the number of x-values that will be provided by the
-                algorithm
-        x0: Initial x-values that are already evaluated
-        y0: Initial results of the evaluations at x0
-        '''
-        self.pmax = procmax
-        self.x = []
-        self.y = []
-        self.tol = tolerance
+        super(Paraopt,self).__init__(tolerance, maxiter, procmax, x0, y0)
         self.r = r
-        self.maxits = maxiter
-        self.t = -1
-        self.iter = 0
-        self.converged = 0
-        if(len(x0) > 0 and len(y0) > 0):
-            self.addpoints(x0, y0)
+        
+    def addpoints(self, newx, newy):
+        Optimizer1D.addpoints(self, newx, newy)
+        
+        # sort results:
+        si = np.argsort(self.x)
+        self.x.sort()
+        y2 = []
+        [y2.append(self.y[yi]) for yi in si]
+        self.y = y2
         
     def addEvaldPoints(self, model, sg, path, coords):
         '''
@@ -98,7 +90,6 @@ class Paraopt(object):
         # find t
         # R starts from 0, not 1!
         si = np.argsort(R)
-        t = np.argmax(R)+1
         
         p = min(k+1,self.pmax)
         
@@ -111,32 +102,15 @@ class Paraopt(object):
             
             xnext.append( val )
         
-        self.t = t
+        self.t = np.argmin(self.y)
         return xnext
     
     def getbest(self):
         '''
         Returns the so-far minimal coordinates.
         '''
-        return [self.x[self.t],self.y[self.t]]
-    
-    def addpoints(self,newx,newy):
-        '''
-        Add the newly evaluated y-values newy at the coordinates newx.
-        The new results will be sorted and convergence checked.
-        '''
-        
-        [self.x.append(xx) for xx in newx]
-        [self.y.append(yy) for yy in newy]
-        
-        # sort results:
-        si = np.argsort(self.x)
-        self.x.sort()
-        y2 = []
-        [y2.append(self.y[yi]) for yi in si]
-        self.y = y2
         self.t = np.argmin(self.y)
-        self.check_conv()
+        return [self.x[self.t],self.y[self.t]]
         
     def check_conv(self):
         '''
@@ -180,7 +154,7 @@ class Paraopt(object):
             model.waitforproc(0.1)
             newy = []
             xi = 0
-            model.gatherResults(sgenerator.structures, pathwd, pathresults)
+            model.gatherResults(sgenerator.structures[-len(newx):], pathwd, pathresults)
             for ss in sgenerator.structures[-len(newx):]:
                 try:
                     val = -float(model.getMerit(ss,pathwd))
