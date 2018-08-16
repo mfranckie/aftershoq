@@ -1,13 +1,13 @@
 '''
 Created on 12 Mar 2018
 
-@author: martin
+@author: Martin Franckie
 '''
 
 from interface import Interface
-from structure.classes import MaterialPar as mp
+import structure.matpar as mp
 from utils import const
-from utils.systemutil import SystemUtil as su
+import utils.systemutil as su
 import time
 
 class Isewself(Interface):
@@ -65,8 +65,10 @@ class Isewself(Interface):
 
     def __init__(self, binpath, pltfm, material_list):
         '''
-        Constructor
+        Constructor. Baseclass-specific parameters:
+        material_list: A list of the Materials that will be used.
         '''
+        
         super(Isewself,self).__init__(binpath, pltfm)
         self.material_list = material_list
         self.processes = []
@@ -140,6 +142,8 @@ class Isewself(Interface):
         return line.split('\n')[0:-1]
     
     def writeStructFile(self,structure,path):
+        '''Writes the structure file self.structfilename.'''
+        
         filepath = path + "/" + self.structfilename
         with open(filepath,'w') as f:
             f.write(str(self.numpar["efield"]) + " # efield\n")
@@ -180,6 +184,7 @@ class Isewself(Interface):
 
     
     def writeParameterFile(self,path):
+        '''Writes the parameter file "path/mat.par".'''
         filepath = path + "/mat.par"
         with open(filepath,'w') as f:
             f.write("mwell, mbarrier, Gamma, hlo, kp0\n")
@@ -204,6 +209,8 @@ class Isewself(Interface):
             f.write(str(well) + "/" + str(barr) + "\n")
             
     def writeSewselfPar(self,path):
+        '''Write the parameter file "path/sewself.par".'''
+        
         filename = path + "/sewself.par"
         with open(filename, 'w') as f:
             d = self.sewselfpar

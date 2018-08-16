@@ -11,12 +11,13 @@ path_to_aftershoq = os.getcwd()
 sys.path.append(path_to_aftershoq)
 sys.path.append(path_to_aftershoq + '/hilbert_curve/')
 
-from structure.classes import Structure, MaterialPar as mp
+from structure.classes import Structure
+import structure.matpar as mp
 from structure.sgenerator import Sgenerator
 from structure.materials import GaAs, AlGaAs
 from numerics.runplatf import Local
-from utils.systemutil import SystemUtil as su
-from utils.debug import Debugger as dbg
+import utils.systemutil as su
+import utils.debug as dbg
 from interface.isewlab import Isewlab
 from numerics.paraopt import Paraopt
 from matplotlib import pyplot as pl
@@ -100,7 +101,7 @@ if __name__ == '__main__':
     #pltfm = Euler(1,"1:00")
     
     # sewlab interface: (add parameter version '4.6.X' if you are not running the default 4.6.4
-    model = Isewlab(binpath,pltfm, gaas)
+    model = Isewlab(binpath, pltfm, gaas)
     
     # to change parameters, change the dictionaries in Isewlab:
     
@@ -109,8 +110,8 @@ if __name__ == '__main__':
     
     # The electric field in the simulation
     efield0 = -1
-    defield = -2
-    Nefield = 5
+    defield = -0.5
+    Nefield = 21
     model.numpar["efield0"] = efield0
     
     # Set the elecron and lattice temperatures

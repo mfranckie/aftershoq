@@ -11,12 +11,13 @@ path_to_aftershoq = os.getcwd()
 sys.path.append(path_to_aftershoq)
 sys.path.append(path_to_aftershoq + '/hilbert_curve/')
 
-from structure.classes import Structure, MaterialPar as mp
+from structure.classes import Structure
+import structure.matpar as mp
+from structure.materials import *
 from structure.sgenerator import Sgenerator
-from utils.qclutil import MaterialUtil as mu
 from numerics.runplatf import Local
-from utils.systemutil import SystemUtil as su
-from utils.debug import Debugger as dbg
+import utils.systemutil as su
+import utils.debug as dbg
 from interface.isewself import Isewself
 from numerics.paraopt import Paraopt
 from matplotlib import pyplot as pl
@@ -47,32 +48,16 @@ if __name__ == '__main__':
     
     # create materials GaAs, AlAs, InAs:
     
-    GaAs = mu.createGaAs()
-    AlAs = mu.createAlAs()
-    InAs = mu.createInAs()
+    gaas = GaAs()
+    alas = AlAs()
+    inas = InAs()
     
-    # create InGaAs/InAlAs lattice matched to InP:
-    
-    x = 0.47
-    lmname = "In" + str(x) + "Ga" + str(1-x) + "As"
-    InGaAsLM = mu.createGaInAs(x,lmname)
-    print str(InGaAsLM) + ":\n"
+    # create Al_0.20Ga_0.80As 
+    x = 0.2
+    algaas = AlGaAs(x = x)
+    print "\n" + str(algaas) + ":\n"
     for val in mp.valdict:
-        print val + " = " + str(InGaAsLM.params[mp.valdict[val]])
-    
-    x = 0.48
-    lmname = "In" + str(x) + "Al" + str(1-x) + "As"
-    InAlAs = mu.createAlInAs(x,lmname)
-    print "\n" + str(InAlAs) + ":\n"
-    for val in mp.valdict:
-        print val + " = " + str(InAlAs.params[mp.valdict[val]])
-    
-    # create Al_0.15Ga_0.85As 
-    x = 0.02
-    AlGaAs = mu.createAlGaAs(x)
-    print "\n" + str(AlGaAs) + ":\n"
-    for val in mp.valdict:
-        print val + " = " + str(AlGaAs.params[mp.valdict[val]])
+        print val + " = " + str(algaas.params[mp.valdict[val]])
     
     print sep
     print 'Creating a structure from generated materials:\n'
@@ -88,12 +73,12 @@ if __name__ == '__main__':
     
     # Add layers:
     # Add layers:
-    s.addLayerMW(3.0, AlGaAs)
-    s.addLayerMW(20.0, AlGaAs)
-    s.addLayerMW(7.0,GaAs)
-    s.addLayerMW(2.0,AlGaAs) # <-- doped layer 3
-    s.addLayerMW(7.0,GaAs)
-    s.addLayerMW(20,AlGaAs)
+    s.addLayerMW(3.0, algaas)
+    s.addLayerMW(20.0, algaas)
+    s.addLayerMW(7.0,gaas)
+    s.addLayerMW(2.0,algaas) # <-- doped layer 3
+    s.addLayerMW(7.0,gaas)
+    s.addLayerMW(20,algaas)
     
     # define doping layer
     zstart = 0; zend = 2.0; dopdens = 2e17; layer = 3
@@ -150,7 +135,7 @@ if __name__ == '__main__':
     #pltfm = Euler(1,"1:00")
     
     # sewself interface:
-    material_list = [GaAs,AlGaAs]
+    material_list = [gaas,algaas]
     model = Isewself(binpath,pltfm,material_list)
     
     

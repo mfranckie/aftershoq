@@ -13,12 +13,13 @@ path_to_aftershoq = os.getcwd()
 sys.path.append(path_to_aftershoq)
 sys.path.append(path_to_aftershoq + '/hilbert_curve/')
 
-from structure.classes import Structure, MaterialPar as mp
+from structure.classes import Structure
+import structure.matpar as mp
 from structure.sgenerator import Sgenerator
 from structure.materials import *
 from numerics.runplatf import Local
-from utils.systemutil import SystemUtil as su
-from utils.debug import Debugger as dbg
+import utils.systemutil as su
+import utils.debug as dbg
 from interface.inegf import Inegf
 from numerics.paraopt import Paraopt
 from matplotlib import pyplot as pl
@@ -38,7 +39,7 @@ if __name__ == '__main__':
     su.mkdir(pathresults)
     
     # Setup debugger:
-    dbg.open(dbg.verb_modes['verbose'],pathresults+"/debug.log")
+    dbg.open(dbg.verb_modes['chatty'],pathresults + "/debug.log")
     dbg.debug("Debug file \n\n")
     dbg.flush()
     
@@ -72,7 +73,7 @@ if __name__ == '__main__':
     for val in mp.valdict:
         print val + " = " + str(InGaAsLM.params[mp.valdict[val]])
     
-    InAlAsLM = InAlAs()
+    InAlAsLM = AlInAs()
     print "\n" + str(InAlAsLM) + ":\n"
     for val in mp.valdict:
         print val + " = " + str(InAlAsLM.params[mp.valdict[val]])
@@ -129,7 +130,7 @@ if __name__ == '__main__':
     # and doping location/density:
     dx = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
     dw = [2,0,2,0,2,0,2,0]
-    ddop = [0,0,0]
+    ddop = [0.1,0.1,1e16]
     
     # create a structure generator instance, based on our structure s above:
     sg = Sgenerator(s,dw,dx,ddop)
@@ -182,6 +183,12 @@ if __name__ == '__main__':
     model.numpar["domega"] = 0.030
     model.numpar["Nomega"] = 1
     model.numpar["efield0"] = 0.030
+    model.numpar["defield"] = 0.001
+    model.numpar["Nefield"] = 3
+    model.numpar["Nper"] = 1
+    model.numpar["fgr_omega0"] = 0
+    model.numpar["fgr_omegaf"] = 0.030
+    model.numpar["fgr_Nomega"] = 500
     
     # define the merit function as max gain/current density, from a dictionary of merit funcs.:
     #model.merit = model.merits.get("max gain")
@@ -195,15 +202,16 @@ if __name__ == '__main__':
         exit()
     
     # execute the model for simulating the structures:
-    model.runStructures(sg.structures, path)
+    model.datpath = '/Run/'
+    #model.runStructures(sg.structures, path)
     
     print "NEGF is running"
-    model.waitforproc(1)
+    #model.waitforproc(1)
     
     print sep + 'Gathering results to: ' + pathresults + '/results.log'
     
     # gather the results from the simulation of all structures:
-    model.gatherResults(sg.structures, path, pathresults)
+    model.gatherResults(sg.structures, path, pathresults=pathresults, runprog=True)
     
     print sep + 'First results acheived. Proceed with optimization?'
     proceed = input("Yes = 1\nExit = 0")
@@ -212,24 +220,6 @@ if __name__ == '__main__':
         dbg.close()
         exit()
     
-    # collect results from trial points
-    '''
-    x0 = []
-    [x0.append( sg.hutil.interp_dist_from_coords( c ) ) for c in coords]
-    x0 = numpy.array(x0)
-    x0.sort()
-    x0 = x0.tolist()
-    print x0
-    y0 = []
-    xi = 0
-    for i in range(0,len(x0)):
-        try:
-            y0.append( -float(model.getMerit(sg.structures[i],path)) )
-        except( ValueError ):
-            del x0[xi]
-            xi-=1
-        xi +=1
-    '''
     # create optimization object
     tol, r, itmax, procmax = 18, 1.1, 20, 2
     opt = Paraopt(tol,r,itmax,procmax)

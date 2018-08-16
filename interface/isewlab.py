@@ -1,20 +1,22 @@
 '''
 Created on 12 Mar 2018
 
-@author: martin
+@author: Martin Franckie
 '''
 
 from interface import Interface
-from structure.classes import MaterialPar as mp
+import structure.matpar as mp
 from utils import const
-from utils.systemutil import SystemUtil as su
+import utils.systemutil as su
 import time
 import numpy as np
 
 class Isewlab(Interface):
+    '''Interface for sewlab, which is documented in:
+    [Terazzi2010] Terazzi and Faist, N. J. Phys. 12, 033045 (2010)
+    [Terazzi2011] Terazzi, PhD thesis, ETH Zuerich (2011)
     '''
-    Interface for sewself.
-    '''
+    
     # dictionary with name and default value
     
     buildpot_params = {
@@ -206,8 +208,12 @@ class Isewlab(Interface):
 
     def __init__(self, binpath, pltfm, wellmaterial, version = '4.6.4'):
         '''
-        Constructor
+        Constructor. Subcalss-specific parameters:
+        wellmaterial: Material of the well of the structure (used for
+        dielectric and phonon properties).
+        vesrion: Defines the version of the sewlab binary which is to be used.
         '''
+        
         super(Isewlab,self).__init__(binpath, pltfm)
         self.numpar.update({ 
             "ldiff"  : 0.0,
@@ -246,6 +252,13 @@ class Isewlab(Interface):
         return "Sewself"
         
     def runStructures(self,structures,path):
+        '''Run simulations for all structures in the given structure list with
+        the base path "path". This method dispatches all processes and returns
+        the user has to wait for processes to finish before accessing results.
+        
+        Stores started processes in self.processes
+        '''
+        
         for ss in structures:
             spath = path + "/" + str(ss.dirname)
             su.mkdir(spath)
@@ -258,11 +271,18 @@ class Isewlab(Interface):
         self.processes.append(proc)
             
     def initdir(self,structure,spath):
+        '''Initialize the dierctory for Structure s, with base path "path".'''
         su.mkdir(spath)
         self.writeSampleFile(structure, spath)
         self.writeScriptFile(spath)
     
     def gatherResults(self,structures,path, wavescale = 1, square = True):
+        '''Write results to pathresults/results.log and run hdiag and bandplot
+        in pathwd/s.dirname/self.datpath/eins/x/ for each i and x. Stores WS 
+        resutls as a new attribute levels[directory][WS level][data field] in 
+        each Structure object in the list structures.
+        '''
+        
         for s in structures:
             s.results = self.readResults(s, path)
             s.populations = self.readPop(s, path)
@@ -284,6 +304,10 @@ class Isewlab(Interface):
                 f.write("\n")
             
     def saveBands(self, s, path, wavescale, square):
+        '''Read wave functions and potential profile from saved files and
+        save them in self.bandplotfile for later plotting.
+        '''
+        
         spath = path + s.dirname
         if self.version == '4.6.4':
             splitchar = ","
@@ -320,6 +344,11 @@ class Isewlab(Interface):
             
             
     def readResults(self, s, path):
+        '''Read and return results for Structure s with base path "path".
+        The results are read from self.resultfile and the returned results
+        are sorted according to increasing electric field.
+        '''
+        
         results = []
         spath = path + s.dirname
         for dir in su.listdirs(spath):
@@ -337,6 +366,10 @@ class Isewlab(Interface):
         return k
     
     def readPop(self, s, path):
+        '''Read and return populations for all levels for Structure s with
+        base path "path".
+        '''
+        
         results = []
         spath = path + s.dirname
         for dir in su.listdirs(spath):
@@ -353,6 +386,10 @@ class Isewlab(Interface):
         return results
     
     def readDipoles(self, s, path):
+        '''Read and return dipoles between all levels for Structure s with
+        base path "path".
+        '''
+        
         results = []
         spath = path + s.dirname
         for dir in su.listdirs(spath):
@@ -369,6 +406,10 @@ class Isewlab(Interface):
         return results
     
     def readRates(self, s, path):
+        '''Read and return scattering rates for all levels for Structure s
+        with base path "path".
+        '''
+        
         results = []
         spath = path + s.dirname
         for dir in su.listdirs(spath):
@@ -385,6 +426,10 @@ class Isewlab(Interface):
         return results
     
     def readEnergies(self, s, path):
+        '''Read and return energies for all levels for Structure s with
+        base path "path".
+        '''
+        
         results = []
         spath = path + s.dirname
         for dir in su.listdirs(spath):
@@ -399,6 +444,8 @@ class Isewlab(Interface):
         return results
     
     def writeSampleFile(self,structure,path):
+        '''Write the sample input file.'''
+        
         filepath = path + "/" + self.samplefilename
         with open(filepath,'w') as f:
             f.write('// ---- material system\n')
@@ -457,9 +504,10 @@ class Isewlab(Interface):
                     discont = structure.layers[0].material.params[mp.Ec]
                 discont = discont - l.material.params[mp.Ec]
                 f.write('discont = ' + str(discont) + "; " )
-                deltadop = structure.layerPos(index)-structure.dopings[0][0]
-                if deltadop < l.width and deltadop >= 0:
-                    f.write('doping = ' + str(structure.dopings[0][2]*1e-18) + ";")
+                for dop in structure.dopings:
+                    deltadop = dop[0] - structure.layerPos(index)
+                    if deltadop < l.width-1e-5 and deltadop >= 0:
+                        f.write('doping = ' + str(dop[2]*1e-18) + ";")
                 f.write(' }\n')
                 index += 1
             f.write('}\n\n')
@@ -528,6 +576,8 @@ class Isewlab(Interface):
             f.write('}\n\n')
             
     def writeBulk(self,material,f):
+        '''Write a bulk Material "material" to file "f".'''
+        
         f.write('\tbulk {\n')
         f.write('\t\talias\t= ')
         f.write(str(material) + ';\n')
@@ -549,6 +599,8 @@ class Isewlab(Interface):
         f.write('\t}\n\n')
         
     def writeAlloy(self,material,f):
+        '''Write an alloy Material "material" to file "f".'''
+        
         f.write('\talloy {\n')
         f.write('\t\talias\t= ')
         f.write(str(material) + ';\n')
@@ -559,6 +611,10 @@ class Isewlab(Interface):
         f.write('\t}\n\n')
         
     def writeInterface(self,f,mat1,mat2):
+        '''Write an interface between Materials "mat1" and "mat2" 
+        to file "f".
+        '''
+        
         f.write('\tinterface {\n')
         f.write('\t\tleft-material = ')
         f.write(str(mat1) + ";\n")
@@ -570,6 +626,8 @@ class Isewlab(Interface):
         f.write('\t}\n\n')
         
     def writeBuildPotParams(self,f):
+        '''Write buildot params to file "f".'''
+        
         f.write("buildpot-params {\n\n")
         for key,value in self.buildpot_params.items():
             f.write('\t' + key + " = " + str(value)+";\n")
@@ -589,6 +647,9 @@ class Isewlab(Interface):
             
             
     def writeScriptFile(self,path):
+        '''Write the script file executed by sewlab from working directory
+        "path".'''
+        
         filepath = path + "/" + self.scriptfilename
         with open(filepath,'w') as f:
             f.write('Verbosity ')
@@ -641,6 +702,10 @@ class Isewlab(Interface):
             f.write("Quit\n")
                 
     def getMerit(self,structure,path):
+        '''Returns the merit function evaluated for the Structure structure,
+        with base path "path". 
+        '''
+        
         path = path + "/" + structure.dirname
         if self.merit == self.merits["Elase"]:
             proc = su.dispatch('tail', ['-n','1',self.resultfile], path)
@@ -656,6 +721,9 @@ class Isewlab(Interface):
             return "ERROR"
                 
     def waitforproc(self,delay,message=None):
+        '''Blocks execution until all processes in self.processes are 
+        finished.
+        '''
         pactive = True
         while pactive:
             if message is not None:
