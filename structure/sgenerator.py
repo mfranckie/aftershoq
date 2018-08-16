@@ -1,3 +1,9 @@
+'''Created on 29 Mar 2018
+
+@author: Martin Franckie
+'''
+
+
 from structure.classes import Structure
 
 import random

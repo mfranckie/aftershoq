@@ -45,6 +45,33 @@ class Optimizer1D(object):
         
         self.t = np.argmin(self.y)
         self.check_conv()
+        
+    def addEvaldPoints(self, model, sg, path, coords):
+        '''
+        Convert the evaluated points in N-dim. paramtere space in the 
+        structure generator "sg", already evaluated with the Inteface 
+        "model", to points along the Hilbert curve and add them.
+        '''
+        # collect results from trial points
+        x0 = []
+        [x0.append( sg.hutil.interp_dist_from_coords( c ) ) for c in coords]
+        x0 = np.array(x0)
+        x0.sort()
+        x0 = x0.tolist()
+        
+        y0 = []
+        xi = 0
+        for i in range(0,len(x0)):
+            try:
+                y0.append( -float(model.getMerit(sg.structures[i],path)) )
+            except( ValueError ):
+                del x0[xi]
+                xi-=1
+            xi +=1
+            
+        self.addpoints(x0,y0)
+        
+        return x0,y0
     
     def nextstep(self):
         pass

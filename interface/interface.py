@@ -1,7 +1,23 @@
 '''
 Created on 26 Jan 2018
 
-@author: martin
+@author: Martin Franckie
+
+Module containing Interface class. This class is intended as parent class to
+model interfaces, which should implement the following methods:
+
+runStructures( structures, path )   :  Run structures in list "structures".
+                                       "Path" is the working directory which
+                                       contains the tree of structures.
+gatherResults( structures, path )   :  Prepare and gather model results, 
+                                       put the results in the respective 
+                                       structure as new attributes.
+waitforproc()                       :  Wait for all processes to finish.
+__init__()                          :  Optionally add model-specific arguments
+
+If the model uses additional numerical parameters, define one or more new 
+dictionaries and in __init__() call self.numpar.update( _new_dict_ )
+
 '''
 
 class Interface(object):
@@ -45,15 +61,40 @@ class Interface(object):
               }
     
     def __init__(self,binpath,pltfm):
+        '''Constructor.
+        binpath : path to model binary files
+        pltfm : Platf object
+        
+        '''
         self.binpath = binpath
         self.pltfm = pltfm
         self.merit = Interface.merits.get("max gain")
 
-    def runStructures(self,structures,numpar,path):
+    def runStructures(self,structures,path):
+        '''Run simulations for all structures in the given structure list with
+        the base path "path". This method dispatches all processes and returns
+        the user has to wait for processes to finish before accessing results.
+        
+        Stores started processes in self.processes
+        '''
         pass
     
     def gatherResults(self,structures,path):
+        '''Write results to pathresults/results.log and run hdiag and bandplot
+        in pathwd/s.dirname/self.datpath/eins/x/ for each i and x. Stores WS 
+        resutls as a new attribute levels[directory][WS level][data field] in 
+        each Structure object in the list structures.
+        '''
         pass
     
     def waitforproc(self, delay, message = None):
+        '''Blocks execution until all processes in self.processes are 
+        finished.
+        '''
+        pass
+    
+    def getMerit(self,structure,path):
+        '''Returns the merit function evaluated for the Structure structure,
+        with base path "path". 
+        '''
         pass

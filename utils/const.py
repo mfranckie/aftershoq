@@ -1,7 +1,9 @@
 '''
 Created on 16 Mar 2018
 
-@author: martin
+@author: Martin Franckie
+
+Module containing physical constants and conversion factors.
 '''
 
 import math

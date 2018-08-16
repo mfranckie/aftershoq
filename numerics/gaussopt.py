@@ -1,7 +1,8 @@
 '''
 Created on 18 Jun 2018
 
-@author: martin
+@author: Martin Franckie
+
 '''
 
 from optimizer import Optimizer1D
@@ -11,10 +12,29 @@ import scipy.optimize as so
 
 class Gaussopt(Optimizer1D):
     '''
-    classdocs
+    Optimizer1D class for Gaussian process optimization. After initializastion
+    the optimal points to evaluate next are given by nextstep(). A fully
+    automatic minimization can be performed by calling minimize() or 
+    minimize_parameters().
     '''
 
     def __init__(self, tolerance, maxiter, procmax, x0 = [], y0 = [], sigma = 4, l = 2, sigma_noise = 0., padding = 10.):
+        '''Constructor.
+        
+        Parameters
+        
+        tolerance: the absolute tolerance as a distance along the HilbertCurve
+        maxiter: the maximum iterations for the optimization.
+        procmax: the maximum points to be evaluated concurrently.
+        x0 (optional): Initial training data parameters
+        y0 (optional): Initial training data function values
+        sigma: standard deviation of GP (default = 4).
+        l: correlation length of GP (default = 2).
+        sigma_noise: noise level of GP (default = 0). If 0, noise will not be
+        updated.
+        padding: minimal distance for evaluating two concurrent points along 
+        HilbertCurve.
+        '''
         
         self.K = [] # covariance matrix
         self.Kt = [] # 
@@ -31,7 +51,6 @@ class Gaussopt(Optimizer1D):
         else:
             self.xmax = 0
         Optimizer1D.__init__(self, tolerance, maxiter, procmax, x0, y0)
-        #self.updateTrials()
         
     def addpoints(self, newx, newy):
         
@@ -45,13 +64,8 @@ class Gaussopt(Optimizer1D):
         self.x = np.reshape(self.x, (len(self.x), 1) )
         self.y = np.reshape(self.y, (len(self.y), 1) )
         
-        
-        #self.updateTrials()
-
-        
-        # TODO: add row and column to cov. matrix
-        
     def updateTrials(self):
+        '''Update trial points depending on the set of training data.'''
         
         pp_interval = 10
         
@@ -66,7 +80,8 @@ class Gaussopt(Optimizer1D):
         
     def logPosterior(self, theta, *args):
         '''
-        log of the posterior probability
+        log of the posterior probability as a function of the hyper
+        parameters theta = [sigma, l, sigma_noise].
         '''
         x, y = args
         try:
@@ -103,8 +118,8 @@ class Gaussopt(Optimizer1D):
 
     def gradLogPosterior(self, theta, *args):
         '''
-        gradient of the log of the posterior probability, with respect to the paratmeres
-        @theta
+        gradient of the log of the posterior probability, with respect to the
+        paratmeres theta = [sigma, l, sigma_noise].
         '''
         x, y = args
         d = len(theta)
@@ -149,6 +164,7 @@ class Gaussopt(Optimizer1D):
         return -dlogpdtheta
         
     def evalmeancov(self):
+        '''Evaluates the mean and covariance of the GP.'''
         
         self.updateTrials()
         K = self.kernel(self.x, self.x, self.theta)
@@ -320,7 +336,12 @@ class Gaussopt(Optimizer1D):
         return self.converged
         
     def plotGP(self, model, hutil):
-                # TODO for debugging:
+        '''Plot the GP at its current stage in the minimization.
+        
+        Parameters
+        
+        model: The actual model- '''
+        
         xt = self.xt; mean = np.squeeze( self.mean ); cov = self.cov; u = self.u;
         maxloc = self.maxloc; umax = self.umax
         x = self.x; y = self.y;
@@ -360,14 +381,13 @@ class Gaussopt(Optimizer1D):
             #return -mean
         
     def kernel(self,data1,data2,theta,wantderiv=False,measnoise=1.):
-        '''
-        Author: Stephen Marsland, 2014. Modified by Martin Franckie 2018
-        '''
+        '''Author: Stephen Marsland, 2014. Modified by Martin Franckie 2018'''
+        
         theta = np.squeeze(theta)
         
         if (len(theta) == 2):
             theta = np.append(theta, 0.)
-            
+        
             
         # Gaussian
         if np.shape(data1)[0] == len(data1):

@@ -1,20 +1,21 @@
 '''
 Created on 15 Mar 2018
 
-@author: martin
+@author: Martin Franckie
+
 '''
 from hilbert import HilbertCurve
 import numpy as np
 
 class HilbertUtil(object):
     '''
-    Help class for interpolation between nodes of the hilbert curve
+    Help class for interpolation between nodes of a HilbertCurve.
     '''
 
 
     def __init__(self, hilbert_curve):
-        '''
-        Constructor
+        '''Constructor.
+        hilbert_curve: A HilbertCurve instance.
         '''
         self.hilbert_curve = hilbert_curve
         self.N = hilbert_curve.n
@@ -23,6 +24,9 @@ class HilbertUtil(object):
         self.pmax = 2**self.p-1
         
     def interp_dist_from_coords(self,x):
+        '''Interpolates and returns a distance along the curve from (unscaled)
+        coordinates. The coordinates must lie on the hilbert curve.
+        '''
         
         x = np.array(x)
         
@@ -44,6 +48,9 @@ class HilbertUtil(object):
         return d
     
     def interp_coords_from_dist(self,d):
+        '''Interpolates and returns a set of (unscaled) coordinates from the
+        given distance along the curve.
+        '''
         
         intd = min( int(d) , self.imax-1 )
             
@@ -83,8 +90,8 @@ class HilbertUtil(object):
     
     def unscale_coordinates(self, x, ranges):
         '''
-        Returns the unscaled coordinates on the interval [0,pmax] , where "ranges" contains the [min,max]
-        values for each parameter in x.
+        Returns the unscaled coordinates on the interval [0,pmax] , where
+        "ranges" contains the [min,max] values for each parameter in x.
         '''
         xscaled = []
         if np.ndim(x) == 1:

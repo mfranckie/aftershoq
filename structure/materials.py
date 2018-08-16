@@ -1,20 +1,54 @@
 '''
 Created on 29 Mar 2018
 
-@author: martin
+@author: Martin Franckie
+
+This module contains pre-defined semiconductor materials and
+binary, ternary, as well as quaternary alloys.
+
+For materials where the alloy composition does not imply a
+simple bowing relationship for some parameters, the parent
+updateAlloy() and copy() functions are overridden.
+
+Note: parameters which are not explicitly altered are set to 0 by default!
+
+Naming convention: For group XX-YY materials, the XX material comes before 
+the YY material. For alloys XX_xYY_(1-x), the XX material comes before the
+YY material.
+
+References:
+[Vurgaftman2001] Vurgaftman et al., Appl. Phys. Rev. 89, 5815-5875 (2001)
+[Ioffe] http://matprop.ru and sources therein.
+[Janotti] Janotti and van der Walle, Phys. Rev. B 75, 121201 (2007)
+[Bateman] Bateman et al., J. Appl. Phys. 33, 3309 (1962)
 '''
-from structure.classes import Material, MaterialPar as mp
+
+from structure.classes import Material
+import structure.matpar as mp
 
 # Binaries:
 
 class GaAs(Material):
+    '''GaAs, band parameters from [Vurgaftman2001]. Other parameters from
+    [Ioffe].
+    '''
     
     def __init__(self,name = None):
         if name is None:
             name = "GaAs"
         paramsGaAs = []
         mp.initList(paramsGaAs)
-        paramsGaAs[0:11] = [0.067,0,1.519,22,0,0.0376,12.9,10.89,-7.2,4730,5317,0.04517]
+        paramsGaAs[mp.meff] = 0.067
+        paramsGaAs[mp.Ec] = 0.0
+        paramsGaAs[mp.Eg] = 1.519
+        paramsGaAs[mp.ELO] = 0.0376
+        paramsGaAs[mp.Ep] = 22
+        paramsGaAs[mp.eps0] = 12.9
+        paramsGaAs[mp.epsinf] = 10.89
+        paramsGaAs[mp.Vdef] = -7.17
+        paramsGaAs[mp.vlong] = 4730
+        paramsGaAs[mp.massdens] = 5317
+        paramsGaAs[mp.molV] = 0.04517
         paramsGaAs[mp.lattconst] = 5.653
         super(GaAs,self).__init__(name,paramsGaAs)
         
@@ -22,7 +56,9 @@ class GaAs(Material):
         return GaAs(self.name)
 
 class AlAs(Material):
-    
+    '''AlAs, band parameters from [Vurgaftman2001]. Other parameters from
+    [Ioffe].
+    '''
     def __init__(self,name = None):
         if name is None:
             name = "AlAs"
@@ -41,7 +77,9 @@ class AlAs(Material):
         return AlAs(self.name)
 
 class InAs(Material):
-    
+    '''InAs, band parameters from [Vurgaftman2001]. Other parameters from
+    [Ioffe].
+    '''    
     def __init__(self,name = None):
         
         if name is None:
@@ -66,7 +104,9 @@ class InAs(Material):
         return InAs(self.name)
 
 class ZnO(Material):
-    
+    '''ZnO, parameters from [Janotti2007] and [Bateman1962].
+    Note that at this time, the state of knowledge about this
+    material is very limited.'''
     def __init__(self,name = None):
         if name is None:
             name = "ZnO"
@@ -74,12 +114,12 @@ class ZnO(Material):
         mp.initList(params)
         params[mp.meff] = 0.22
         params[mp.Ec] = 0
-        params[mp.Eg] = 3.4 # Janotti, van der Walle PRB 2007
+        params[mp.Eg] = 3.4 # [Janotti2007]
         params[mp.ELO] = 0.072
         params[mp.Ep] = 21.5
         params[mp.eps0] = 8.49
         params[mp.epsinf] = 3.72
-        params[mp.Vdef] = -2.3 # Janotti, van der Walle PRB 2007
+        params[mp.Vdef] = -2.3 # [Janotti2007]
         params[mp.vlong] = 6090 # Bateman JAP 33, 1962
         params[mp.massdens] = 5606
         params[mp.molV] = 0.0145
@@ -90,7 +130,9 @@ class ZnO(Material):
         return ZnO(self.name)
         
 class MgO(Material):
-    
+    '''MgO, parameters from [Janotti2007].
+    Note that at this time, the state of knowledge about this
+    material is very limited.'''
     def __init__(self,name = None):
         
         if name is None:
@@ -112,6 +154,7 @@ class MgO(Material):
         return MgO(self.name)
     
 class MgOzoterac(Material):
+    '''MgO, parameters used in the Zoterac (ERC) project.'''
     
     def __init__(self,name = 'MgOzoterac'):
         params = []
@@ -133,11 +176,9 @@ class MgOzoterac(Material):
 # Ternaries:
 
 class AlGaAs(Material):
-    '''
-    classdocs
-    '''
+    '''Al_xGa_1-xAs. Bowing parameters from [Vurgaftman2001].'''
 
-    def __init__(self,name = None, x=None):
+    def __init__(self, name = None, x=None):
         if name is None:
             name = "AlGaAs"
         mat1 = AlAs()
@@ -160,7 +201,7 @@ class AlGaAs(Material):
     
     
 class InGaAs(Material):
-    
+    '''In_xGa_1-xAs. Bowing parameters from [Vurgaftman2001] and [Ioffe].'''
     def __init__(self,name = None, x = None):
         if name is None:
             name = "GaInAs"
@@ -185,8 +226,8 @@ class InGaAs(Material):
     def copy(self):
         return InGaAs(self.name,self.x)
         
-class InAlAs(Material):
-    
+class AlInAs(Material):
+    '''Al_xIn_1-xAs. Bowing parameters from [Vurgaftman2001].'''
     def __init__(self,name = None, x = None):
         
         if name is None:
@@ -204,7 +245,7 @@ class InAlAs(Material):
         if x is None:
             x = 0.48
             
-        super(InAlAs,self).__init__(name,[],mat1, mat2, A, x)
+        super(AlInAs,self).__init__(name,[],mat1, mat2, A, x)
         
         if x == 0.48:
             self.params[mp.Ec] = 0.032294
@@ -212,12 +253,12 @@ class InAlAs(Material):
             self.params[mp.Eg] = 1.404
         
     def copy(self):
-        return InAlAs(self.name,self.x)
+        return AlInAs(self.name,self.x)
         
 
 
 class ZnMgO(Material):
-    
+    '''Zn_xMg_1-xO. Only linear mixing.'''
     def __init__(self,name = None,x = None):
         if name is None:
             name = "Zn_"+str(x)+"Mg_"+str(1-x)+"O"
@@ -235,9 +276,7 @@ class ZnMgO(Material):
 # Quqternaries;
     
 class AlInGaAs(Material):
-        
-        '''
-        Quaternary alloy composed of AlInAs and GaInAs
+        '''Quaternary alloy composed of AlInAs and GaInAs
         Default: Lattice matched to InP (Al_0.48InAs)_x (In_0.53GaAs)_(1-x)
         Material parameters from Ohtani APL (2013)
         Note: General case is not implemented yet!
