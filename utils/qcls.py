@@ -55,12 +55,37 @@ class EV1157(Structure):
         self.addLayerMW(3.8, barrier) 
         self.addLayerMW(9.4, well)
         self.addLayerMW(4.2, barrier) 
-        self.addLayerMW(18.4, well) # <----- # 7 doped to 1.5*10^17 cm^-3 (4.5*10^10 cm^-2)
+        self.addLayerMW(18.4, well) # <----- # 7 doped to 2*10^16 cm^-3
         
         idop= 7
         vdop = 2e16 # cm^-3
         
         self.addDoping(0, self.layers[idop].width, vdop, idop)
+        
+class Fathololoumi2012(Structure):
+    '''Record THz QCL from Fathololoumi et al., Optics Express 20, 3866 (2012)
+    '''
+    def __init__(self):
+        Structure.__init__(self)
+        
+        self.setIFR(0.1, 10)
+        well = GaAs()
+        barrier = AlGaAs(x = 0.15)
+        
+        self.addLayerMW(4.3, barrier)
+        self.addLayerMW(8.9, well)
+        self.addLayerMW(2.46, barrier)
+        self.addLayerMW(8.15, well)
+        self.addLayerMW(4.1, barrier) 
+        self.addLayerMW(5.5, well) 
+        self.addLayerMW(5.0, well) # <----- # 6 doped to 6*10^16 cm^-3 (4.5*10^10 cm^-2)
+        self.addLayerMW(5.5, well)
+        
+        idop= 6
+        vdop = 6e16 # cm^-3
+        
+        self.addDoping(0, self.layers[idop].width, vdop, idop)
+    
         
 class EV1907(Structure):
     '''
@@ -135,3 +160,5 @@ class EV2017(Structure):
         self.addDoping(0, 3.79, dop, 9)
         self.addDoping(0, 1.29, dop, 10)
         self.addDoping(0, 3.23, dop, 11)
+        
+        
