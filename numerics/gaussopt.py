@@ -9,6 +9,7 @@ from optimizer import Optimizer1D
 import numpy as np
 from matplotlib import pyplot as pl
 import scipy.optimize as so
+import utils.debug as dbg
 
 class Gaussopt(Optimizer1D):
     '''
@@ -46,7 +47,8 @@ class Gaussopt(Optimizer1D):
         self.xmin = 0
         self.iter = 0
         self.padding = padding
-        if len(x0) > 0:
+
+        if len( x0 ) > 0:
             self.xmax = np.max(x0)
         else:
             self.xmax = 0
@@ -282,6 +284,41 @@ class Gaussopt(Optimizer1D):
                 break
         
         return self.maxloc
+    
+    def minimize(self, model, sgenerator, pathwd, pathresults=None):
+        if pathresults is None:
+            pathresults = pathwd
+            
+        dbg.debug("Starting minimization\n", dbg.verb_modes["verbose"],self)
+        niter = 0
+        while self.converged == 0:
+            niter += 1
+            dbg.debug("Iteration " + str(niter) + "\n", 
+                      dbg.verb_modes["verbose"],self)
+            
+            newx = self.nextstep()
+            sgenerator.gen_struct_from_hilbert_curve(newx)
+            model.runStructures(sgenerator.structures[-len(newx):], pathwd)
+            model.waitforproc(0.1)
+            newy = []
+            xi = 0
+            model.gatherResults(sgenerator.structures[-len(newx):], pathwd, pathresults = pathresults, runprog = True)
+            for ss in sgenerator.structures[-len(newx):]:
+                try:
+                    val = -float(model.getMerit(ss,pathwd))
+                    newy.append( val )
+                except( ValueError ):
+                    del newx[xi]
+                    xi -= 1
+                xi += 1
+        
+            self.addpoints(newx,newy)
+            self.writeresults(pathresults, "hilbert.log")
+        
+        dbg.debug("Minimization finished with convergence: " + str(self.converged) + "\n", 
+                  dbg.verb_modes["verbose"],self)
+        dbg.flush()
+        return self.converged
     
     def minimize_parameters(self, model, hutil, plot = False):
         
@@ -530,9 +567,15 @@ class Gaussopt(Optimizer1D):
         #pl.plot(xstar,mean+2*np.sqrt(var),'x-')
         #pl.plot(xstar,mean-2*np.sqrt(var),'x-')
         #print np.shape(xstar), np.shape(mean), np.shape(var)
-        pl.fill_between(np.squeeze(xstar),np.squeeze(mean-2*np.sqrt(var)),np.squeeze(mean+2*np.sqrt(var)),color='0.75')
+        pl.fill_between(np.squeeze(xstar),np.squeeze(mean-2*np.sqrt(var)),
+                        np.squeeze(mean+2*np.sqrt(var)),color='0.75')
         pl.plot(x,t,'ko')
         pl.axis('tight')
         pl.xlabel('x')
         pl.ylabel('f(x)')
         pl.show()
+        
+    def writeresults(self, pathresults, filename):
+        with open(pathresults + "/" + filename, 'w') as f:
+            [f.write( str( np.squeeze( self.x[i] )) + " " + str( 
+                np.squeeze( self.y[i] )) +"\n") for i in range(0,len(self.x))]
