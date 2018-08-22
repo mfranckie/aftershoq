@@ -14,17 +14,22 @@ import utils.debug as dbg
 from tempfile import TemporaryFile as tmp
 
 def mkdir(name):
-    '''Make directory "name", non-recursively. Calls mkdir.'''
+    '''Make directory "name", recursively.'''
     
-    call(["mkdir",name])
+    try:
+        os.makedirs(name)
+    except OSError:
+        pass
     
 def rmdir(name):
     '''Delete directory "name". Calls rm.'''
-    call("rm -r " + name,shell=True)
+    
+    os.removedirs(name)
     
 def ls(path):
     '''List files and directories in path. Calls ls.'''
-    call("ls -l "+name,shell=True)
+    
+    return os.listdir(path)
 
 def listdirs(path):
     '''List directories only in path.'''
