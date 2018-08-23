@@ -19,7 +19,10 @@ class Gaussopt(Optimizer1D):
     minimize_parameters().
     '''
 
-    def __init__(self, tolerance, maxiter, procmax, x0 = [], y0 = [], sigma = 4, l = 2, sigma_noise = 0., padding = 10.):
+    def __init__(self, tolerance, maxiter, procmax, x0 = [], y0 = [], 
+                 sigma = 4, l = 2, sigma_noise = 0., padding = 10.,
+                 sigma_max = None, l_max = None , sigma_noise_max = None,
+                 utility = None):
         '''Constructor.
         
         Parameters
@@ -35,6 +38,11 @@ class Gaussopt(Optimizer1D):
         updated.
         padding: minimal distance for evaluating two concurrent points along 
         HilbertCurve.
+        sigma_max: maximum value for sigma in optimization
+        l_max: maximum value for l in optimization
+        sigma_noise_max: maximum value for sigma_noise in optimization
+        utility (optional): utility function f(mean, cov) with two arguments 
+        (mean and covarianvce. If None, standard is used.
         '''
         
         self.K = [] # covariance matrix
@@ -43,10 +51,12 @@ class Gaussopt(Optimizer1D):
         self.KtT = []
         self.L = []
         self.theta = [sigma, l, sigma_noise]
+        self.thetamax = [sigma_max, l_max, sigma_noise_max]
         self.theta0 = self.theta
         self.xmin = 0
         self.iter = 0
         self.padding = padding
+        self.utility = utility
 
         if len( x0 ) > 0:
             self.xmax = np.max(x0)
@@ -225,8 +235,11 @@ class Gaussopt(Optimizer1D):
         #print "xmin, xmax, xav = ",xmin,xmax,xav
         
         print "old theta = ", self.theta0, self.logPosterior(self.theta0,*args)
-        newtheta = so.fmin_cg(self.logPosterior, self.theta0, fprime=self.gradLogPosterior, args=args, gtol=1e-4, maxiter=100, disp=1)
+        newtheta = so.fmin_cg(self.logPosterior, self.theta0, 
+                            fprime=self.gradLogPosterior, args=args,
+                            gtol=1e-4, maxiter=100, disp=1)
         print "new theta = ", newtheta, self.logPosterior(newtheta,*args)
+            
         self.theta = newtheta
         
         # build the covariance matrix:
@@ -290,10 +303,10 @@ class Gaussopt(Optimizer1D):
             pathresults = pathwd
             
         dbg.debug("Starting minimization\n", dbg.verb_modes["verbose"],self)
-        niter = 0
+        self.iter = 0
         while self.converged == 0:
-            niter += 1
-            dbg.debug("Iteration " + str(niter) + "\n", 
+            self.iter += 1
+            dbg.debug("Iteration " + str(self.iter) + "\n", 
                       dbg.verb_modes["verbose"],self)
             
             newx = self.nextstep()
@@ -314,6 +327,8 @@ class Gaussopt(Optimizer1D):
         
             self.addpoints(newx,newy)
             self.writeresults(pathresults, "hilbert.log")
+            self.writeGP(pathresults, "gpfit_"+str(self.iter)+".log")
+            self.writeGP(pathresults, "gpfit.log")
         
         dbg.debug("Minimization finished with convergence: " + str(self.converged) + "\n", 
                   dbg.verb_modes["verbose"],self)
@@ -372,12 +387,44 @@ class Gaussopt(Optimizer1D):
 
         return self.converged
         
-    def plotGP(self, model, hutil):
+    def plotGP(self):
         '''Plot the GP at its current stage in the minimization.
+        '''
+        maxloc = self.maxloc; umax = self.umax
+        xt = self.xt; mean = np.squeeze( self.mean )
+        cov = self.cov; u = self.u;
+        x = self.x; y = self.y;
+        
+        var = np.reshape( np.abs( np.diag( self.cov ) ), (self.Nx,1) )
+        
+        pl.figure(5)
+        pl.hold(False)
+        pl.plot(xt,mean)
+        pl.hold(True)
+        pl.plot(x,y,'*')
+        pl.fill_between(np.squeeze(xt), mean-np.squeeze(2*np.sqrt(var)),
+                        mean+np.squeeze(2*np.sqrt(var)), 
+                        facecolor = "grey", alpha=0.5)
+        pl.plot(xt,u/5,'-g')
+        pl.plot(maxloc,umax,'*')
+        pl.ylim(-5, 5)
+        
+        lim_diff = (np.max(y) - np.min(y))/2.
+        
+        pl.gca().set_xlim( 0, np.max(x) )
+        pl.gca().set_ylim( np.min(y) - lim_diff, np.max(y) + lim_diff )
+        
+        #writer.grab_frame()
+        pl.pause(0.01)
+        
+        
+    def plotGP_testfunc(self, model, hutil):
+        '''Plot the GP at its current stage in the minimization 
+        with the test function "model".
         
         Parameters
         
-        model: The actual model- '''
+        model: A tets function giving a fast merit function evaluation'''
         
         xt = self.xt; mean = np.squeeze( self.mean ); cov = self.cov; u = self.u;
         maxloc = self.maxloc; umax = self.umax
@@ -412,15 +459,31 @@ class Gaussopt(Optimizer1D):
         return [self.x[index], self.y[index] ]
         
     def util(self, mean, cov):
-            #return np.multiply(-mean + 0.001*np.diag(cov),100*np.diag(cov))
-            #return -np.multiply(mean,np.diag(cov)) + 0.2*np.diag(cov)
-            return np.exp(-mean) * ( 1 + np.sqrt( np.abs( np.diag(cov) ) ) )
-            #return -mean
+        '''
+        Utility function, estimating the most likely points along
+        the x-axis to contain the new minimum.
+        '''
+        
+        if self.utility is None:
+            return (-mean + np.sqrt( np.abs( np.diag(cov) ) ) )
+        else:
+            return self.utility(mean, cov)
+            
+    def constraint(self, theta0):
+        '''Contains the inequality constraints for the hyperparameter
+        minimization. If None is specified, no constraint is applied.
+        '''
+        return self.thetamax - theta
         
     def kernel(self,data1,data2,theta,wantderiv=False,measnoise=1.):
         '''Author: Stephen Marsland, 2014. Modified by Martin Franckie 2018'''
         
+        
         theta = np.squeeze(theta)
+        for i in range(len(theta)):
+            if self.thetamax[i] is not None and \
+                theta[i] > self.thetamax[i]:
+                theta[i] = self.thetamax[i]
         
         if (len(theta) == 2):
             theta = np.append(theta, 0.)
@@ -446,7 +509,7 @@ class Gaussopt(Optimizer1D):
             K[:,:,0] = k + measnoise*theta[2]**2.*np.eye(d1,d2, dtype=np.double)
             K[:,:,1] = 2.0 *k /theta[0]
             K[:,:,2] = k*sumxy**2./theta[1]**3.
-            K[:,:,3] = 2.0*theta[2]*np.eye(d1,d2, dtype=np.double)
+            K[:,:,3] = 2.0*measnoise*theta[2]*np.eye(d1,d2, dtype=np.double)
             return K
         else:    
             return k + measnoise*theta[2]**2.*np.eye(d1,d2, dtype = np.double)
@@ -579,3 +642,14 @@ class Gaussopt(Optimizer1D):
         with open(pathresults + "/" + filename, 'w') as f:
             [f.write( str( np.squeeze( self.x[i] )) + " " + str( 
                 np.squeeze( self.y[i] )) +"\n") for i in range(0,len(self.x))]
+            
+    def writeGP(self, pathresults, filename):
+        std = np.sqrt( np.abs( np.diag( self.cov ) ) )
+        with open(pathresults + "/" + filename, 'w') as f:
+            f.write('# Iteration = ' + str( self.iter ) +"\n")
+            f.write('# theta = (' + str( self.theta) + "\n" )
+            f.write('xt\tmean\tstd\tutil\n' )
+            [f.write( str( np.squeeze(self.xt[i]) ) + " " + 
+                      str( np.squeeze(self.mean[i]) ) + " " +
+                      str( std[i] ) + " " + str( self.u[i] ) + 
+                      "\n" ) for i in range( len( self.xt) ) ]
