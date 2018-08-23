@@ -286,7 +286,7 @@ class Inegf(Interface):
         try:
             with open(path+"/negft.dat",'r') as f:
                 for line in f:
-                    if '#' in line or line.split()[Inegf.idat.get("ierror")] == '1'\
+                    if '#' in line or line.split()[Inegf.idat.get("ierror")].endswith('1')\
                             or line.split()[Inegf.idat.get("konv")] == 'NaN':
                         continue
                     results.append(line.split())
