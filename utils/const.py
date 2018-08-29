@@ -15,4 +15,5 @@ h_eV = h_SI/qe
 hbar_SI = h_SI/pi
 hbar_eV = hbar_SI/qe
 me = 9.1093826e-31
+eps0 = 8.8542e-12
 

@@ -128,7 +128,7 @@ class Paraopt(Optimizer1D):
             model.waitforproc(0.1)
             newy = []
             xi = 0
-            model.gatherResults(sgenerator.structures[-len(newx):], pathwd, pathresults = pathresults, runprog = True)
+            model.gatherResults(sgenerator.structures[-len(newx):], pathwd, pathresults = pathresults)
             for ss in sgenerator.structures[-len(newx):]:
                 try:
                     val = -float(model.getMerit(ss,pathwd))

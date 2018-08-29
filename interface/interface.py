@@ -29,7 +29,8 @@ class Interface(object):
               "wall plug efficiency":4,
               "threshold current density":5,
               "estimated gain":6,
-              "custom figure of merit":7
+              "Chi2":7,
+              "custom figure of merit":8
               }
     
     numpar = {"efield0":0,
@@ -70,7 +71,7 @@ class Interface(object):
         self.pltfm = pltfm
         self.merit = Interface.merits.get("max gain")
 
-    def runStructures(self,structures,path):
+    def runStructures(self,structures,path,runprog=True):
         '''Run simulations for all structures in the given structure list with
         the base path "path". This method dispatches all processes and returns
         the user has to wait for processes to finish before accessing results.
@@ -79,7 +80,7 @@ class Interface(object):
         '''
         pass
     
-    def gatherResults(self,structures,path):
+    def gatherResults(self,structures,path,pathresults=None):
         '''Write results to pathresults/results.log and run hdiag and bandplot
         in pathwd/s.dirname/self.datpath/eins/x/ for each i and x. Stores WS 
         resutls as a new attribute levels[directory][WS level][data field] in 

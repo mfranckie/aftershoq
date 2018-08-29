@@ -184,6 +184,11 @@ class Inegf(Interface):
                     gamma  = self.numpar["fgr_gamma"]
                     if runprog:
                         self.runHdiag(einspath,omega0=omega0,omegaf=omegaf, Nomega = Nomega, gamma=gamma)
+                        
+                        # Check if daigolalization failed, try once with zshift:
+                        if self.checkWSdens(einspath) == False:
+                            self.runHdiag(einspath,zshift = 10., omega0=omega0,omegaf=omegaf, 
+                                          Nomega = Nomega, gamma=gamma)
                         self.runBandplot(einspath, ss)
                         
                     ss.wslevels.append(self.getWSdata(einspath))
@@ -231,6 +236,32 @@ class Inegf(Interface):
         dbg.debug("from hdiag: " + str(out) + str(", ") + str(err), dbg.verb_modes["chatty"], self.__class__)
         su.waitforproc(proc, 0.1)
         return proc
+    
+    def checkWSdens(self, einspath, tolerance = 0.1):
+        '''Check if doping density in diagonalized basis matches
+        the intended doping. Default tolerance is 10%.
+        '''
+        
+        with open(einspath + "/wslevelsRediag.dat", 'r') as f:
+            for line in f:
+                dopdiag = -1
+                doping = -1
+                for i in range( len(line.split()) ):
+                    word = line.split()[i]
+                    if word == 'indices=':
+                        dopdiag = float( line.split()[i+1] )
+                        doping = float( line.split()[i+3] )
+                        break
+                if dopdiag != -1:
+                    break
+        
+        if dopdiag == -1:
+            return False
+        elif (abs(dopdiag - doping) > tolerance*doping):
+            return False
+        else:
+            return True
+                        
     
     def getWSdata(self,path):
         '''Get the Wannier-Stark data from wslevels.dat.'''
@@ -329,13 +360,15 @@ class Inegf(Interface):
             maxgain = []
             for folder in dirlist:
                 einspath = path+"/eins/"+folder
-                with open(einspath+"/gainFGR.dat") as f:
-                    for line in f:
-                        linestr = line.split()
-                        try:
-                            maxgain.append( float( linestr[1] ) )
-                        except( IndexError ):
-                            pass
+                if( self.checkWSdens(einspath) ):
+                    with open(einspath+"/gainFGR.dat") as f:
+                        for line in f:
+                            linestr = line.split()
+                            try:
+                                maxgain.append( float( linestr[1] ) )
+                            except( IndexError ):
+                                pass
+                
             out = max(maxgain)
             
                 

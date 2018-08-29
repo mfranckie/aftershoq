@@ -178,6 +178,12 @@ class Sgenerator():
             for i in range(0,len(self.windex)):
                 news.layers[self.windex[i]].width = par_unscaled[pindex]
                 pindex+=1
+            
+            # Shifting the doping to always remain in the same layer:
+            doplayer = self.orig.layerIndex(self.orig.dopings[0][0])
+            dopshift = 0
+            for l in range(doplayer):
+                dopshift -= self.orig.layers[l].width - news.layers[l].width
                 
             # Doping layers:
             z0 = news.dopings[0][0]
@@ -189,8 +195,8 @@ class Sgenerator():
             for i in range(0,len(self.dopindex)):
                 cwd[self.dopindex[i]] = par_unscaled[pindex]
                 pindex +=1
-            z0 = cwd[0] - cwd[1]
-            zend = cwd[0] + cwd[1]
+            z0 = cwd[0] - cwd[1] + dopshift
+            zend = cwd[0] + cwd[1] + dopshift
             doping = cwd[2]
             news.dopings[0] = [z0,zend,doping]
             

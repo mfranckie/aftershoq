@@ -9,6 +9,9 @@ import structure.matpar as mp
 from utils import const
 import utils.systemutil as su
 import time
+import utils.debug as dbg
+import subprocess
+import numpy as np
 
 class Isewself(Interface):
     '''
@@ -81,7 +84,7 @@ class Isewself(Interface):
     def __str__(self):
         return "Sewself"
         
-    def runStructures(self,structures,path):
+    def runStructures(self, structures, path, command = None):
         for ss in structures:
             spath = path + "/" + str(ss.sid)
             self.initdir(ss,spath)
@@ -89,21 +92,60 @@ class Isewself(Interface):
         self.waitforproc(0.1)
         for ss in structures:
             spath = path + "/" + str(ss.sid)
-            self.run_sewself(ss, spath)
+            self.run_sewself(ss, spath, command)
             
     def run_buildmatself(self,structure,spath):
         su.dispatch(self.buildmatself, [self.structfilename], spath)
         
-    def run_sewself(self,structure,spath):
-        commands  = "e\n"   # compute self-consitent potential
-        commands += str(self.numpar.get('lattice_temp')) + "\n"
-        commands += str(self.numpar.get('el_temp')) + "\n"
-        commands += "d\n"   # compute abosrption from ground state
-        commands += "c\n"   # compute qwip absorption from upper states
-        commands += "a\n2\n1\n0\n" # compute dipole and lifetime between two states
-        commands +=  "q\n"
-        proc = su.dispatch(self.sewself, [], spath)
-        [out, _] = proc.communicate(commands)
+    def run_sewself(self,structure,spath,inputs = None):
+        '''Run sewself for given structure and structure path (spath)
+        inputs (Optional): List of sting of commands to be executed (a-w)
+        '''
+        commands = ""
+        if inputs is None:
+            commands  += "e\n"   # compute self-consitent potential
+            commands += str(self.numpar.get('lattice_temp')) + "\n"
+            commands += str(self.numpar.get('el_temp')) + "\n"
+            commands += "d\n"   # compute abosrption from ground state
+            commands += "c\n"   # compute qwip absorption from upper states
+            commands += "a\n2\n1\n0\n" # compute dipole and lifetime between two states
+            commands +=  "q\n"
+        else:
+            for c in inputs:
+                if c[0] == 'a':
+                    commands += "a\n" + c[1] + "\n" + c[2] + \
+                     "\n" + c[3] + "\n"
+                elif c[0] == 'b':
+                    commands += "b\n"
+                    commands += str(self.numpar.get('lattice_temp')) + "\n"
+                    commands += str(self.numpar.get('el_temp')) + "\n"
+                elif c[0] == 'c':
+                    commands += "c\n"
+                elif c[0] == 'd':
+                    commands += "d\n"
+                elif c[0] == 'e':
+                    commands  += "e\n"   # compute self-consitent potential
+                    commands += str(self.numpar.get('lattice_temp')) + "\n"
+                    commands += str(self.numpar.get('el_temp')) + "\n"
+                elif c[0] == 'f':
+                    commands  += "f\n"
+                elif c[0] == 'g':
+                    commands  += "g\n"
+                    commands += str(self.numpar.get('el_temp')) + "\n"
+                else:
+                    print "WARNING: Option " + c[0] + \
+                    " not implemented in Isewself!"
+        commands += "q\n^C\n"
+                
+        dbg.debug("Running sewself:", callclass=self)
+        dbg.flush()
+        proc = su.dispatch(self.sewself, [], spath, 
+                            infile = subprocess.PIPE,
+                            outfile = subprocess.PIPE, 
+                            errfile = subprocess.PIPE)
+        dbg.debug("Communicating sewself: \n" + commands, callclass=self)
+        dbg.flush()
+        out, err = proc.communicate(commands)
         structure.output = out
             
     def initdir(self,structure,spath):
@@ -112,24 +154,48 @@ class Isewself(Interface):
         self.writeSewselfPar(spath)
         self.writeStructFile(structure, spath)
     
-    def gatherResults(self,structures,path):
+    def gatherResults(self, structures, path, pathresults = None, runprog=True):
         self.ebound = []
-        with open(path+'/results.log','w') as f:
-            f.write('# Results for structures:\nID | N times layer width | N times Mat | Merit\n')
+        self.dipoles = []
+        with open(path+'/results.log','a') as f:
+            f.write('# Results for structures:\nID | Merit |  N times layer width | N times Mat \n')
             for ss in structures:
+                
+                levels = self.readEbound(path + "/" + str(ss.dirname))
+                dipoles = self.readDipoles(ss)
+                ebounds = []
+                [ebounds.append(float(l)) for l in levels]
+                self.ebound.append(ebounds)
+                ss.ebound = ebounds
+                ss.dipoles = dipoles
+                self.dipoles.append( self.readDipoles(ss) )
+                
                 f.write(str(ss.sid)+" ")
+                f.write(str(self.getMerit(ss, path)) + " ")
                 for layer in ss.layers:
                     f.write(str(layer.width)+" ")
                 for layer in ss.layers:
                     f.write(str(layer.material.x)+" ")
                               
-                f.write(str(self.getMerit(ss, path)))
                 f.write("\n")
                 
-                levels = self.readEbound(path + "/" + str(ss.dirname))
-                ebounds = []
-                [ebounds.append(float(l)) for l in levels]
-                self.ebound.append(ebounds)
+                with open(path+ ss.dirname+"/chi2.log", 'w') as chif:
+                    domega = 0.001
+                    gamma = self.target[2]
+                    E1 = self.target[0]
+                    chif.write('# E2, E3, |Chi2(E1,E2,E3=E1-E2)| ')
+                    chif.write('with E1 fixed to E1 = ' + str(E1) + '\n')
+                    chif.write("# gamma = " + str(gamma) + "\n")
+                    if self.merit == self.merits['Chi2']:
+                        
+                        for i in range(0, 1000):
+                            E2 = i*domega
+                            chif.write(str( E2 ) + " " + str( E1-E2 ) + " " )
+                            chif.write(str( self.calcChi2(ss, E1, E2, gamma))
+                                        + "\n")
+                            
+                
+                
                 
     def readEbound(self,path):
         with open(path + '/Ebound.dat','r') as f:
@@ -141,8 +207,21 @@ class Isewself(Interface):
             line = f.read()
         return line.split('\n')[0:-1]
     
+    def readDipoles(self, structure):
+        out = structure.output.split()
+        dipoles = []
+        for i in range(len(out)):
+            if out[i] == 'z':
+                dipoles.append( float( out[i+2] ) )
+        return dipoles
+    
     def writeStructFile(self,structure,path):
         '''Writes the structure file self.structfilename.'''
+        
+        mat_list = []
+        for layer in structure.layers:
+            if layer.material not in mat_list:
+                mat_list.append(layer.material)
         
         filepath = path + "/" + self.structfilename
         with open(filepath,'w') as f:
@@ -158,7 +237,7 @@ class Isewself(Interface):
             f.write(str(self.numpar["bool_one"]) + " # one period\n")
             f.write("material parameters\n")
             f.write(str(self.numpar["matchoice"]) + " matchoice\n")
-            for mat in self.material_list:
+            for mat in mat_list:
                 f.write(str(mat) + " ")
                 f.write(str(mat.params[mp.Ec]) + " ")
                 if mat.x is None:
@@ -169,15 +248,28 @@ class Isewself(Interface):
             f.write( "end discretisation of the potential\n" )
             f.write( str(self.numpar["inc0"]) + " inc0\n" )
             f.write( str(self.numpar["incw"]) + " incw\n" )
-            f.write( "Structure (mat, thick (A), doping x 1e-18) \n" )
+            f.write( "Structure (mat, thick (A), doping x 1e18 cm^-3) \n" )
             index = 0
             for layer in structure.layers:
                 f.write(str(layer.material) + " " + str(10*layer.width) + " " )
                 doping = 0
+                l0 = structure.layerPos(index)
+                l1 = structure.layerPos(index) + layer.width
                 for dop in structure.dopings:
-                    if dop[0] >= structure.layerPos(index) and dop[1] <= structure.layerPos(index) + layer.width:
-                        doping += dop[2]
-                    #doping += structure.dopings[0][2]
+                    if dop[1] >= l0 and dop[0] <= l1:
+                        if dop[0] > l0:
+                            if dop[1] > l1:
+                                ol = l1 - dop[0]
+                            else:
+                                ol = dop[1]-dop[0]
+                        else:
+                            if dop[1] > l1:
+                                ol = l1 - l0
+                            else:
+                                ol = dop[1]-l0
+                            
+                            
+                        doping += dop[2]*ol/(dop[1]-dop[0])
                 f.write( str( doping*1e-18 ) + "\n")
                 index += 1
 
@@ -287,6 +379,30 @@ class Isewself(Interface):
                 return -abs(ebound[1]-ebound[0] - float(self.target))
             except(ValueError,IndexError):
                 return 'ERROR'
+        elif self.merit == self.merits["Chi2"]:
+            
+            E1 = self.target[0]
+            E2 = self.target[1]
+            E3 = E1-E2
+            gamma = self.target[2]
+            
+            
+            elevel = structure.ebound
+            dipoles = structure.dipoles
+            dopdens = 0.
+            for d in structure.dopings:
+                dopdens += (d[1]-d[0])*d[2]
+            dopdens /= structure.length
+            
+            if len(elevel) < 3 or len(dipoles) < 3:
+                return 0
+            
+            chi2 = 1./(E1-elevel[2]+elevel[0] - gamma*1j)
+            chi2 += 1./(-E2+elevel[1]-elevel[0] - gamma*1j)
+            chi2 *= dipoles[0]*dipoles[1]*dipoles[2]/(E3-elevel[2]+elevel[1] - gamma*1j)
+            chi2 *= -const.qe/const.eps0*dopdens*1e6*1e-30*1e12
+            
+            return np.abs( chi2 )
         else:
             print "Merit function " + self.merit + "not implemented yet!"
             return "ERROR"
@@ -302,4 +418,25 @@ class Isewself(Interface):
                     pactive=True
                     #break
             time.sleep(delay)
+            
+    def calcChi2(self, structure, E1, E2, gamma):
+        
+        E3 = E1-E2
+        
+        elevel = structure.ebound
+        dipoles = structure.dipoles
+        dopdens = 0.
+        for d in structure.dopings:
+            dopdens += (d[1]-d[0])*d[2]
+        dopdens /= structure.length
+        
+        if len(elevel) < 3 or len(dipoles) < 3:
+            return 0
+        
+        chi2 = 1./(E1-elevel[2]+elevel[0] - gamma*1j)
+        chi2 += 1./(-E2+elevel[1]-elevel[0] - gamma*1j)
+        chi2 *= dipoles[0]*dipoles[1]*dipoles[2]/(E3-elevel[2]+elevel[1] - gamma*1j)
+        chi2 *= -const.qe/const.eps0*dopdens*1e6*1e-30*1e12
+        
+        return np.abs( chi2 )
                         

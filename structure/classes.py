@@ -139,6 +139,11 @@ class Structure:
         
     layers=[]
     dopings=[]
+    
+    def getSheetDop(self):
+        sd = 0.
+        for l in self.dopings:
+            sd += (l[1]-l[0])*l[2]
 
 class Material(object):
     '''Defines a material or alloy between two materials.'''
