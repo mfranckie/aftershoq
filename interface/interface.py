@@ -38,7 +38,7 @@ class Interface(object):
               "Nefield":1,
               "omega0":0.001,
               "domega":0.001,
-              "Nomega":21,
+              "Nomega":1,
               "efac0": 0,
               "defac": 0.010,
               "Nefac": 1,

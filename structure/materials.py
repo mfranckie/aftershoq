@@ -299,7 +299,7 @@ class AlInGaAs(Material):
             elif z != 0.53:
                 print "General case is not implemented, use z = 0.53 or None!"
             
-            mat1 = InAlAs()
+            mat1 = AlInAs()
             mat2 = InGaAs()
             
             A = []

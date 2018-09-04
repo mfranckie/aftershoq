@@ -88,7 +88,7 @@ class Structure:
         '''
         self.addLayer(Layer(width,material,eta,lam))
         
-    def addLayerMW(self,width,material):
+    def addLayerWM(self,width,material):
         '''Add a new layer based on width (nm) and Material.
         Uses pre-defined interface roughness parameters (set via setIFR )
         '''
@@ -126,7 +126,10 @@ class Structure:
                 return self.layers.index(li)
     
     def __str__(self):
-        return str(self.layers)
+        s = "[width, Material, eta, lambda] (id="+str(self.sid) + ")\n" 
+        for l in self.layers:
+            s += str(l) + "\n"
+        return s
     
     def layername(self):
         '''Generates and returns a name for this structure, based on 

@@ -66,7 +66,7 @@ class Isewself(Interface):
         "incw":2
         }
 
-    def __init__(self, binpath, pltfm, material_list):
+    def __init__(self, binpath, pltfm, material_list, commands = None):
         '''
         Constructor. Baseclass-specific parameters:
         material_list: A list of the Materials that will be used.
@@ -80,6 +80,19 @@ class Isewself(Interface):
         self.structfilename = "structure.txt"
         self.merits.update({'DeltaE_12' : 8, 'Elase' : 9, 'QWIP' : 10})
         self.merits.update({'absorption': 11})
+        
+        if commands == None:
+            commands = ""
+            commands  += "e\n"   # compute self-consitent potential
+            commands += str(self.numpar.get('lattice_temp')) + "\n"
+            commands += str(self.numpar.get('el_temp')) + "\n"
+            commands += "d\n"   # compute abosrption from ground state
+            commands += "c\n"   # compute qwip absorption from upper states
+            commands += "a\n2\n1\n0\n" # compute dipole and lifetime between two states
+            commands +=  "q\n"
+        
+        self.commands = commands
+            
         
     def __str__(self):
         return "Sewself"
@@ -103,38 +116,32 @@ class Isewself(Interface):
         '''
         commands = ""
         if inputs is None:
-            commands  += "e\n"   # compute self-consitent potential
-            commands += str(self.numpar.get('lattice_temp')) + "\n"
-            commands += str(self.numpar.get('el_temp')) + "\n"
-            commands += "d\n"   # compute abosrption from ground state
-            commands += "c\n"   # compute qwip absorption from upper states
-            commands += "a\n2\n1\n0\n" # compute dipole and lifetime between two states
-            commands +=  "q\n"
-        else:
-            for c in inputs:
-                if c[0] == 'a':
-                    commands += "a\n" + c[1] + "\n" + c[2] + \
-                     "\n" + c[3] + "\n"
-                elif c[0] == 'b':
-                    commands += "b\n"
-                    commands += str(self.numpar.get('lattice_temp')) + "\n"
-                    commands += str(self.numpar.get('el_temp')) + "\n"
-                elif c[0] == 'c':
-                    commands += "c\n"
-                elif c[0] == 'd':
-                    commands += "d\n"
-                elif c[0] == 'e':
-                    commands  += "e\n"   # compute self-consitent potential
-                    commands += str(self.numpar.get('lattice_temp')) + "\n"
-                    commands += str(self.numpar.get('el_temp')) + "\n"
-                elif c[0] == 'f':
-                    commands  += "f\n"
-                elif c[0] == 'g':
-                    commands  += "g\n"
-                    commands += str(self.numpar.get('el_temp')) + "\n"
-                else:
-                    print "WARNING: Option " + c[0] + \
-                    " not implemented in Isewself!"
+            inputs = self.commands
+        
+        for c in inputs:
+            if c[0] == 'a':
+                commands += "a\n" + c[1] + "\n" + c[2] + \
+                 "\n" + c[3] + "\n"
+            elif c[0] == 'b':
+                commands += "b\n"
+                commands += str(self.numpar.get('lattice_temp')) + "\n"
+                commands += str(self.numpar.get('el_temp')) + "\n"
+            elif c[0] == 'c':
+                commands += "c\n"
+            elif c[0] == 'd':
+                commands += "d\n"
+            elif c[0] == 'e':
+                commands  += "e\n"   # compute self-consitent potential
+                commands += str(self.numpar.get('lattice_temp')) + "\n"
+                commands += str(self.numpar.get('el_temp')) + "\n"
+            elif c[0] == 'f':
+                commands  += "f\n"
+            elif c[0] == 'g':
+                commands  += "g\n"
+                commands += str(self.numpar.get('el_temp')) + "\n"
+            else:
+                print "WARNING: Option " + c[0] + \
+                " not implemented in Isewself!"
         commands += "q\n^C\n"
                 
         dbg.debug("Running sewself:", callclass=self)
@@ -179,14 +186,15 @@ class Isewself(Interface):
                               
                 f.write("\n")
                 
-                with open(path+ ss.dirname+"/chi2.log", 'w') as chif:
-                    domega = 0.001
-                    gamma = self.target[2]
-                    E1 = self.target[0]
-                    chif.write('# E2, E3, |Chi2(E1,E2,E3=E1-E2)| ')
-                    chif.write('with E1 fixed to E1 = ' + str(E1) + '\n')
-                    chif.write("# gamma = " + str(gamma) + "\n")
-                    if self.merit == self.merits['Chi2']:
+                if self.merit == self.merits['Chi2']:
+                    with open(path+ ss.dirname+"/chi2.log", 'w') as chif:
+                        domega = 0.001
+                        gamma = self.target[2]
+                        E1 = self.target[0]
+                        chif.write('# E2, E3, |Chi2(E1,E2,E3=E1-E2)| ')
+                        chif.write('with E1 fixed to E1 = ' + str(E1) + '\n')
+                        chif.write("# gamma = " + str(gamma) + "\n")
+                        
                         
                         for i in range(0, 1000):
                             E2 = i*domega

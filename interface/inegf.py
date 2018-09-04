@@ -15,6 +15,7 @@ import utils.debug as dbg
 import subprocess
 from matplotlib import pyplot as pl
 import numpy as np
+from utils import const
 
 class Inegf(Interface):
     '''
@@ -50,7 +51,8 @@ class Inegf(Interface):
         "fgr_omega0" : 0,
         "fgr_omegaf" : 0.1,
         "fgr_Nomega" : 1000,
-        "fgr_gamma"  : 0.005
+        "fgr_gamma"  : 0.005,
+        "zshift_trials" : 2
         }
     
     # index of data in negft.dat
@@ -69,7 +71,10 @@ class Inegf(Interface):
         self.numpar.update(self.hdiag_numpar)
         self.numpar["maxits"] = 40
         self.progwann = binpath+"wannier8.out"
-        self.prognegft = binpath+"negft8mpi.out"
+        if type(pltfm) == Local:
+            self.prognegft = binpath + "negft8.out"
+        else:
+            self.prognegft = binpath+"negft8mpi.out"
         self.proghdiag = binpath+"hdiag8.out"
         self.progbandplot = binpath+"bandplot8.out"
         self.wellmat = wellmaterial
@@ -169,6 +174,7 @@ class Inegf(Interface):
             N times layer width | Ndop times (zi, zf, nvol) | N times x \n')
             for ss in structures:
                 ss.wslevels = []
+                ss.dipoles = []
                 spath = pathwd + "/" + str(ss.dirname)
                 try:
                     dirlist = su.listdirs(spath+self.datpath+"eins/")
@@ -185,13 +191,20 @@ class Inegf(Interface):
                     if runprog:
                         self.runHdiag(einspath,omega0=omega0,omegaf=omegaf, Nomega = Nomega, gamma=gamma)
                         
-                        # Check if daigolalization failed, try once with zshift:
-                        if self.checkWSdens(einspath) == False:
-                            self.runHdiag(einspath,zshift = 10., omega0=omega0,omegaf=omegaf, 
+                        # Check if daigolalization failed, try zshift_trial times with zshift:
+                        zshift = 0.
+                        for _ in range(self.hdiag_numpar["zshift_trials"]-1):
+                            if self.checkWSdens(einspath) == False:
+                                zshift += ss.length/self.hdiag_numpar["zshift_trials"]
+                                self.runHdiag(einspath,zshift=zshift, omega0=omega0,omegaf=omegaf, 
                                           Nomega = Nomega, gamma=gamma)
+                            else:
+                                break
                         self.runBandplot(einspath, ss)
                         
-                    ss.wslevels.append(self.getWSdata(einspath))
+                    (levels, dipoles) = self.getWSdata(einspath)
+                    ss.wslevels.append(levels)
+                    ss.dipoles.append(dipoles)
                 
                 ss.merit = self.getMerit(ss, pathwd)
                 
@@ -206,7 +219,27 @@ class Inegf(Interface):
                     f.write(str(layer.material.x)+" ")
                 
                 f.write("\n")
-                
+                if self.merit == self.merits["Chi2"]:    
+                    with open(pathresults+ ss.dirname+"/chi2.log", 'w') as chif:
+                            domega = 0.001
+                            if len( self.target ) < 3:
+                                gamma = None
+                            else:
+                                gamma = self.target[2]
+                            E1 = self.target[0]
+                            chif.write('# E2, E3, |Chi2(E1,E2,E3=E1-E2)| ')
+                            chif.write('with E1 fixed to E1 = ' + str(E1) + '\n')
+                            if gamma is None:
+                                chif.write("# gamma from NEGF \n")
+                            else:
+                                chif.write("# gamma = " + str(gamma) + "\n")
+        
+                            for i in range(0, 1000):
+                                E2 = i*domega
+                                chif.write(str( E2 ) + " " + str( E1-E2 ) + " " )
+                                chif.write(str( self.calcChi2(ss, E1, E2, gamma))
+                                            + "\n")
+            
                 
     def runHdiag(self, path, zshift=0, omega0=0, omegaf=1, Nomega = 1000,
                   Nper=1, gamma = 0.0001, Nk = 0, dEk = 0.001, Ek = -1):
@@ -264,7 +297,7 @@ class Inegf(Interface):
                         
     
     def getWSdata(self,path):
-        '''Get the Wannier-Stark data from wslevels.dat.'''
+        '''Get the Wannier-Stark data from wslevels.dat and matrixWS.dat.'''
         levels = []
         with open(path+"/wslevels.dat") as ff:
             # read eFd
@@ -281,7 +314,21 @@ class Inegf(Interface):
                 for element in line:
                     data.append(float(element))
                 levels.append(data)
-        return levels
+        dipoles = []
+        with open(path + "/matrixWS.dat") as ff:
+            line = ff.next().split()
+            line = ff.next().split()
+            nlevels = int(line[0])
+            for _ in range(3+nlevels*2):
+                ff.next()
+            for _ in range(nlevels):
+                row = []
+                line = ff.next().split()
+                for i in range(nlevels):
+                    row.append( float(line[i] ) )
+                dipoles.append(row)
+            
+        return levels, dipoles
         
     def runBandplot(self, path, structure, valence = 0, localdata = 1, eFd = 0, plotWS = 1, 
                     whichWS = 1, square = 1, renorm = 0.3, pmin = -1, pmax = 1, zmin = None, zmax = None):
@@ -371,6 +418,21 @@ class Inegf(Interface):
                 
             out = max(maxgain)
             
+        elif self.merit == self.merits["Chi2"]:
+            
+            E1 = self.target[0]
+            E2 = self.target[1]
+            
+            if len( self.target ) > 2:
+                gamma = self.target[2]
+            else:
+                gamma = None
+            
+            chi2 = self.calcChi2(structure, E1, E2, gamma)
+            if chi2 < 0:
+                return "ERROR"
+            else:
+                return chi2
                 
         else:
             print "No such merit function!"
@@ -644,3 +706,40 @@ class Inegf(Interface):
                 pl.plot(om, g)
                 
         return om_all, g_all
+
+    def calcChi2(self, structure, E1, E2, gamma = None):
+        
+        E3 = E1-E2
+        
+        elevel = []
+        nlevel = []
+        glevel = []
+        # TODO: only takes the first eins folder
+        for level in structure.wslevels[0]:
+            elevel.append( level[4] )
+            nlevel.append( level[5] )
+            if gamma is None:
+                glevel.append( level[6] )
+            else:
+                glevel.append(gamma)
+            
+        dipoles = structure.dipoles[0]
+        dopdens = 0.
+        for d in structure.dopings:
+            dopdens += (d[1]-d[0])*d[2]
+        dopdens /= structure.length
+        
+        if len(elevel) < 3 or len(dipoles) < 3 or self.checkWSdens(structure.wslevels[0][0][0], 0.1) == False:
+            return -1
+        
+        chi2 =  (nlevel[0]-nlevel[2])/( E1-elevel[2]+elevel[0] - 
+                    (glevel[0] + glevel[2])*1j/2.)
+        chi2 += (nlevel[0]-nlevel[1])/(-E2+elevel[1]-elevel[0] - 
+                    (glevel[0] + glevel[1])*1j/2.)
+        chi2 *= dipoles[0][1]*dipoles[0][2]*dipoles[2][1]
+        chi2 *= structure.length**3 # from Z0/d -> nm
+        chi2 /= (E3-elevel[2]+elevel[1] - 
+                    (glevel[1] + glevel[2])*1j/2.)
+        chi2 *= -const.qe/const.eps0/structure.length*1e4*1e-27*1e9*1e12
+        
+        return np.abs( chi2 )
