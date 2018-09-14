@@ -19,7 +19,7 @@ def mkdir(name):
     try:
         os.makedirs(name)
     except OSError:
-        pass
+        print "WARNING: Could not create directory " + name + "!"
     
 def rmdir(name):
     '''Delete directory "name". Calls rm.'''

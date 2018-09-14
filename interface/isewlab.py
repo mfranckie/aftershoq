@@ -163,7 +163,7 @@ class Isewlab(Interface):
         "light-gain-window-min-energy" :  40.0e-3,
         "light-gain-window-max-energy" :  60.0e-3,
         "light-gain-window-sampling"   :  64,
-        "light-losses" :  72, # n655: 3mm HR (2.3 + 2.2+.5)/0.68 env 7cm-1
+        "light-losses" :  72,
         "light-initial-photonflux" :  2e22,
         "light-bracketing-maxiter" :  128,
         "light-convergence-maxiter" :  5000,
@@ -202,6 +202,13 @@ class Isewlab(Interface):
         "direct-scattering" : False,
         "edge-gain-line" : False,
         "no-ando-dephasing" : False
+    }
+    
+    light_params = {
+        "width" : 4, # ridge width in micron
+        "mirror_loss" : 7.7, # cm^-1
+        "periods" : 40, # number of periods
+        "Rfacet" : 0.25 # facet reflectivity
     }
 
 
@@ -277,10 +284,9 @@ class Isewlab(Interface):
         self.writeScriptFile(spath)
     
     def gatherResults(self,structures,path, wavescale = 1, square = True):
-        '''Write results to pathresults/results.log and run hdiag and bandplot
-        in pathwd/s.dirname/self.datpath/eins/x/ for each i and x. Stores WS 
-        resutls as a new attribute levels[directory][WS level][data field] in 
-        each Structure object in the list structures.
+        '''Write results to pathresults/results.log. Stores results in local
+        variables results, populations, dipoles, energies, and rates. Also
+        writes the wave functions to disc.
         '''
         
         for s in structures:
@@ -316,31 +322,33 @@ class Isewlab(Interface):
         else:
             splitchar = ","
         for dir in su.listdirs(spath):
-            fwave = open(spath + "/" + dir + "/" + self.wavefile, 'r')
-            fpot = open(spath + "/" + dir + "/" + self.potfile, 'r')
-            fbands = open(spath + "/" + dir + "/" + self.bandplotfile, 'w')
-            
-            for _ in range(0, 3):
-                fpot.readline()
-            E = fwave.readline().split(splitchar)
-            
-            for lwave in fwave:
-                lpot = fpot.readline().split()
-                lwavesplit = lwave.split(splitchar)
-                fbands.write(lwavesplit[0] + " " + lpot[1])
-                for iwave in range(1, len(E)):
-                    if square:
-                        value = float( lwavesplit[iwave] )*float( lwavesplit[iwave] )*wavescale \
-                            + float(E[iwave])
-                    else:
-                        value = float( lwavesplit[iwave] )*wavescale + float(E[iwave])
-                    fbands.write(" " + str( value ))
-                fbands.write("\n")
+            try:
+                fwave = open(spath + "/" + dir + "/" + self.wavefile, 'r')
+                fpot = open(spath + "/" + dir + "/" + self.potfile, 'r')
+                fbands = open(spath + "/" + dir + "/" + self.bandplotfile, 'w')
                 
-            fwave.close()
-            fpot.close()
-            fbands.close()
+                for _ in range(0, 3):
+                    fpot.readline()
+                E = fwave.readline().split(splitchar)
                 
+                for lwave in fwave:
+                    lpot = fpot.readline().split()
+                    lwavesplit = lwave.split(splitchar)
+                    fbands.write(lwavesplit[0] + " " + lpot[1])
+                    for iwave in range(1, len(E)):
+                        if square:
+                            value = float( lwavesplit[iwave] )*float( lwavesplit[iwave] )*wavescale \
+                                + float(E[iwave])
+                        else:
+                            value = float( lwavesplit[iwave] )*wavescale + float(E[iwave])
+                        fbands.write(" " + str( value ))
+                    fbands.write("\n")
+                    
+                fwave.close()
+                fpot.close()
+                fbands.close()
+            except(IOError):
+                pass
             
             
     def readResults(self, s, path):
@@ -360,6 +368,9 @@ class Isewlab(Interface):
                         results.append( vals )
             except(IOError):
                 print "WARNING: Error in directory: " + spath + "/" + dir
+        
+        if results == []:
+            return "ERROR"        
         # sort the results according to efield:
         results = np.array(results)
         k = results[results[:,0].argsort()]
@@ -688,6 +699,14 @@ class Isewlab(Interface):
             f.write('Save sol.basis "' + self.wavefile + '":"wf"\n')
             f.write('Save bpot "' + self.potfile + '"\n')
             f.write('Write efield sol.J (Stats Max sol.GainLorentz) (Stats MaxLoc sol.GainLorentz) ')
+            if self.script_params["compute-light"] == True:
+                f.write(' (OpticalPower sol ')
+                f.write(str( self.light_params["periods"] ) + ' ')
+                f.write(str( self.light_params["width"] ) +  ' ')
+                f.write(str( self.light_params["Rfacet"] ))
+                f.write(' ) (Wallplug sol ')
+                f.write(str( self.light_params["mirror_loss"] ))
+                f.write(') ')
             f.write('To "')
             f.write(self.resultfile)
             f.write('"\n')
@@ -716,6 +735,12 @@ class Isewlab(Interface):
             gain = []
             [gain.append(float(l[2])) for l in structure.results]
             return max(gain)
+        elif self.merit == self.merits["wall plug efficiency"]:
+            wp = []
+            if structure.results == "ERROR":
+                return "ERROR"
+            [wp.append(float(l[5])) for l in structure.results]
+            return max(wp)
         else:
             print "Merit function " + str(self.merit) + "not implemented yet!"
             return "ERROR"
@@ -756,8 +781,22 @@ class Isewlab(Interface):
         else:
             self.script_params["no-superself"] = True
                         
-    def computeLight(self, bool):
+    def computeLight(self, bool, minE = None, maxE = None, wg_loss = 4., m_loss = 4., width = 4, Rfacet = 0.25, periods = 30):
+        '''Choose to compute light. Optional parameters if bool = True:
+        minE/maxE: min/max photon energy to evaluate photon flux
+        wg_loss/m_loss: total waveguide / mirror losses
+        width: Ridge width in micrometers
+        Rfacet: Facet reflectivity (of one facet)
+        periods: Number of periods of the active region
+        '''
         if( bool == True ):
             self.script_params["compute-light"] = True
+            self.transport_params["light-losses"] = wg_loss
+            self.transport_params["light-gain-window-min-energy"] = minE
+            self.transport_params["light-gain-window-max-energy"] = maxE
+            self.light_params["mirror_loss"] = m_loss
+            self.light_params["Rfacet"] = Rfacet
+            self.light_params["width"] = width
+            self.light_params["periods"] = periods
         else:
             self.script_params["compute-light"] = False

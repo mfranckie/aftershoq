@@ -219,8 +219,9 @@ class Inegf(Interface):
                     f.write(str(layer.material.x)+" ")
                 
                 f.write("\n")
-                if self.merit == self.merits["Chi2"]:    
-                    with open(pathresults+ ss.dirname+"/chi2.log", 'w') as chif:
+                if self.merit == self.merits["Chi2"]:
+                    su.mkdir(pathresults + ss.dirname)    
+                    with open(pathresults + ss.dirname+"/chi2.log", 'w') as chif:
                             domega = 0.001
                             if len( self.target ) < 3:
                                 gamma = None
