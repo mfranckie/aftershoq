@@ -5,7 +5,7 @@ Created on 16 Mar 2018
 
 '''
 
-from interface import Interface
+from .interface import Interface
 from structure.classes import Structure
 import structure.matpar as mp
 import utils.systemutil as su
@@ -139,7 +139,7 @@ class Inegf(Interface):
         pactive = True
         while pactive:
             if message is not None:
-                print message
+                print(message)
             pactive = False
             for p in self.processes:
                 if self.pltfm.jobstatus(p):
@@ -179,7 +179,7 @@ class Inegf(Interface):
                 try:
                     dirlist = su.listdirs(spath+self.datpath+"eins/")
                 except (OSError, IOError):
-                    print "WARNING: could not find directory: " + spath+self.datpath+"eins/"
+                    print("WARNING: could not find directory: " + spath+self.datpath+"eins/")
                     continue
                 dirs = dirlist
                 for folder in dirs:
@@ -300,15 +300,15 @@ class Inegf(Interface):
     def getWSdata(self,path):
         '''Get the Wannier-Stark data from wslevels.dat and matrixWS.dat.'''
         levels = []
-        with open(path+"/wslevels.dat") as ff:
+        with open(path+"/wslevels.dat", 'r') as ff:
             # read eFd
-            line = ff.next().split()
+            line = ff.readline().split()
             efd = line[2]
             # read 3 lines of comments
             for _ in range(0,3):
-                ff.next()
+                next(ff)
             for _ in range(0,self.numpar["Nstates"]):
-                line = ff.next().split()
+                line = ff.readline().split()
                 data = []
                 data.append(path)
                 data.append(float(efd))
@@ -316,15 +316,15 @@ class Inegf(Interface):
                     data.append(float(element))
                 levels.append(data)
         dipoles = []
-        with open(path + "/matrixWS.dat") as ff:
-            line = ff.next().split()
-            line = ff.next().split()
+        with open(path + "/matrixWS.dat",'r') as ff:
+            line = ff.readline().split()
+            line = ff.readline().split()
             nlevels = int(line[0])
             for _ in range(3+nlevels*2):
-                ff.next()
+                next(ff)
             for _ in range(nlevels):
                 row = []
-                line = ff.next().split()
+                line = ff.readline().split()
                 for i in range(nlevels):
                     row.append( float(line[i] ) )
                 dipoles.append(row)
@@ -374,10 +374,10 @@ class Inegf(Interface):
             f.closed
             
         except (OSError, IOError):
-            print "\nWARNING: Could not find directory: " + path
+            print("\nWARNING: Could not find directory: " + path)
             return "ERROR"
         except ValueError:
-            print "\nWarning: Error when getting results from: " + path
+            print("\nWarning: Error when getting results from: " + path)
             return "ERROR"
         
         values = []
@@ -403,7 +403,7 @@ class Inegf(Interface):
             try:
                 dirlist = su.listdirs(path+"/eins/")
             except (OSError, IOError):
-                print "WARNING: could not find directory: " + path+self.datpath+"eins/"
+                print("WARNING: could not find directory: " + path+self.datpath+"eins/")
                 return "ERROR"
             maxgain = []
             for folder in dirlist:
@@ -436,7 +436,7 @@ class Inegf(Interface):
                 return chi2
                 
         else:
-            print "No such merit function!"
+            print("No such merit function!")
         
         return out
     
@@ -510,7 +510,7 @@ class Inegf(Interface):
                 f.write(str(self.numpar["Blochtol"])+ "\t\t# Tolerance for accuracy of solution for Blochfunction\n")
             f.closed
         except IOError:
-            print "WARNING: Directory "+dirpath+" not found!"
+            print("WARNING: Directory "+dirpath+" not found!")
         
     def writeNegftInp(self,pathwann,patheins,dirpath=None):
         '''Writes the negft8.inp input file.'''
@@ -562,7 +562,7 @@ class Inegf(Interface):
                 
             f.closed
         except IOError:
-            print "WARNING: Directory "+dirpath+" not found!"
+            print("WARNING: Directory "+dirpath+" not found!")
     
     def loadStructures(self, origs, path):
         '''

@@ -19,7 +19,7 @@ def mkdir(name):
     try:
         os.makedirs(name)
     except OSError:
-        print "WARNING: Could not create directory " + name + "!"
+        print("WARNING: Could not create directory " + name + "!")
     
 def rmdir(name):
     '''Delete directory "name". Calls rm.'''
@@ -76,7 +76,8 @@ def dispatch(prog,args,dirpath=None, infile = None, outfile = None, errfile = No
     dbg.debug( "<<<< Dispatching program: " + str(progargs) + " from " + dirpath,
                dbg.verb_modes["chatty"])
     
-    process=Popen(progargs,cwd=dirpath,close_fds=True,stdout=outfile,stderr=errfile,stdin=infile)
+    process=Popen(progargs,cwd=dirpath,close_fds=True,stdout=outfile,stderr=errfile,stdin=infile,
+                  universal_newlines=True)
     
     dbg.debug(  " with pid="+str(process.pid)+" >>>>\n" ,
                 dbg.verb_modes["chatty"])

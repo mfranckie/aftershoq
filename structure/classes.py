@@ -71,6 +71,10 @@ class Structure:
         
         self.eta = eta
         self.lam = lam
+        
+        for l in self.layers:
+            l.eta = self.eta
+            l.lam = self.lam
     
     def addLayer(self,layer):
         '''Add a Layer to this structure.'''

@@ -29,11 +29,11 @@ class Numerics():
     def waitforproc(self,delay):
         pactive = True
         while pactive:
-            print "Processes running..."
+            print("Processes running...")
             pactive = False
             for p in self.processes:
                 if self.model.pltfm.jobstatus(p):
                     pactive=True
                     #break
             time.sleep(delay)
-        print "All processes terminated!"
+        print("All processes terminated!")

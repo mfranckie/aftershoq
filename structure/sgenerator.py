@@ -124,7 +124,7 @@ class Sgenerator():
         # pmax = side of hyper cube
         pmax = 2**p-1
         
-        print 'Dim = {0}, p = {1}, imax = {2}, pmax = {3}'.format(ND,p,imax,pmax)
+        print('Dim = {0}, p = {1}, imax = {2}, pmax = {3}'.format(ND,p,imax,pmax))
         
         self.hutil = HilbertUtil(hilbert_curve)
         self.params = params

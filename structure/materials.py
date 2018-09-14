@@ -292,12 +292,12 @@ class AlInGaAs(Material):
             if y is None:
                 y = 0.48
             elif y != 0.48:
-                print "General case is not implemented, use y = 0.48 or None!"
+                print("General case is not implemented, use y = 0.48 or None!")
                 
             if z is None:
                 z = 0.53
             elif z != 0.53:
-                print "General case is not implemented, use z = 0.53 or None!"
+                print("General case is not implemented, use z = 0.53 or None!")
             
             mat1 = AlInAs()
             mat2 = InGaAs()

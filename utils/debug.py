@@ -13,7 +13,7 @@ Debug class, for writing debugging information. The level of detail in the
     output to the stream.
 '''
 
-import __builtin__
+import builtins
 
 verb_modes = {"silent" : 0, "verbose" : 1, "chatty" : 2}
 file = None
@@ -32,7 +32,7 @@ def open(verb, outfile = None):
     filename = outfile
     if verbosity == verb_modes["silent"] or outfile is None:
         return
-    file = __builtin__.open(outfile,'a')
+    file = builtins.open(outfile,'a')
     
 def close():
     '''Closes the debug file.'''
@@ -58,7 +58,7 @@ def debug(message, level = 2, callclass = None):
     if verbosity < level:
         return
     elif file is None:
-        print message
+        print(message)
     else:
         file.write(message)
 

@@ -4,7 +4,7 @@ Created on 12 Mar 2018
 @author: Martin Franckie
 '''
 
-from interface import Interface
+from .interface import Interface
 import structure.matpar as mp
 from utils import const
 import utils.systemutil as su
@@ -82,14 +82,15 @@ class Isewself(Interface):
         self.merits.update({'absorption': 11})
         
         if commands == None:
-            commands = ""
-            commands  += "e\n"   # compute self-consitent potential
-            commands += str(self.numpar.get('lattice_temp')) + "\n"
-            commands += str(self.numpar.get('el_temp')) + "\n"
-            commands += "d\n"   # compute abosrption from ground state
-            commands += "c\n"   # compute qwip absorption from upper states
-            commands += "a\n2\n1\n0\n" # compute dipole and lifetime between two states
-            commands +=  "q\n"
+            commands = ['e', 'd', 'c', 'a210']
+#             commands = ""
+#             commands  += "e\n"   # compute self-consitent potential
+#             commands += str(self.numpar.get('lattice_temp')) + "\n"
+#             commands += str(self.numpar.get('el_temp')) + "\n"
+#             commands += "d\n"   # compute abosrption from ground state
+#             commands += "c\n"   # compute qwip absorption from upper states
+#             commands += "a\n2\n1\n0\n" # compute dipole and lifetime between two states
+#             commands +=  "q\n"
         
         self.commands = commands
             
@@ -140,8 +141,8 @@ class Isewself(Interface):
                 commands  += "g\n"
                 commands += str(self.numpar.get('el_temp')) + "\n"
             else:
-                print "WARNING: Option " + c[0] + \
-                " not implemented in Isewself!"
+                print("WARNING: Option " + c[0] + \
+                " not implemented in Isewself!")
         commands += "q\n^C\n"
                 
         dbg.debug("Running sewself:", callclass=self)
@@ -412,14 +413,14 @@ class Isewself(Interface):
             
             return np.abs( chi2 )
         else:
-            print "Merit function " + self.merit + "not implemented yet!"
+            print("Merit function " + str(self.merit) + " not implemented yet!")
             return "ERROR"
                 
     def waitforproc(self,delay,message=None):
         pactive = True
         while pactive:
             if message is not None:
-                print message
+                print(message)
             pactive = False
             for p in self.processes:
                 if self.pltfm.jobstatus(p):

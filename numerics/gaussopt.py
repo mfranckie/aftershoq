@@ -5,7 +5,7 @@ Created on 18 Jun 2018
 
 '''
 
-from optimizer import Optimizer1D
+from .optimizer import Optimizer1D
 import numpy as np
 from matplotlib import pyplot as pl
 import scipy.optimize as so
@@ -119,8 +119,8 @@ class Gaussopt(Optimizer1D):
                     #print theta
                     #print self.maxloc
         if i == trymax-1:
-            print "FATAL, could not resolve linalg error: " + error
-            print "x = " + str( np.sort(x.transpose()) )
+            print("FATAL, could not resolve linalg error: " + error)
+            print("x = " + str( np.sort(x.transpose()) ))
             return 0
                     
         beta = np.linalg.solve(np.transpose(L), np.linalg.solve(L,y))
@@ -159,8 +159,8 @@ class Gaussopt(Optimizer1D):
                     #print theta
                     #print self.maxloc
         if i == trymax-1:
-            print "FATAL, could not resolve linalg error: " + error
-            print "x = " + str( np.sort(x.transpose()) )
+            print("FATAL, could not resolve linalg error: " + error)
+            print("x = " + str( np.sort(x.transpose()) ))
             return np.zeros(d)
             
             
@@ -187,7 +187,7 @@ class Gaussopt(Optimizer1D):
             #invk = np.linalg.solve(L.transpose(),np.linalg.solve(L,np.eye(np.shape(self.x)[0], dtype=np.double)))
             
         except np.linalg.linalg.LinAlgError as e:
-            print "linalg error: " + str( e )
+            print("linalg error: " + str( e ))
             return -1
         
         Kt = self.kernel(self.x, self.xt, self.theta, measnoise = 0.)
@@ -234,11 +234,11 @@ class Gaussopt(Optimizer1D):
                                   
         #print "xmin, xmax, xav = ",xmin,xmax,xav
         
-        print "old theta = ", self.theta0, self.logPosterior(self.theta0,*args)
+        print("old theta = ", self.theta0, self.logPosterior(self.theta0,*args))
         newtheta = so.fmin_cg(self.logPosterior, self.theta0, 
                             fprime=self.gradLogPosterior, args=args,
                             gtol=1e-4, maxiter=100, disp=1)
-        print "new theta = ", newtheta, self.logPosterior(newtheta,*args)
+        print("new theta = ", newtheta, self.logPosterior(newtheta,*args))
             
         self.theta = newtheta
         
@@ -275,7 +275,7 @@ class Gaussopt(Optimizer1D):
                 maxloc.append( xadd )
             else:
                 if( iproc == 0):
-                    print "Converged for x, ix, u(x) = ", xadd, np.argmax( uproc ), np.max( uproc )
+                    print("Converged for x, ix, u(x) = ", xadd, np.argmax( uproc ), np.max( uproc ))
                     self.converged = 1
                 else:
                     exit()
@@ -290,8 +290,8 @@ class Gaussopt(Optimizer1D):
             for j in range(i+1, len(self.x)):
                 if np.abs( self.x[i] - self.x[j] ) < self.tol:
                     self.converged = 1
-                    print "Converged!"
-                    print self.converged
+                    print("Converged!")
+                    print(self.converged)
                     break
             if self.converged:
                 break
@@ -347,12 +347,12 @@ class Gaussopt(Optimizer1D):
             
             newx = self.nextstep()
             if self.converged:
-                print self.x[np.argmin(self.y)]
+                print(self.x[np.argmin(self.y)])
                 break
-            print newx
+            print(newx)
             if(np.shape(newx) == np.shape(1) ):
                 if newx == -1:
-                    print "Update failed! Stopping."
+                    print("Update failed! Stopping.")
                     self.converged = -1
                     break
             for xx in newx:
@@ -381,7 +381,7 @@ class Gaussopt(Optimizer1D):
             
             
             
-            print "Converged: ", self.converged
+            print("Converged: ", self.converged)
             #print "x = ",self.x
             #print "y = ",self.y
 
@@ -576,7 +576,7 @@ class Gaussopt(Optimizer1D):
         
         xs = np.sort(np.squeeze(x))
         
-        print "sort = ", xs
+        print("sort = ", xs)
         
         for i in range(Nx-1):
             if np.abs( xs[i] - xs[i+1] ) < deltaxmin:
@@ -586,17 +586,17 @@ class Gaussopt(Optimizer1D):
             
         
         
-        print deltaxmin, deltaxmax
+        print(deltaxmin, deltaxmax)
         
         #theta = np.array([4,2*deltaxmin]) # GP4
         theta = self.theta
         
-        print "x = ", x
+        print("x = ", x)
         Nx = 1000
         args = (x,t)
-        print theta, -self.logPosterior(theta,*args)
+        print(theta, -self.logPosterior(theta,*args))
         newTheta = so.fmin_cg(self.logPosterior, theta, fprime=self.gradLogPosterior, args=args, gtol=1e-4,maxiter=100,disp=1)
-        print newTheta, -self.logPosterior(newTheta,*args)
+        print(newTheta, -self.logPosterior(newTheta,*args))
         theta = newTheta
     
         xstar = np.reshape(np.linspace(np.min(x),np.max(x),Nx),(Nx,1))
@@ -614,15 +614,15 @@ class Gaussopt(Optimizer1D):
         invk = np.linalg.solve(L.transpose(),np.linalg.solve(L,np.eye(np.shape(x)[0])))
         #invL = np.linalg.inv(L)
         #invk = np.dot(invL.T,invL)
-        print np.shape(kstar), np.shape(invk), np.shape(t)
+        print(np.shape(kstar), np.shape(invk), np.shape(t))
         mean = np.dot(np.transpose(kstar),np.dot(invk,t))
         #print np.shape(kstarstar), np.shape(kstar), np.shape(invk)
         var = kstarstar - np.diag(np.dot(np.transpose(kstar),np.dot(invk,kstar)))
-        print np.shape(mean), np.shape(var)
+        print(np.shape(mean), np.shape(var))
         
         #var = kstarstar - np.dot(kstar.transpose(),np.dot(invk,kstar))
         var = np.reshape( np.abs( np.diag( var ) ), (Nx,1) )
-        print np.shape(var)
+        print(np.shape(var))
         #print mean
     
         pl.figure()

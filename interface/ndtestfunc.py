@@ -1,18 +1,25 @@
 '''
 Created on 14 May 2018
 
-@author: martin
+@author: Martin Franckie
 '''
-from interface import Interface
+from .interface import Interface
 import numpy as np
 import random as rm
 
 class NDtestfunc(Interface):
     
-    '''
-    ND = number of dimensions for parameter space
-    '''
+    '''Fast function for {ND} -> {1D} function testing.'''
+    
     def __init__(self, ND, C = None):
+        '''Constructor.
+        
+        Parameters
+        
+        ND: Number of dimensions of parameter space.
+        C (optional): List of parameters defining the functions.
+                      Defaults to random numbers.
+        '''
         
         self.ND = ND
         self.NC = 4
@@ -26,11 +33,15 @@ class NDtestfunc(Interface):
                 C.append(A)
         self.C = C
         
-    '''
-    Returns the objective evaluated for an N-dimensional parameter list
-    @x: N-dimensional list of parameters.
-    '''
     def testfunc(self, x):
+        '''
+        Returns the objective scalar evaluated for an N-dimensional parameter
+        list.
+        
+        Parameters
+        
+        x: N-dimensional list of parameters.
+        '''
         fac = 0.30
         a = b = 0
         for i in range(0,self.ND+1):
@@ -49,5 +60,13 @@ class NDtestfunc(Interface):
         pass
     
     def getMerit(self, params):
+        '''
+        Returns the objective scalar evaluated for an N-dimensional parameter
+        list.
+        
+        Parameters
+        
+        x: N-dimensional list of parameters.
+        '''
         return self.testfunc( params )
     

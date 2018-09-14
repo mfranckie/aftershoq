@@ -4,7 +4,7 @@ Created on 12 Mar 2018
 @author: Martin Franckie
 '''
 
-from interface import Interface
+from .interface import Interface
 import structure.matpar as mp
 from utils import const
 import utils.systemutil as su
@@ -367,7 +367,7 @@ class Isewlab(Interface):
                         [vals.append(float(val)) for val in line.split()]
                         results.append( vals )
             except(IOError):
-                print "WARNING: Error in directory: " + spath + "/" + dir
+                print("WARNING: Error in directory: " + spath + "/" + dir)
         
         if results == []:
             return "ERROR"        
@@ -393,7 +393,7 @@ class Isewlab(Interface):
                         tmp.append( vals )
                 results.append( tmp )
             except(IOError):
-                print "WARNING: Error in directory: " + spath + "/" + dir
+                print("WARNING: Error in directory: " + spath + "/" + dir)
         return results
     
     def readDipoles(self, s, path):
@@ -413,7 +413,7 @@ class Isewlab(Interface):
                         tmp.append( vals )
                 results.append( tmp )
             except(IOError):
-                print "WARNING: Error in directory: " + spath + "/" + dir
+                print("WARNING: Error in directory: " + spath + "/" + dir)
         return results
     
     def readRates(self, s, path):
@@ -433,7 +433,7 @@ class Isewlab(Interface):
                         tmp.append( vals )
                 results.append( tmp )
             except(IOError):
-                print "WARNING: Error in directory: " + spath + "/" + dir
+                print("WARNING: Error in directory: " + spath + "/" + dir)
         return results
     
     def readEnergies(self, s, path):
@@ -451,7 +451,7 @@ class Isewlab(Interface):
                         tmp.append( float(line) )
                 results.append( tmp )
             except(IOError):
-                print "WARNING: Error in directory: " + spath + "/" + dir
+                print("WARNING: Error in directory: " + spath + "/" + dir)
         return results
     
     def writeSampleFile(self,structure,path):
@@ -528,61 +528,61 @@ class Isewlab(Interface):
             
             f.write('// ----- eigen solver parameters\n')
             f.write('solver {\n')
-            for key,value in self.solver_params.items():
+            for key,value in list(self.solver_params.items()):
                 f.write('\t' + key + " = " + str(value) + ";\n")
             f.write('}\n\n')
             
             f.write('// ----- absoption parameters\n')
             f.write('absorption { \n')
-            for key,value in self.absorption_params.items():
+            for key,value in list(self.absorption_params.items()):
                 f.write('\t' + key + " = " + str(value) + ";\n")
             f.write('}\n\n')
             
             f.write('// ----- ifr parameters\n')
             f.write('ifr { \n')
-            for key,value in self.ifr_params.items():
+            for key,value in list(self.ifr_params.items()):
                 f.write('\t' + key + " = " + str(value) + ";\n")
             f.write('}\n\n')
             
             f.write('// ----- hlo parameters\n')
             f.write('hlo { \n')
-            for key,value in self.hlo_params.items():
+            for key,value in list(self.hlo_params.items()):
                 f.write('\t' + key + " = " + str(value) + ";\n")
             f.write('}\n\n')
                 
             f.write('// ----- alloy disorder parameters\n')
             f.write('alloy-disorder { \n')
-            for key,value in self.alloy_params.items():
+            for key,value in list(self.alloy_params.items()):
                 f.write('\t' + key + " = " + str(value) + ";\n")
             f.write('}\n\n')
             
             f.write('// ----- impurities parameters\n')
             f.write('impurities { \n')
-            for key,value in self.imp_params.items():
+            for key,value in list(self.imp_params.items()):
                 f.write('\t' + key + " = " + str(value) + ";\n")
             f.write('}\n\n')
             
             f.write('// ----- transport parameters\n')
             f.write('transport { \n')
-            for key,value in self.transport_params.items():
+            for key,value in list(self.transport_params.items()):
                 f.write('\t' + key + " = " + str(value) + ";\n")
             f.write('}\n\n')
             
             f.write('// ----- self solver parameters\n')
             f.write('selfsolver { \n')
-            for key,value in self.selfsolver_params.items():
+            for key,value in list(self.selfsolver_params.items()):
                 f.write('\t' + key + " = " + str(value) + ";\n")
             f.write('}\n\n')
             
             f.write('// ----- thermal model parameters\n')
             f.write('thermal-model { \n')
-            for key,value in self.thermalmodel_params.items():
+            for key,value in list(self.thermalmodel_params.items()):
                 f.write('\t' + key + " = " + str(value) + ";\n")
             f.write('}\n\n')
             
             f.write('// ----- show options\n')
             f.write('show-options { \n')
-            for key,value in self.show_options.items():
+            for key,value in list(self.show_options.items()):
                 f.write('\t' + key + " = " + str(value) + ";\n")
             f.write('}\n\n')
             
@@ -640,18 +640,18 @@ class Isewlab(Interface):
         '''Write buildot params to file "f".'''
         
         f.write("buildpot-params {\n\n")
-        for key,value in self.buildpot_params.items():
+        for key,value in list(self.buildpot_params.items()):
             f.write('\t' + key + " = " + str(value)+";\n")
         f.write('\n\tleft-barrier {\n')
-        for key, value in self.left_barrier.items():
+        for key, value in list(self.left_barrier.items()):
             f.write('\t\t' + key[3:] + " = " + str(value)+";\n")
         f.write('\t}\n')
         f.write('\n\tright-barrier {\n')
-        for key, value in self.right_barrier.items():
+        for key, value in list(self.right_barrier.items()):
             f.write('\t\t' + key[3:] + " = " + str(value)+";\n")
         f.write('\t}\n')
         f.write('\n\tbox-wall-layer {\n')
-        for key,value in self.bw_layer.items():
+        for key,value in list(self.bw_layer.items()):
             f.write('\t\t' + key[3:] + " = " + str(value)+";\n")
         f.write('\t}\n')
         f.write('}\n')
@@ -692,7 +692,7 @@ class Isewlab(Interface):
                 f.write(" step " + str( self.numpar["defield"] ) + "\n" )
             f.write('bpot = (Bias pot To efield);\n')
             f.write('sol = (Selftransport bpot Using params')
-            for flag in self.script_params.items():
+            for flag in list(self.script_params.items()):
                 if flag[1] is True:
                     f.write(' --' + flag[0])
             f.write(')\n')
@@ -742,7 +742,7 @@ class Isewlab(Interface):
             [wp.append(float(l[5])) for l in structure.results]
             return max(wp)
         else:
-            print "Merit function " + str(self.merit) + "not implemented yet!"
+            print("Merit function " + str(self.merit) + "not implemented yet!")
             return "ERROR"
                 
     def waitforproc(self,delay,message=None):
@@ -752,7 +752,7 @@ class Isewlab(Interface):
         pactive = True
         while pactive:
             if message is not None:
-                print message
+                print(message)
             pactive = False
             for p in self.processes:
                 if self.pltfm.jobstatus(p):
