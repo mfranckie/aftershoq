@@ -12,7 +12,7 @@ from utils.hilbertutil import HilbertUtil
 import numpy as np
 
 class Sgenerator():
-    def __init__(self,origstruct,dw,dx,ddop=None):
+    def __init__(self,origstruct,dw=None,dx=None,ddop=None):
         '''
         Constructor which takes:
         origstruct: original structure to modify, with N layers
@@ -25,6 +25,14 @@ class Sgenerator():
             doping layer widths, and ddens the range of doping densities.
         
         '''
+        
+        if dx is None:
+            dx = []
+            [dx.append(0.) for _ in range(origstruct.Nl)]
+        
+        if dw is None:
+            dw = []
+            [dw.append(0.) for _ in range(origstruct.Nl)]
         
         self.dx = dx
         self.dw = dw

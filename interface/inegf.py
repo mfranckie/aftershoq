@@ -91,7 +91,7 @@ class Inegf(Interface):
         su.mkdir(pathNegf)
         self.writeWannier(ss,path)
         self.writeMaterial(self.wellmat, "# "+str(self.wellmat.name),path)
-        self.writeNegftInp(path, self.einspath ,pathNegf)
+        self.writeNegftInp(su.abspath(path), self.einspath ,pathNegf)
         
     def runStructures(self,structures,path):
         '''Run simulations for all structures in the given structure list with

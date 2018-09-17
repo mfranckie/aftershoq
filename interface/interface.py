@@ -80,7 +80,7 @@ class Interface(object):
         '''
         pass
     
-    def gatherResults(self,structures,path,pathresults=None):
+    def gatherResults(self,structures,path,pathresults=None, runprog=None):
         '''Write results to pathresults/results.log and run hdiag and bandplot
         in pathwd/s.dirname/self.datpath/eins/x/ for each i and x. Stores WS 
         resutls as a new attribute levels[directory][WS level][data field] in 

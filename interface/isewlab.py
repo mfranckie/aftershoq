@@ -283,7 +283,8 @@ class Isewlab(Interface):
         self.writeSampleFile(structure, spath)
         self.writeScriptFile(spath)
     
-    def gatherResults(self,structures,path, wavescale = 1, square = True):
+    def gatherResults(self,structures,path, wavescale = 1, 
+                      square = True, pathresults=None, runprog=None):
         '''Write results to pathresults/results.log. Stores results in local
         variables results, populations, dipoles, energies, and rates. Also
         writes the wave functions to disc.
@@ -297,16 +298,17 @@ class Isewlab(Interface):
             s.rates = self.readRates(s, path)
             self.saveBands(s, path, wavescale, square)
             
-        with open(path+'/results.log','w') as f:
-            f.write('# Results for structures:\nID | N times layer width | N times Mat | Merit\n')
+        with open(path+'/results.log','a') as f:
+            f.write('# Results for structures:\nID | Merit | N times layer width | N times Mat \n')
             for ss in structures:
                 f.write(str(ss.sid)+" ")
+                f.write(str(self.getMerit(ss, path))+" ")
                 for layer in ss.layers:
                     f.write(str(layer.width)+" ")
                 for layer in ss.layers:
                     f.write(str(layer.material.x)+" ")
                               
-                f.write(str(self.getMerit(ss, path)))
+                
                 f.write("\n")
             
     def saveBands(self, s, path, wavescale, square):
@@ -314,7 +316,7 @@ class Isewlab(Interface):
         save them in self.bandplotfile for later plotting.
         '''
         
-        spath = path + s.dirname
+        spath = path + "/" + s.dirname
         if self.version == '4.6.4':
             splitchar = ","
         elif self.version == '4.6.5':
@@ -358,7 +360,7 @@ class Isewlab(Interface):
         '''
         
         results = []
-        spath = path + s.dirname
+        spath = path + "/" + s.dirname
         for dir in su.listdirs(spath):
             try:
                 with open(spath + "/" + dir + "/" + self.resultfile, 'r') as f:
@@ -382,7 +384,7 @@ class Isewlab(Interface):
         '''
         
         results = []
-        spath = path + s.dirname
+        spath = path + "/" + s.dirname
         for dir in su.listdirs(spath):
             tmp = []
             try:
@@ -402,7 +404,7 @@ class Isewlab(Interface):
         '''
         
         results = []
-        spath = path + s.dirname
+        spath = path + "/" + s.dirname
         for dir in su.listdirs(spath):
             tmp = []
             try:
@@ -422,7 +424,7 @@ class Isewlab(Interface):
         '''
         
         results = []
-        spath = path + s.dirname
+        spath = path + "/" + s.dirname
         for dir in su.listdirs(spath):
             tmp = []
             try:
@@ -442,7 +444,7 @@ class Isewlab(Interface):
         '''
         
         results = []
-        spath = path + s.dirname
+        spath = path + "/" + s.dirname
         for dir in su.listdirs(spath):
             tmp = []
             try:

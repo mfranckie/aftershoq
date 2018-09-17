@@ -1,1 +1,6 @@
 example/example_sewlab_EV2238.py
+*.pyc
+*.bak
+example/notebooks/demo/
+demo/
+data/

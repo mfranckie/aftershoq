@@ -38,6 +38,16 @@ def listdirs(path):
     
     return output
 
+def abspath(path):
+    '''Returns absolute path of input path.'''
+    wd = os.getcwd()
+    os.chdir(path)
+    abspath = os.getcwd()
+    os.chdir(wd)
+    
+    return abspath
+    
+
 def waitforproc(proc,delay = 0.1):
     '''Wait for the process proc to finish. Sleep with delay seconds.'''
     while proc.poll() == None:
