@@ -274,7 +274,9 @@ class Isewlab(Interface):
             self.run_sewlab(ss, spath)
                 
     def run_sewlab(self,structure,spath):
-        proc = su.dispatch(self.sewlab, [self.scriptfilename], spath)
+        
+        proc = self.pltfm.submitjob(self.sewlab,[self.scriptfilename],spath)
+        
         self.processes.append(proc)
             
     def initdir(self,structure,spath):
@@ -685,6 +687,7 @@ class Isewlab(Interface):
             f.write(';\n')
             f.write('\n// Potential And Self Basis\n')
             f.write('pot = (Buildpot mqw Using params);\n')
+            f.write('d = (Period pot)')
             # If you want to sweep
             # WARNING: Sewlab might crash and stop the sweep!
             if( self.numpar['Nefield'] > 1 ):
@@ -692,7 +695,7 @@ class Isewlab(Interface):
                 f.write( str( self.numpar['efield0'] ) + " to " )
                 f.write( str( self.numpar['efield0'] + (self.numpar['Nefield']-1)*self.numpar['defield']) )
                 f.write(" step " + str( self.numpar["defield"] ) + "\n" )
-            f.write('bpot = (Bias pot To efield);\n')
+            f.write('bpot = (Bias pot To (* efield d) );\n')
             f.write('sol = (Selftransport bpot Using params')
             for flag in list(self.script_params.items()):
                 if flag[1] is True:
@@ -747,20 +750,6 @@ class Isewlab(Interface):
             print("Merit function " + str(self.merit) + "not implemented yet!")
             return "ERROR"
                 
-    def waitforproc(self,delay,message=None):
-        '''Blocks execution until all processes in self.processes are 
-        finished.
-        '''
-        pactive = True
-        while pactive:
-            if message is not None:
-                print(message)
-            pactive = False
-            for p in self.processes:
-                if self.pltfm.jobstatus(p):
-                    pactive=True
-                    #break
-            time.sleep(delay)
             
     def setTe(self, Te):
         self.Te = Te

@@ -92,7 +92,21 @@ class Interface(object):
         '''Blocks execution until all processes in self.processes are 
         finished.
         '''
-        pass
+        
+        pactive = True
+        while pactive:
+            if message is not None:
+                print(message)
+            pactive = False
+            for p in self.processes:
+                if self.pltfm.jobstatus(p):
+                    pactive=True
+                    #break
+            time.sleep(delay)
+        # close all finished processes:
+        for p in self.processes:
+            p.wait()
+            del p
     
     def getMerit(self,structure,path):
         '''Returns the merit function evaluated for the Structure structure,

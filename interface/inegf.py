@@ -131,25 +131,7 @@ class Inegf(Interface):
             self.processes.append(proc)
         return self.processes
         
-    def waitforproc(self,delay,message=None):
-        '''Blocks execution until all processes in self.processes are 
-        finished.
-        '''
-        
-        pactive = True
-        while pactive:
-            if message is not None:
-                print(message)
-            pactive = False
-            for p in self.processes:
-                if self.pltfm.jobstatus(p):
-                    pactive=True
-                    #break
-            time.sleep(delay)
-        # close all finished processes:
-        for p in self.processes:
-            p.wait()
-            del p
+    
             
     def checkactive(self):
         pactive = False
