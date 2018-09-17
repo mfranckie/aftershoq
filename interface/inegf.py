@@ -347,8 +347,11 @@ class Inegf(Interface):
         try:
             with open(path+"/negft.dat",'r') as f:
                 for line in f:
-                    if '#' in line or line.split()[Inegf.idat.get("ierror")].endswith('1')\
-                            or line.split()[Inegf.idat.get("konv")] == 'NaN':
+                    try:
+                        if '#' in line or line.split()[Inegf.idat.get("ierror")].endswith('1')\
+                                or line.split()[Inegf.idat.get("konv")] == 'NaN':
+                            continue
+                    except(IndexError): # missing # in negft.dat, with intel compiler
                         continue
                     results.append(line.split())
                 if results == []:

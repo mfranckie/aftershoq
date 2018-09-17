@@ -171,6 +171,9 @@ class Material(object):
         self.C = C
         self.x = x
         if x is not None:
+            if x > 1:
+                print("ERROR: x > 1 in material creation! Stopping.")
+                exit(1)
             self.updateAlloy(x)
             
     def copy(self):

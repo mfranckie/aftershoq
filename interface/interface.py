@@ -20,6 +20,8 @@ dictionaries and in __init__() call self.numpar.update( _new_dict_ )
 
 '''
 
+import time
+
 class Interface(object):
     
     merits = {"max gain":0, 
