@@ -687,7 +687,7 @@ class Isewlab(Interface):
             f.write(';\n')
             f.write('\n// Potential And Self Basis\n')
             f.write('pot = (Buildpot mqw Using params);\n')
-            f.write('d = (Period pot)')
+            f.write('d = (Period pot);\n')
             # If you want to sweep
             # WARNING: Sewlab might crash and stop the sweep!
             if( self.numpar['Nefield'] > 1 ):
