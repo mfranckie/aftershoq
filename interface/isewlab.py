@@ -731,23 +731,29 @@ class Isewlab(Interface):
         '''
         
         path = path + "/" + structure.dirname
-        if self.merit == self.merits["Elase"]:
-            proc = su.dispatch('tail', ['-n','1',self.resultfile], path)
-            [output, _] = proc.communicate()
-            output = output.split()
-            return abs(float(output[2]) - float(self.target))
-        elif self.merit == self.merits["max gain"]:
-            gain = []
-            [gain.append(float(l[2])) for l in structure.results]
-            return max(gain)
-        elif self.merit == self.merits["wall plug efficiency"]:
-            wp = []
-            if structure.results == "ERROR":
+        try:
+            
+            if self.merit == self.merits["Elase"]:
+                proc = su.dispatch('tail', ['-n','1',self.resultfile], path)
+                [output, _] = proc.communicate()
+                output = output.split()
+                return abs(float(output[2]) - float(self.target))
+            elif self.merit == self.merits["max gain"]:
+                gain = []
+                [gain.append(float(l[2])) for l in structure.results]
+                return max(gain)
+            elif self.merit == self.merits["wall plug efficiency"]:
+                wp = []
+                if structure.results == "ERROR":
+                    return "ERROR"
+                [wp.append(float(l[5])) for l in structure.results]
+                return max(wp)
+            else:
+                print("Merit function " + str(self.merit) + "not implemented yet!")
                 return "ERROR"
-            [wp.append(float(l[5])) for l in structure.results]
-            return max(wp)
-        else:
-            print("Merit function " + str(self.merit) + "not implemented yet!")
+        
+        # Catch index errors arising from sewlab failing
+        except(IndexError):
             return "ERROR"
                 
             
