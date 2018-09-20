@@ -250,7 +250,7 @@ class Isewself(Interface):
                 f.write(str(mat) + " ")
                 f.write(str(mat.params[mp.Ec]) + " ")
                 if mat.x is None:
-                    f.write(str(1))
+                    f.write(str(0))
                 else:
                     f.write(str(mat.x))
                 f.write("\n")
