@@ -11,8 +11,19 @@ from hilbert import HilbertCurve
 from utils.hilbertutil import HilbertUtil
 import numpy as np
 
+doping_modes = {"FOLLOW LAYER SHEET": 0,
+                "FOLLOW LAYER VOLUME": 1,
+                "FIXED POSITION SHEET": 2,
+                "FIXED POSITION VOLUME": 3}
+
 class Sgenerator():
-    def __init__(self,origstruct,dw=None,dx=None,ddop=None):
+    
+    
+    
+    
+    
+    def __init__(self,origstruct,dw=None,dx=None,ddop=None,
+                 doping_mode = doping_modes.get("FOLLOW LAYER SHEET") ):
         '''
         Constructor which takes:
         origstruct: original structure to modify, with N layers
@@ -25,6 +36,8 @@ class Sgenerator():
             doping layer widths, and ddens the range of doping densities.
         
         '''
+        
+        self.doping_mode = doping_mode
         
         if dx is None:
             dx = []
@@ -47,12 +60,16 @@ class Sgenerator():
     
     def genRanStructs(self,N):
         """
-        Generate N structures with random variations in layer widths
+        Generate N structures with random variations in layer widths.
+        Doping modes "FOLLOW LAYER SHEET/VOLUME" assume that doping
+        covers entire layer width. 
+        Doping modes "FIXED WIDTH SHEET/VOLUME" changes doping pos.
+        independently of layer widths.
         """
         for _ in range(0,N):
             news = Structure(self.orig)
             
-            for il in range(0,len(self.dw)):
+            for il in range(len(self.dw)):
                 w0 = self.orig.layers[il].width
                 width = w0 + 2*(random.random()-0.5)*self.dw[il]
                 news.layers[il].width = width
@@ -60,19 +77,42 @@ class Sgenerator():
             news.dopings = []
             for dl in self.orig.dopings:
                 
-                # find out offset from layer start for original structure
                 zc = (dl[0]+dl[1])/2
                 layerindex = self.orig.layerIndex(zc)
-                dzc = zc - self.orig.layerPos(layerindex)
-                               
-                # define new offset from layer start
-                dzc = dzc + 2*(random.random()-0.5)*self.ddop[0]
-                dopw = (dl[1]-dl[0]) + 2*(random.random()-0.5)*self.ddop[1]
-                dopdens = dl[2] + 2*(random.random()-0.5)*self.ddop[2]
+                sheet = self.orig.layers[layerindex].width*dl[2]
                 
-                # add new doping layer
-                zi = dzc - dopw/2
-                zf = dzc + dopw/2
+                if (self.doping_mode == doping_modes.get("FOLLOW LAYER SHEET") or 
+                    self.doping_mode == doping_modes.get("FOLLOW LAYER VOLUME")):
+                                    
+                    zi = 0
+                    zf = news.layers[layerindex].width
+                    
+                    if self.doping_mode == doping_modes.get("FOLLOW LAYER SHEET"):
+                        dopdens = sheet/news.layers[layerindex].width
+                    else:
+                        dopdens = dl[2]
+                        
+                    dopdens = dopdens + 2*(random.random()-0.5)*self.ddop[2]
+                
+                else:
+                    
+                    dzc = zc - self.orig.layerPos(layerindex)
+                                   
+                    # define new offset from layer start
+                    dzc = dzc + 2*(random.random()-0.5)*self.ddop[0]
+                    dopw = (dl[1]-dl[0]) + 2*(random.random()-0.5)*self.ddop[1]
+                    
+                    # add new doping layer
+                    zi = dzc - dopw/2
+                    zf = dzc + dopw/2
+                    
+                    if self.doping_mode == doping_modes.get("FIXED POSITION SHEET"):
+                        dopdens = sheet/(zf-zi)
+                    else:
+                        dopdens = dl[2]
+                    
+                    dopdens = dopdens + 2*(random.random()-0.5)*self.ddop[2]
+                    
                 news.addDoping(zi, zf, dopdens, layerindex)
                 
             self.structures.append(news)
@@ -105,13 +145,15 @@ class Sgenerator():
                 ND += 1
                 
         # 2) Doping layers:
-        # TODO: extend to multiple doping layers
-        for i in range(0,len(self.orig.dopings[0])):
-            if self.ddop[i] > 0:
-                params.append(self.orig.dopings[0][i])
-                dparams.append(self.ddop[i])
-                dopindex.append(i)
-                ND +=1
+        for d in self.orig.dopings:
+            for i in range(0,len(d)):
+                if self.ddop[i] > 0:
+                    params.append(d[i])
+                    dparams.append(self.ddop[i])
+                    dopindex.append(i)
+                    ND +=1
+                    
+        print("dopindex = " + str(dopindex))
                 
         # 3) Alloy composition x:
         for i in range(0,len(self.dx)):
@@ -187,26 +229,57 @@ class Sgenerator():
                 news.layers[self.windex[i]].width = par_unscaled[pindex]
                 pindex+=1
             
-            # Shifting the doping to always remain in the same layer:
-            doplayer = self.orig.layerIndex(self.orig.dopings[0][0])
-            dopshift = 0
-            for l in range(doplayer):
-                dopshift -= self.orig.layers[l].width - news.layers[l].width
+            news.dopings = []
+            
+            dop_start = 0
+            dop_step = int(len(self.dopindex)/len(self.orig.dopings))
+            for d in self.orig.dopings:
+                    
+                # Doping layers:
+                z0 = d[0]
+                zend = d[1]
+                doping = d[2]
+                center = (z0 + zend)/2
+                width = (zend - z0)/2
+                sheet = width*2*doping
+                cwd = [center, width, doping]
                 
-            # Doping layers:
-            z0 = news.dopings[0][0]
-            zend = news.dopings[0][1]
-            doping = news.dopings[0][2]
-            center = (z0 + zend)/2
-            width = (zend - z0)/2
-            cwd = [center, width, doping]
-            for i in range(0,len(self.dopindex)):
-                cwd[self.dopindex[i]] = par_unscaled[pindex]
-                pindex +=1
-            z0 = cwd[0] - cwd[1] + dopshift
-            zend = cwd[0] + cwd[1] + dopshift
-            doping = cwd[2]
-            news.dopings[0] = [z0,zend,doping]
+                dop_end = dop_start + dop_step
+                
+                for i in range(dop_start,dop_end):
+                    print (len(par_unscaled))
+                    print (pindex)
+                    print (len(self.dopindex))
+                    print(i)
+                    cwd[self.dopindex[i]] = par_unscaled[pindex]
+                    pindex +=1
+                
+                dop_start = dop_end
+                    
+                if (self.doping_mode == doping_modes.get("FOLLOW LAYER SHEET") or 
+                    self.doping_mode == doping_modes.get("FOLLOW LAYER VOLUME")):
+                    
+                    layerindex = self.orig.layerIndex(center)
+                    z0 = news.layerPos(layerindex)
+                    zend = z0 + news.layers[layerindex].width
+                    
+                    if (self.doping_mode == doping_modes.get("FOLLOW LAYER SHEET") ):
+                        doping = cwd[2]*width/(zend-z0)
+                    else:
+                        doping = cwd[2]
+                
+                else:
+                    z0 = cwd[0] - cwd[1]
+                    zend = cwd[0] + cwd[1]
+                    
+                    if (self.doping_mode == doping_modes.get("FIXED POSITION SHEET") ):
+                        doping = cwd[2]/width*(zend-z0)
+                    else:
+                        doping = cwd[2]
+                    
+                    doping = cwd[2]
+                    
+                news.addDoping(z0,zend,doping)
             
             # Alloy composition:
             for i in range(0,len(self.xindex)):
