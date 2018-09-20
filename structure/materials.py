@@ -176,7 +176,8 @@ class MgOzoterac(Material):
 # Ternaries:
 
 class AlGaAs(Material):
-    '''Al_xGa_1-xAs. Bowing parameters from [Vurgaftman2001].'''
+    '''Al_xGa_1-xAs. Bowing parameters from [Vurgaftman2001]. 
+    CBO from Yi et al, PRB 81, 235325 (2010)'''
 
     def __init__(self, name = None, x=None):
         if name is None:
