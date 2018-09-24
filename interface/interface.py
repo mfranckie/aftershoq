@@ -35,6 +35,7 @@ class Interface(object):
               "custom figure of merit":8
               }
     
+    # Energies in meV, temperatures in K
     numpar = {"efield0":0,
               "defield":0.001,
               "Nefield":1,
@@ -50,7 +51,9 @@ class Interface(object):
               "Nper":1,
               "maxits":50,
               "NE":1000,
+              "Emax":1.0,
               "Nk":800,
+              "Ekmax":1.0,
               "Nz":400,
               "Nq":400,
               "use-ifr":True,
@@ -60,6 +63,7 @@ class Interface(object):
               "use-TO": True,
               "use-imp": True,
               "use-e-e": False,
+              "use-poisson": True,
               "use-poisson": True
               }
     

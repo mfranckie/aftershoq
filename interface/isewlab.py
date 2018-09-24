@@ -10,6 +10,7 @@ from utils import const
 import utils.systemutil as su
 import time
 import numpy as np
+import utils.debug as dbg
 
 class Isewlab(Interface):
     '''Interface for sewlab, which is documented in:
@@ -371,7 +372,8 @@ class Isewlab(Interface):
                         [vals.append(float(val)) for val in line.split()]
                         results.append( vals )
             except(IOError):
-                print("WARNING: Error in directory: " + spath + "/" + dir)
+                dbg.debug("WARNING: Error in directory: " + spath + "/" + dir, 
+                          callclass = self)
         
         if results == []:
             return "ERROR"        
@@ -397,7 +399,8 @@ class Isewlab(Interface):
                         tmp.append( vals )
                 results.append( tmp )
             except(IOError):
-                print("WARNING: Error in directory: " + spath + "/" + dir)
+                dbg.debug("WARNING: Error in directory: " + spath + "/" + dir,
+                          callclass = self)
         return results
     
     def readDipoles(self, s, path):
