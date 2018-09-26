@@ -128,6 +128,30 @@ class Structure:
             z += li.width
             if pos<z:
                 return self.layers.index(li)
+            
+    def layerDoping2D(self, index):
+        ''' Returns the sheet doping density in the layer with layer index
+        "Index". '''
+        doping = 0
+        l0 = self.layerPos(index)
+        l1 = self.layerPos(index) + self.layers[index].width
+        for dop in self.dopings:
+            if dop[1] >= l0 and dop[0] <= l1:
+                if dop[0] > l0:
+                    if dop[1] > l1:
+                        ol = l1 - dop[0]
+                    else:
+                        ol = dop[1]-dop[0]
+                else:
+                    if dop[1] > l1:
+                        ol = l1 - l0
+                    else:
+                        ol = dop[1]-l0
+                    
+                    
+                doping += dop[2]*ol/(dop[1]-dop[0])
+                
+        return doping
     
     def __str__(self):
         s = "[width, Material, eta, lambda] (id="+str(self.sid) + ")\n" 
@@ -148,9 +172,11 @@ class Structure:
     dopings=[]
     
     def getSheetDop(self):
+        '''Returns the sheet doping density per period in cm^-2.'''
         sd = 0.
         for l in self.dopings:
             sd += (l[1]-l[0])*l[2]
+        return sd*1e-7
 
 class Material(object):
     '''Defines a material or alloy between two materials.'''
