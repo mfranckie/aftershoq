@@ -74,18 +74,21 @@ def dispatch(prog,args,dirpath=None, infile = None, outfile = None, errfile = No
         outfile = tmp()
     if errfile is None:
         errfile = tmp()
+
+    if args == []:
+        progargs = prog
+    else:
+        progargs = [prog]
     
-    progargs=[prog]
-    
-    for a in args:
-        progargs.append(a)
+        for a in args:
+            progargs.append(a)
     
     if dirpath is None:
         dirpath = "./"
     
     dbg.debug( "<<<< Dispatching program: " + str(progargs) + " from " + dirpath,
                dbg.verb_modes["chatty"])
-    
+
     process=Popen(progargs,cwd=dirpath,close_fds=True,stdout=outfile,stderr=errfile,stdin=infile,
                   universal_newlines=True)
     
