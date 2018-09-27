@@ -10,7 +10,7 @@ to Interface, which writes input files, executes the model, computes the merit f
 results data.
 
 This is a program written for Python 3.6. You need to have Python 3 installed to use and modify this software
-to your needs. The current implentation also uses numpy, scipy, and matplotlib.
+to your needs. The current implentation also uses numpy, scipy, matplotlib, and lxml for some features.
 
 For a demonstration, see the Jupyter notebooks located in examples/notebooks. To install Jupyter, run
 
