@@ -166,7 +166,8 @@ class Isewself(Interface):
         self.ebound = []
         self.dipoles = []
         with open(path+'/results.log','a') as f:
-            f.write('# Results for structures:\nID | Merit |  N times layer width | N times Mat \n')
+            f.write('# Results for structures:\nID | merit | \
+            N times layer width | Ndop times (zi, zf, nvol) | N times x \n')
             for ss in structures:
                 
                 levels = self.readEbound(path + "/" + str(ss.dirname))
@@ -182,8 +183,12 @@ class Isewself(Interface):
                 f.write(str(self.getMerit(ss, path)) + " ")
                 for layer in ss.layers:
                     f.write(str(layer.width)+" ")
+                for doping in ss.dopings:
+                    for val in doping:
+                        f.write( str(val) +" ")
                 for layer in ss.layers:
                     f.write(str(layer.material.x)+" ")
+                
                               
                 f.write("\n")
                 

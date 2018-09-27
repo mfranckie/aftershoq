@@ -81,6 +81,7 @@ class Sgenerator():
                 layerindex = self.orig.layerIndex(zc)
                 sheet = self.orig.layers[layerindex].width*dl[2]
                 
+                
                 if (self.doping_mode == doping_modes.get("FOLLOW LAYER SHEET") or 
                     self.doping_mode == doping_modes.get("FOLLOW LAYER VOLUME")):
                                     
@@ -240,18 +241,16 @@ class Sgenerator():
                 zend = d[1]
                 doping = d[2]
                 center = (z0 + zend)/2
-                width = (zend - z0)/2
-                sheet = width*2*doping
-                cwd = [center, width, doping]
+                width = (zend - z0)
+                sheet = width*doping
+                zizfdens = [center, width, doping]
                 
                 dop_end = dop_start + dop_step
                 
                 for i in range(dop_start,dop_end):
-                    print (len(par_unscaled))
-                    print (pindex)
-                    print (len(self.dopindex))
-                    print(i)
-                    cwd[self.dopindex[i]] = par_unscaled[pindex]
+                    
+                    zizfdens[self.dopindex[i]] = par_unscaled[pindex]
+                    
                     pindex +=1
                 
                 dop_start = dop_end
@@ -264,20 +263,20 @@ class Sgenerator():
                     zend = z0 + news.layers[layerindex].width
                     
                     if (self.doping_mode == doping_modes.get("FOLLOW LAYER SHEET") ):
-                        doping = cwd[2]*width/(zend-z0)
+                        doping = zizfdens[2]*width/(zend-z0)
                     else:
-                        doping = cwd[2]
+                        doping = zizfdens[2]
                 
                 else:
-                    z0 = cwd[0] - cwd[1]
-                    zend = cwd[0] + cwd[1]
+                    z0 = zizfdens[0]
+                    zend = zizfdens[1]
                     
                     if (self.doping_mode == doping_modes.get("FIXED POSITION SHEET") ):
-                        doping = cwd[2]/width*(zend-z0)
+                        doping = zizfdens[2]/width*(zend-z0)
                     else:
-                        doping = cwd[2]
+                        doping = zizfdens[2]
                     
-                    doping = cwd[2]
+                    doping = zizfdens[2]
                     
                 news.addDoping(z0,zend,doping)
             
