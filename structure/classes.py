@@ -7,6 +7,7 @@ Module containing core classes for materials, layers, and structures.
 '''
 
 import structure.matpar as mp
+import copy
 
 class Layer:
     ''' Defines a layer in the heterostructure. Each layer has a material
@@ -25,7 +26,8 @@ class Layer:
         '''
         
         self.width = width
-        self.material = material.copy()
+        self.material = copy.deepcopy(material)
+        
         self.lam = lam
         self.eta = eta
         
@@ -196,15 +198,11 @@ class Material(object):
         self.mat2 = mat2
         self.C = C
         self.x = x
-        if x is not None:
+        if (x is not None):
             if x > 1:
                 print("ERROR: x > 1 in material creation! Stopping.")
                 exit(1)
             self.updateAlloy(x)
-            
-    def copy(self):
-        ''' Returns a deep copy of this material.'''
-        return Material(self.name, self.params, self.mat1, self.mat2, self.C, self.x)
             
     def updateAlloy(self,x):
         '''Updates the alloy composition of this alloy material with x

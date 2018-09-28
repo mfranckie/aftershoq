@@ -196,13 +196,18 @@ class Isewlab(Interface):
         "underline-eigenstates" : 'TRUE'
     }
     
-    script_params = {
+    selftransport_flags = {
         "no-kinetic-balance" : True,
         "no-superself" : True,
         "compute-light" : False,
         "direct-scattering" : False,
         "edge-gain-line" : False,
         "no-ando-dephasing" : False
+    }
+    
+    script_params = {
+        "split-pot-layer": 1,
+        "split-pot-bestFGR": True
     }
     
     light_params = {
@@ -522,10 +527,11 @@ class Isewlab(Interface):
                     discont = structure.layers[0].material.params[mp.Ec]
                 discont = discont - l.material.params[mp.Ec]
                 f.write('discont = ' + str(discont) + "; " )
-                for dop in structure.dopings:
-                    deltadop = dop[0] - structure.layerPos(index)
-                    if deltadop < l.width-1e-5 and deltadop >= 0:
-                        f.write('doping = ' + str(dop[2]*1e-18) + ";")
+                
+                doping = structure.layerDoping2D(index)*1e-18
+                if doping > 0.0:
+                    f.write('doping = ' + str(doping) + ";")
+                
                 f.write(' }\n')
                 index += 1
             f.write('}\n\n')
@@ -692,22 +698,35 @@ class Isewlab(Interface):
             f.write('pot = (Buildpot mqw Using params);\n')
             f.write('d = (Period pot);\n')
             # If you want to sweep
-            # WARNING: Sewlab might crash and stop the sweep!
             if( self.numpar['Nefield'] > 1 ):
                 f.write( "Sweep efield from ")
                 f.write( str( self.numpar['efield0'] ) + " to " )
-                f.write( str( self.numpar['efield0'] + (self.numpar['Nefield']-1)*self.numpar['defield']) )
+                f.write( str( self.numpar['efield0'] + 
+                              (self.numpar['Nefield']-1)*self.numpar['defield']) )
                 f.write(" step " + str( self.numpar["defield"] ) + "\n" )
             f.write('bpot = (Bias pot To (* efield d) );\n')
-            f.write('sol = (Selftransport bpot Using params')
-            for flag in list(self.script_params.items()):
+            
+            if(self.script_params["split-pot-layer"] > -1):
+                if(self.script_params["split-pot-bestFGR"] == True):
+                    f.write('layer = (BestFGR bpot 1 Using params);\n')
+                else:
+                    f.write('layer = ' + 
+                            str( self.script_params["split-pot-layer"]) + ';\n' )
+                f.write('left = (Splitpot bpot At-layer layer And-get Left);\n')
+                f.write('right = (Splitpot bpot At-layer layer And-get Right);\n')
+                f.write('sol = (Selftransport left right Using params')
+        
+            else:
+                f.write('sol = (Selftransport bpot Using params')
+                
+            for flag in list(self.selftransport_flags.items()):
                 if flag[1] is True:
                     f.write(' --' + flag[0])
             f.write(')\n')
             f.write('Save sol.basis "' + self.wavefile + '":"wf"\n')
             f.write('Save bpot "' + self.potfile + '"\n')
             f.write('Write efield sol.J (Stats Max sol.GainLorentz) (Stats MaxLoc sol.GainLorentz) ')
-            if self.script_params["compute-light"] == True:
+            if self.selftransport_flags["compute-light"] == True:
                 f.write(' (OpticalPower sol ')
                 f.write(str( self.light_params["periods"] ) + ' ')
                 f.write(str( self.light_params["width"] ) +  ' ')
@@ -780,6 +799,19 @@ class Isewlab(Interface):
             self.script_params["no-superself"] = False
         else:
             self.script_params["no-superself"] = True
+            
+    def splitPot(self, default_layer, use_bestFGR = True):
+        '''Use BestFGR to split potentail at default_layer. If
+        use_bestFGR = True (default) then sewlab uses BestFGR to split 
+        the potential at the best layer for FGR calculations in the two
+        regions. The splitting is done for each sweep point.
+        Splitting can be turned off by setting default_layer = -1.
+        '''
+        
+        self.script_params["split-pot-layer"] = default_layer
+        self.script_params["split-pot-bestFGR"] = use_bestFGR
+        
+        
                         
     def computeLight(self, bool, minE = None, maxE = None, wg_loss = 4., m_loss = 4., width = 4, Rfacet = 0.25, periods = 30):
         '''Choose to compute light. Optional parameters if bool = True:

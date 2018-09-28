@@ -86,7 +86,35 @@ class Fathololoumi2012(Structure):
         
         self.addDoping(0, self.layers[idop].width, vdop, idop)
     
+
+class N471(Structure):
+    '''THz QCL emitting at 3.74 THz "single quantum well active region".
+    Published in: Scalari et al., Appl. Phys. Lett. 91, 032103 (2007)
+    '''
+    def __init__(self):
+        Structure.__init__(self)
         
+        self.setIFR(0.1, 10)
+        well = GaAs()
+        barrier = AlGaAs(x = 0.15)
+        
+        self.addLayerWM(4.7, barrier)
+        self.addLayerWM(28, well)
+        self.addLayerWM(2.3, barrier)
+        self.addLayerWM(18, well)
+        self.addLayerWM(2.3, barrier) 
+        self.addLayerWM(16.5, well)
+        self.addLayerWM(2.3, barrier) 
+        self.addLayerWM(16.0, well) # <----- # 7 doped to 2.4*10^16 cm^-3 (3.84*10^10 cm^-2)
+        self.addLayerWM(2.3, barrier) 
+        self.addLayerWM(15.5, well)
+        
+        idop= 7
+        vdop = 2.4e16 # cm^-3
+        
+        self.addDoping(0, self.layers[idop].width, vdop, idop)  
+        
+
 class EV1907(Structure):
     '''
     Strained 8.5 micron design. Published in thesis of J. Wolf (ETH Zuerich, 2017)
@@ -124,9 +152,52 @@ class EV1907(Structure):
         self.addDoping(0, 1.4, dop, 10)
         self.addDoping(0, 4.0, dop, 11)
         
+        
+class EV2016(Structure):
+    '''
+    Strained 8.5 micron design, seed for the genetically optimized design EV2017.
+    Published in thesis of J. Wolf (ETH Zuerich, 2017)
+    '''
+        
+    def __init__(self):
+        Structure.__init__(self)
+        
+        self.setIFR(0.1, 10)
+        
+        alinas_s = AlInAs(x = 0.64)
+        # to account for strain (see thesis Tobias Gresch ETH Zürich 2009)
+        alinas_s.params[mp.Ec] = 0.72
+        gainas_s = InGaAs(x = 0.58)
+        gainas_s.params[mp.Ec] = 0.0
+        
+        
+        self.addLayerWM(3.1, alinas_s)
+        self.addLayerWM(2.5, gainas_s)
+        self.addLayerWM(0.6, alinas_s)
+        self.addLayerWM(5.7, gainas_s)
+        self.addLayerWM(0.7, alinas_s)
+        self.addLayerWM(5.5, gainas_s)
+        self.addLayerWM(1.2, alinas_s)
+        self.addLayerWM(4.6, gainas_s)
+        self.addLayerWM(1.1, alinas_s)
+        self.addLayerWM(4.5, gainas_s) # <----- #9  Doped to 0.101*10^18 cm^-3
+        self.addLayerWM(1.4, alinas_s) # <----- #10 Doped to 0.101*10^18 cm^-3 
+        self.addLayerWM(4.0, gainas_s) # <----- #11 Doped to 0.101*10^18 cm^-3
+        self.addLayerWM(1.5, alinas_s)
+        self.addLayerWM(3.4, gainas_s)
+        self.addLayerWM(1.7, alinas_s)
+        self.addLayerWM(3.5, gainas_s)
+        
+        dop = 0.120276e18
+        
+        self.addDoping(0, 4.5, dop, 9)
+        self.addDoping(0, 1.4, dop, 10)
+        self.addDoping(0, 4.0, dop, 11)
+        
 class EV2017(Structure):
     '''
-    Genetically optimized 8.5 micron design. Published in thesis of J. Wolf (ETH Zuerich, 2017)
+    Genetically optimized 8.5 micron design. 
+    Published in thesis of J. Wolf (ETH Zuerich, 2017)
     '''
     
     def __init__(self):
@@ -135,7 +206,10 @@ class EV2017(Structure):
         self.setIFR(0.1, 10)
         
         alinas_s = AlInAs(x = 0.64)
+        # to account for strain (see thesis Tobias Gresch ETH Zürich 2009)
+        alinas_s.params[mp.Ec] = 0.72
         gainas_s = InGaAs(x = 0.58)
+        gainas_s.params[mp.Ec] = 0.0
         
         
         self.addLayerWM(3.1, alinas_s)
