@@ -18,6 +18,7 @@ from structure.materials import GaAs, AlGaAs
 from numerics.runplatf import Local
 import utils.systemutil as su
 import utils.debug as dbg
+from utils.qcls import *
 from interface.isewlab import Isewlab
 from numerics.paraopt import Paraopt
 from matplotlib import pyplot as pl
@@ -27,10 +28,10 @@ import numpy as np
 if __name__ == '__main__':
     
     # the binaries (change to your bin folder):
-    binpath = "/usr/local/bin/sewlab_MAC"
+    binpath = "sewlab"
     
     # the working directory:
-    path = "../../demo/"
+    path = "demo"
     path = os.getcwd()+"/"+path
     su.mkdir(path)
     
@@ -41,14 +42,14 @@ if __name__ == '__main__':
     
     sep = '\n----------------------------------------------\n'
     
-    print '--- Welcome to the "sewlab" demonstration of ---\n'
-    print '               "AFTERSHOQ" \n\n'
-    print '       Written by Martin Franckie 2018.'
-    print '       Please give credit where credit'
-    print '                   is due\n'
-    print sep
-    print 'Creating semiconductor materials and alloys:\n'
-    print '       ( All CBO relative to GaAs )\n'
+    print('--- Welcome to the "sewlab" demonstration of ---\n')
+    print('               "AFTERSHOQ" \n\n')
+    print('       Written by Martin Franckie 2018.')
+    print('       Please give credit where credit')
+    print('                   is due\n')
+    print(sep)
+    print('Creating semiconductor materials and alloys:\n')
+    print('       ( All CBO relative to GaAs )\n')
     
     # create materials:
     # create GaAs:
@@ -57,44 +58,25 @@ if __name__ == '__main__':
     
     # create Al_0.15Ga_0.85As 
     algaas = AlGaAs(x = 0.15)
-    print "\n" + str(algaas) + ":\n"
+    print("\n" + str(algaas) + ":\n")
     for val in mp.valdict:
-        print val + " = " + str(algaas.params[mp.valdict[val]])
+        print(val + " = " + str(algaas.params[mp.valdict[val]]))
     
-    print sep
-    print 'Creating a structure from generated materials:\n'
-    print '[width, material, eta, lambda]'
+    print(sep)
+    print('Creating a structure from generated materials:\n')
+    print('[width, material, eta, lambda]')
     
-    # creating a two quantum-well structure
-    mystruct = Structure()
+    # creating a structure:
     
-    # set interface roughness parameters for all interfaces:
-    eta = 0.1
-    lam = 2.0
-    mystruct.setIFR(eta, lam)
+    mystruct = EV2017()
     
-    # Add layers:
-    mystruct.addLayerMW(5.1,algaas)
-    mystruct.addLayerMW(9.3,gaas)
-    mystruct.addLayerMW(1.0,algaas)
-    mystruct.addLayerMW(10.5,gaas)
-    mystruct.addLayerMW(3.3,algaas)
-    mystruct.addLayerMW(8.7,gaas)
-    mystruct.addLayerMW(4.2,algaas)
-    mystruct.addLayerMW(16.5,gaas)
-
-    # when using sewlab, doping will cover entire layer.
-    # to make a different doping thickness, create a 
-    # separate doping layer.
-    mystruct.addDoping(0, 16.5, 2e16, 7)
+    print("Structure created : ")
+    print(mystruct)
     
-    print "Structure created : "
-    print mystruct
+    print(sep)
     
-    print sep
-    
-    print 'Creating directory tree in: ' + path + '.\n'
-    print 'Please change variable "binpath" to match your binaries!\n'
+    print('Creating directory tree in: ' + path + '.\n')
+    print('Please change variable "binpath" to match your binaries!\n')
     
     # Define the platform, local or cluster (e. g. Euler cluster at ETH Zuerich)
     pltfm = Local()
@@ -111,8 +93,10 @@ if __name__ == '__main__':
     # The electric field in the simulation
     efield0 = -1
     defield = -0.5
-    Nefield = 21
-    model.numpar["efield0"] = efield0
+    Nefield = 1
+    model.numpar["efield0"] = -0.100
+    model.numpar["defield"] = -0.020
+    model.numpar["Nefield"] = 5
     
     # Set the elecron and lattice temperatures
     Te = 100 # Kelvin
@@ -128,36 +112,41 @@ if __name__ == '__main__':
     model.writeSampleFile(mystruct, path)
     model.writeScriptFile(path)
     
-    print sep + 'Starting simulations in directory tree (sewlab version ' + model.version + ' ). This will overwrite any previous results.'
+    print(sep + 'Starting simulations in directory tree (sewlab version ' + model.version + ' ). This will overwrite any previous results.')
     
-    # for looping over bias points:
-    for i in range(0,Nefield):
-        model.numpar["efield0"] = efield0 + defield*i
+    model.runStructures([mystruct], path)
+    model.waitforproc(5, "sewlab is running...")
     
-        # execute the model for simulating the structures and wait:
-        # (Comment out these next two lines if you just want to gather results which were already simulated)
-        model.runStructures( [mystruct], path )
-        model.waitforproc(5, "sewlab is running.... iteration = " + str( i ))
-    
-    print sep + 'Gathering results to: ' + path + '/results.log'
+    print(sep + 'Gathering results to: ' + path + '/results.log')
     
     # gather the results from the simulation of all structures:
     model.gatherResults( [mystruct], path )
     
-    print sep + 'Results acheived!'
+    print(sep + 'Results acheived!')
     
     # now, the results for each bias are stored in mystruct.results, .dipoles, .energies, .populations, and .rates
     results = np.array( mystruct.results )
     descr = ['E (kV/cm)', 'j (A/cm^2)', 'Max gain (1/cm)', 'Peak energy. (meV)']
-    print descr
-    print results
+    print(descr)
+    print(results)
     # plots the I-V:
     pl.plot(-results[:,0], results[:,1],'-*')
     pl.xlabel("Electric field (kV/cm)")
     pl.ylabel("Current density (A/cm^2)")
+    
+    pl.figure(2)
+    pl.plot(-results[:,0], results[:,2],'-*')
+    pl.xlabel("Electric field (kV/cm)")
+    pl.ylabel("Max gain (cm^{-1})")
+    
+    pl.figure(3)
+    pl.plot(-results[:,0], results[:,3]*1000.,'-*')
+    pl.xlabel("Electric field (kV/cm)")
+    pl.ylabel("Peak position (meV)")
+    
     pl.show()
     
     
-    print sep + 'Program completed! Good bye!'
+    print(sep + 'Program completed! Good bye!')
     dbg.close()
     
