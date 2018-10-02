@@ -200,7 +200,7 @@ class Isewlab(Interface):
         "no-kinetic-balance" : True,
         "no-superself" : True,
         "compute-light" : False,
-        "direct-scattering" : False,
+        "enable-direct-scattering" : False,
         "edge-gain-line" : False,
         "no-ando-dephasing" : False
     }
@@ -275,7 +275,6 @@ class Isewlab(Interface):
         for ss in structures:
             spath = path + "/" + str(ss.dirname)
             su.mkdir(spath)
-            spath = spath + "/" + str( abs( self.numpar["efield0"] ) ) + "/" 
             self.initdir(ss,spath)
             self.run_sewlab(ss, spath)
                 
@@ -306,7 +305,7 @@ class Isewlab(Interface):
             s.rates = self.readRates(s, path)
             self.saveBands(s, path, wavescale, square)
             
-        with open(path+'/results.log','a') as f:
+        with open(pathresults+'/results.log','a') as f:
             f.write('# Results for structures:\nID | Merit | N times layer width | N times Mat \n')
             for ss in structures:
                 f.write(str(ss.sid)+" ")
@@ -331,34 +330,32 @@ class Isewlab(Interface):
             splitchar = " "
         else:
             splitchar = ","
-        for dir in su.listdirs(spath):
-            try:
-                fwave = open(spath + "/" + dir + "/" + self.wavefile, 'r')
-                fpot = open(spath + "/" + dir + "/" + self.potfile, 'r')
-                fbands = open(spath + "/" + dir + "/" + self.bandplotfile, 'w')
-                
-                for _ in range(0, 3):
-                    fpot.readline()
-                E = fwave.readline().split(splitchar)
-                
-                for lwave in fwave:
-                    lpot = fpot.readline().split()
-                    lwavesplit = lwave.split(splitchar)
-                    fbands.write(lwavesplit[0] + " " + lpot[1])
-                    for iwave in range(1, len(E)):
-                        if square:
-                            value = float( lwavesplit[iwave] )*float( lwavesplit[iwave] )*wavescale \
-                                + float(E[iwave])
-                        else:
-                            value = float( lwavesplit[iwave] )*wavescale + float(E[iwave])
-                        fbands.write(" " + str( value ))
-                    fbands.write("\n")
-                    
-                fwave.close()
-                fpot.close()
-                fbands.close()
-            except(IOError):
-                pass
+    
+        fwave = open(spath + "/" + self.wavefile, 'r')
+        fpot = open(spath + "/" + self.potfile, 'r')
+        fbands = open(spath + "/" + self.bandplotfile, 'w')
+        
+        for _ in range(0, 3):
+            fpot.readline()
+        E = fwave.readline().split(splitchar)
+        
+        for lwave in fwave:
+            lpot = fpot.readline().split()
+            lwavesplit = lwave.split(splitchar)
+            fbands.write(lwavesplit[0] + " " + lpot[1])
+            for iwave in range(1, len(E)):
+                if square:
+                    value = float( lwavesplit[iwave] )*float( lwavesplit[iwave] )*wavescale \
+                        + float(E[iwave])
+                else:
+                    value = float( lwavesplit[iwave] )*wavescale + float(E[iwave])
+                fbands.write(" " + str( value ))
+            fbands.write("\n")
+            
+        fwave.close()
+        fpot.close()
+        fbands.close()
+            
             
             
     def readResults(self, s, path):
@@ -369,16 +366,13 @@ class Isewlab(Interface):
         
         results = []
         spath = path + "/" + s.dirname
-        for dir in su.listdirs(spath):
-            try:
-                with open(spath + "/" + dir + "/" + self.resultfile, 'r') as f:
-                    for line in f:
-                        vals = []
-                        [vals.append(float(val)) for val in line.split()]
-                        results.append( vals )
-            except(IOError):
-                dbg.debug("WARNING: Error in directory: " + spath + "/" + dir, 
-                          callclass = self)
+
+        with open(spath + "/" + self.resultfile, 'r') as f:
+            for line in f:
+                vals = []
+                [vals.append(float(val)) for val in line.split()]
+                results.append( vals )
+    
         
         if results == []:
             return "ERROR"        
@@ -394,18 +388,14 @@ class Isewlab(Interface):
         
         results = []
         spath = path + "/" + s.dirname
-        for dir in su.listdirs(spath):
-            tmp = []
-            try:
-                with open(spath + "/" + dir + "/" + self.popfile, 'r') as f:
-                    for line in f:
-                        vals = []
-                        [vals.append(float(val)) for val in line.split()]
-                        tmp.append( vals )
-                results.append( tmp )
-            except(IOError):
-                dbg.debug("WARNING: Error in directory: " + spath + "/" + dir,
-                          callclass = self)
+        
+        with open(spath + "/" + self.popfile, 'r') as f:
+            for line in f:
+                vals = []
+                [vals.append(float(val)) for val in line.split()]
+                tmp.append( vals )
+        results.append( tmp )
+            
         return results
     
     def readDipoles(self, s, path):
@@ -415,17 +405,13 @@ class Isewlab(Interface):
         
         results = []
         spath = path + "/" + s.dirname
-        for dir in su.listdirs(spath):
-            tmp = []
-            try:
-                with open(spath + "/" + dir + "/" + self.dipolefile, 'r') as f:
-                    for line in f:
-                        vals = []
-                        [vals.append(float(val)) for val in line.split()]
-                        tmp.append( vals )
-                results.append( tmp )
-            except(IOError):
-                print("WARNING: Error in directory: " + spath + "/" + dir)
+        with open(spath + "/" + self.dipolefile, 'r') as f:
+            for line in f:
+                vals = []
+                [vals.append(float(val)) for val in line.split()]
+                tmp.append( vals )
+        results.append( tmp )
+            
         return results
     
     def readRates(self, s, path):
@@ -435,17 +421,14 @@ class Isewlab(Interface):
         
         results = []
         spath = path + "/" + s.dirname
-        for dir in su.listdirs(spath):
-            tmp = []
-            try:
-                with open(spath + "/" + dir + "/" + self.ratefile, 'r') as f:
-                    for line in f:
-                        vals = []
-                        [vals.append(float(val)) for val in line.split()]
-                        tmp.append( vals )
-                results.append( tmp )
-            except(IOError):
-                print("WARNING: Error in directory: " + spath + "/" + dir)
+        
+        with open(spath + "/" + self.ratefile, 'r') as f:
+            for line in f:
+                vals = []
+                [vals.append(float(val)) for val in line.split()]
+                tmp.append( vals )
+        results.append( tmp )
+            
         return results
     
     def readEnergies(self, s, path):
@@ -455,15 +438,12 @@ class Isewlab(Interface):
         
         results = []
         spath = path + "/" + s.dirname
-        for dir in su.listdirs(spath):
-            tmp = []
-            try:
-                with open(spath + "/" + dir + "/" + self.energiesfile, 'r') as f:
-                    for line in f:
-                        tmp.append( float(line) )
-                results.append( tmp )
-            except(IOError):
-                print("WARNING: Error in directory: " + spath + "/" + dir)
+        
+        with open(spath + "/" + dir + "/" + self.energiesfile, 'r') as f:
+            for line in f:
+                tmp.append( float(line) )
+        results.append( tmp )
+            
         return results
     
     def writeSampleFile(self,structure,path):
@@ -742,7 +722,7 @@ class Isewlab(Interface):
             f.write('Save sol "' + self.energiesfile + '":"energies"\n')
             f.write('Save sol "' + self.dipolefile + '":"dipoles"\n')
             f.write('Save bpot.doping "' + self.dopingfile + '"\n')
-            f.write('Save sol.GainLorentz "gain"!efield!".itx"\n')
+            f.write('Save sol.GainLorentz "gainL_"!efield!".itx"\n')
             if( self.numpar['Nefield'] > 1 ):
                 f.write("Endsweep\n")
             f.write("Quit\n")
@@ -799,6 +779,12 @@ class Isewlab(Interface):
             self.script_params["no-superself"] = False
         else:
             self.script_params["no-superself"] = True
+            
+    def useDirectScatt(self, bool):
+        if( bool == True ):
+            self.script_params["enable-direct-scattering"] = True
+        else:
+            self.script_params["enable-direct-scattering"] = False
             
     def splitPot(self, default_layer, use_bestFGR = True):
         '''Use BestFGR to split potentail at default_layer. If
