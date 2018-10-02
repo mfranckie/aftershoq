@@ -159,18 +159,18 @@ class Isewlab(Interface):
 
         # Light Parameters */
         "light-fixed-laser-energy" :  'FALSE',
-        "light-use-bloch-gain" :  'TRUE',
-        "light-laser-energy" :  50.0e-3,
-        "light-gain-window-min-energy" :  40.0e-3,
-        "light-gain-window-max-energy" :  60.0e-3,
+        "light-use-bloch-gain" :  'FALSE',
+        "light-laser-energy" :  150.0e-3,
+        "light-gain-window-min-energy" :  0.1,
+        "light-gain-window-max-energy" :  0.3,
         "light-gain-window-sampling"   :  64,
-        "light-losses" :  72,
+        "light-losses" :  4.0,
         "light-initial-photonflux" :  2e22,
         "light-bracketing-maxiter" :  128,
-        "light-convergence-maxiter" :  5000,
-        "light-convergence-tolerance" :  1e-1,     # in cm-1 */
+        "light-convergence-maxiter" :  500,
+        "light-convergence-tolerance" :  0.1,     # in cm-1 */
         "light-damping-factor" :  0.3,
-        "light-photonflux-precision" :  0.005
+        "light-photonflux-precision" :  0.05
     }
     
     selfsolver_params = {
@@ -274,7 +274,6 @@ class Isewlab(Interface):
         
         for ss in structures:
             spath = path + "/" + str(ss.dirname)
-            su.mkdir(spath)
             self.initdir(ss,spath)
             self.run_sewlab(ss, spath)
                 
@@ -289,9 +288,18 @@ class Isewlab(Interface):
         su.mkdir(spath)
         self.writeSampleFile(structure, spath)
         self.writeScriptFile(spath)
+        
+        start = self.numpar["efield0"]
+        step  = self.numpar["defield"]
+        stop = step*(self.numpar["Nefield"]-1) + start
+        
+        for i in range(self.numpar["Nefield"]):
+            efield = start + step*i
+            efield = np.round(efield*10000)/10000
+            su.mkdir(spath + "/" + str(efield))
     
     def gatherResults(self,structures,path, wavescale = 1, 
-                      square = True, pathresults=None, runprog=None):
+                      square = True, pathresults=".", runprog=None):
         '''Write results to pathresults/results.log. Stores results in local
         variables results, populations, dipoles, energies, and rates. Also
         writes the wave functions to disc.
@@ -331,30 +339,37 @@ class Isewlab(Interface):
         else:
             splitchar = ","
     
-        fwave = open(spath + "/" + self.wavefile, 'r')
-        fpot = open(spath + "/" + self.potfile, 'r')
-        fbands = open(spath + "/" + self.bandplotfile, 'w')
-        
-        for _ in range(0, 3):
-            fpot.readline()
-        E = fwave.readline().split(splitchar)
-        
-        for lwave in fwave:
-            lpot = fpot.readline().split()
-            lwavesplit = lwave.split(splitchar)
-            fbands.write(lwavesplit[0] + " " + lpot[1])
-            for iwave in range(1, len(E)):
-                if square:
-                    value = float( lwavesplit[iwave] )*float( lwavesplit[iwave] )*wavescale \
-                        + float(E[iwave])
-                else:
-                    value = float( lwavesplit[iwave] )*wavescale + float(E[iwave])
-                fbands.write(" " + str( value ))
-            fbands.write("\n")
+        dirs = su.listdirs(spath)
+        for dir in dirs:
             
-        fwave.close()
-        fpot.close()
-        fbands.close()
+            try:
+                fwave = open(spath + "/" + dir + "/" + self.wavefile, 'r')
+                fpot = open(spath + "/" + dir + "/"  + self.potfile, 'r')
+                fbands = open(spath + "/" + dir + "/"  + self.bandplotfile, 'w')
+            except(IOError):
+                # something wrong for this bias, try next
+                continue
+        
+            for _ in range(0, 3):
+                fpot.readline()
+            E = fwave.readline().split(splitchar)
+            
+            for lwave in fwave:
+                lpot = fpot.readline().split()
+                lwavesplit = lwave.split(splitchar)
+                fbands.write(lwavesplit[0] + " " + lpot[1])
+                for iwave in range(1, len(E)):
+                    if square:
+                        value = float( lwavesplit[iwave] )*float( lwavesplit[iwave] )*wavescale \
+                            + float(E[iwave])
+                    else:
+                        value = float( lwavesplit[iwave] )*wavescale + float(E[iwave])
+                    fbands.write(" " + str( value ))
+                fbands.write("\n")
+                
+            fwave.close()
+            fpot.close()
+            fbands.close()
             
             
             
@@ -369,9 +384,13 @@ class Isewlab(Interface):
 
         with open(spath + "/" + self.resultfile, 'r') as f:
             for line in f:
-                vals = []
-                [vals.append(float(val)) for val in line.split()]
-                results.append( vals )
+                try:
+                    vals = []
+                    [vals.append(float(val)) for val in line.split()]
+                    results.append( vals )
+                except(ValueError):
+                    # Comment lines are ignored
+                    continue
     
         
         if results == []:
@@ -389,12 +408,18 @@ class Isewlab(Interface):
         results = []
         spath = path + "/" + s.dirname
         
-        with open(spath + "/" + self.popfile, 'r') as f:
-            for line in f:
-                vals = []
-                [vals.append(float(val)) for val in line.split()]
-                tmp.append( vals )
-        results.append( tmp )
+        tmp = []
+        for dir in su.listdirs(spath):
+            try:
+                with open(spath + "/" + self.popfile, 'r') as f:
+                    for line in f:
+                        vals = []
+                        [vals.append(float(val)) for val in line.split()]
+                        tmp.append( vals )
+            except(IOError):
+                tmp.append("#ERROR")
+            
+            results.append( tmp )
             
         return results
     
@@ -405,12 +430,18 @@ class Isewlab(Interface):
         
         results = []
         spath = path + "/" + s.dirname
-        with open(spath + "/" + self.dipolefile, 'r') as f:
-            for line in f:
-                vals = []
-                [vals.append(float(val)) for val in line.split()]
-                tmp.append( vals )
-        results.append( tmp )
+        tmp = []
+        for dir in su.listdirs(spath):
+            try:
+                with open(spath + "/" + self.dipolefile, 'r') as f:
+                    for line in f:
+                        vals = []
+                        [vals.append(float(val)) for val in line.split()]
+                        tmp.append( vals )
+            except(IOError):
+                tmp.append("#ERROR")
+            
+            results.append( tmp )
             
         return results
     
@@ -421,13 +452,18 @@ class Isewlab(Interface):
         
         results = []
         spath = path + "/" + s.dirname
-        
-        with open(spath + "/" + self.ratefile, 'r') as f:
-            for line in f:
-                vals = []
-                [vals.append(float(val)) for val in line.split()]
-                tmp.append( vals )
-        results.append( tmp )
+        tmp = []
+        for dir in su.listdirs(spath):
+            try:
+                with open(spath + "/" + self.ratefile, 'r') as f:
+                    for line in f:
+                        vals = []
+                        [vals.append(float(val)) for val in line.split()]
+                        tmp.append( vals )
+            except(IOError):
+                tmp.append("#ERROR")
+            
+            results.append( tmp )
             
         return results
     
@@ -438,11 +474,16 @@ class Isewlab(Interface):
         
         results = []
         spath = path + "/" + s.dirname
-        
-        with open(spath + "/" + dir + "/" + self.energiesfile, 'r') as f:
-            for line in f:
-                tmp.append( float(line) )
-        results.append( tmp )
+        tmp = []
+        for dir in su.listdirs(spath):
+            try:
+                with open(spath + "/" + dir + "/" + self.energiesfile, 'r') as f:
+                    for line in f:
+                        tmp.append( float(line) )
+            except(IOError):
+                tmp.append("#ERROR")
+                
+            results.append( tmp )
             
         return results
     
@@ -677,6 +718,12 @@ class Isewlab(Interface):
             f.write('\n// Potential And Self Basis\n')
             f.write('pot = (Buildpot mqw Using params);\n')
             f.write('d = (Period pot);\n')
+            
+            f.write('Write "E" "J" "Max gain" "Loc" ')
+            if self.selftransport_flags["compute-light"]:
+                f.write('"Power" "Wallplug" ')
+            f.write('To "' + self.resultfile + '"\n')
+            
             # If you want to sweep
             if( self.numpar['Nefield'] > 1 ):
                 f.write( "Sweep efield from ")
@@ -703,8 +750,8 @@ class Isewlab(Interface):
                 if flag[1] is True:
                     f.write(' --' + flag[0])
             f.write(')\n')
-            f.write('Save sol.basis "' + self.wavefile + '":"wf"\n')
-            f.write('Save bpot "' + self.potfile + '"\n')
+            f.write('Save sol.basis ""!efield!"/' + self.wavefile + '":"wf"\n')
+            f.write('Save bpot ""!efield!"/' + self.potfile + '"\n')
             f.write('Write efield sol.J (Stats Max sol.GainLorentz) (Stats MaxLoc sol.GainLorentz) ')
             if self.selftransport_flags["compute-light"] == True:
                 f.write(' (OpticalPower sol ')
@@ -717,12 +764,12 @@ class Isewlab(Interface):
             f.write('To "')
             f.write(self.resultfile)
             f.write('"\n')
-            f.write('Save sol "' + self.popfile + '":"populations"\n')
-            f.write('Save sol "' + self.ratefile + '":"rates"\n')
-            f.write('Save sol "' + self.energiesfile + '":"energies"\n')
-            f.write('Save sol "' + self.dipolefile + '":"dipoles"\n')
-            f.write('Save bpot.doping "' + self.dopingfile + '"\n')
-            f.write('Save sol.GainLorentz "gainL_"!efield!".itx"\n')
+            f.write('Save sol ""!efield!"/' + self.popfile + '":"populations"\n')
+            f.write('Save sol ""!efield!"/' + self.ratefile + '":"rates"\n')
+            f.write('Save sol ""!efield!"/' + self.energiesfile + '":"energies"\n')
+            f.write('Save sol ""!efield!"/' + self.dipolefile + '":"dipoles"\n')
+            f.write('Save bpot.doping ""!efield!"/' + self.dopingfile + '"\n')
+            f.write('Save sol.GainLorentz ""!efield!"/gainLor.itx"\n')
             if( self.numpar['Nefield'] > 1 ):
                 f.write("Endsweep\n")
             f.write("Quit\n")
@@ -770,21 +817,21 @@ class Isewlab(Interface):
         
     def useKinBal(self, bool):
         if( bool == True ):
-            self.script_params["no-kinetic-balance"] = False
+            self.selftransport_flags["no-kinetic-balance"] = False
         else:
-            self.script_params["no-kinetic-balance"] = True
+            self.selftransport_flags["no-kinetic-balance"] = True
             
     def useSuperself(self, bool):
         if( bool == True ):
-            self.script_params["no-superself"] = False
+            self.selftransport_flags["no-superself"] = False
         else:
-            self.script_params["no-superself"] = True
+            self.selftransport_flags["no-superself"] = True
             
     def useDirectScatt(self, bool):
         if( bool == True ):
-            self.script_params["enable-direct-scattering"] = True
+            self.selftransport_flags["enable-direct-scattering"] = True
         else:
-            self.script_params["enable-direct-scattering"] = False
+            self.selftransport_flags["enable-direct-scattering"] = False
             
     def splitPot(self, default_layer, use_bestFGR = True):
         '''Use BestFGR to split potentail at default_layer. If
@@ -807,14 +854,17 @@ class Isewlab(Interface):
         Rfacet: Facet reflectivity (of one facet)
         periods: Number of periods of the active region
         '''
+        
         if( bool == True ):
-            self.script_params["compute-light"] = True
+            self.selftransport_flags["compute-light"] = True
             self.transport_params["light-losses"] = wg_loss
-            self.transport_params["light-gain-window-min-energy"] = minE
-            self.transport_params["light-gain-window-max-energy"] = maxE
+            if minE is not None :
+                self.transport_params["light-gain-window-min-energy"] = minE
+            if maxE is not None :
+                self.transport_params["light-gain-window-max-energy"] = maxE
             self.light_params["mirror_loss"] = m_loss
             self.light_params["Rfacet"] = Rfacet
             self.light_params["width"] = width
             self.light_params["periods"] = periods
         else:
-            self.script_params["compute-light"] = False
+            self.selftransport_flags["compute-light"] = False
