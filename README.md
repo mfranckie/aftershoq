@@ -12,9 +12,29 @@ results data.
 This is a program written for Python 3.6. You need to have Python 3 installed to use and modify this software
 to your needs. The current implentation also uses numpy, scipy, matplotlib, and lxml for some features.
 
+
+# Installation
+
+When cloning, use the --recursive option:
+
+git clone --recursive https://github.com/mfranckie/aftershoq.git
+
+(or
+
+git clone --recurse-submodules https://github.com/mfranckie/aftershoq.git
+
+depending on your git version) so that the project "hilbert_curve" appears in the base directory of aftershoq.
+To install aftershoq and all its dependencies, execute
+
+python setup.py install
+
+from the aftershoq/ AND aftershoq/hilbert_curve/ directories.
+
+# Tutorials
+
 For a demonstration, see the Jupyter notebooks located in examples/notebooks. To install Jupyter, run
 
-pip install jupyter
+python -m pip install jupyter
 
 then run with
 
