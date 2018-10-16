@@ -277,6 +277,9 @@ class Gaussopt(Optimizer1D):
                 if( iproc == 0):
                     print("Converged for x, ix, u(x) = ", xadd, np.argmax( uproc ), np.max( uproc ))
                     self.converged = 1
+                    maxloc.append( xadd )
+                    self.umax.append( np.max( uproc ) )
+                    break
                 else:
                     exit()
 

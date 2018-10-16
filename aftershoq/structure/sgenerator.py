@@ -8,7 +8,7 @@ from aftershoq.structure import Structure
 
 import random
 from hilbert import HilbertCurve
-from utils.hilbertutil import HilbertUtil
+from aftershoq.utils import HilbertUtil
 import numpy as np
 
 doping_modes = {"FOLLOW LAYER SHEET": 0,

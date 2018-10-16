@@ -43,7 +43,7 @@ class Optimizer1D(object):
         [self.x.append(xx) for xx in newx]
         [self.y.append(yy) for yy in newy]
         
-        self.t = np.argmin(self.y)
+        self.t = np.argmin(np.array(self.y))
         self.check_conv()
         
     def addEvaldPoints(self, model, sg, path, coords):
@@ -68,6 +68,8 @@ class Optimizer1D(object):
                 del x0[xi]
                 xi-=1
             xi +=1
+            
+        y0 = np.array(y0)
             
         self.addpoints(x0,y0)
         
