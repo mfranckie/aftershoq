@@ -14,15 +14,16 @@ from aftershoq.structure import Sgenerator
 from aftershoq.numerics.runplatf import Local
 import aftershoq.utils.systemutil as su
 import aftershoq.utils.debug as dbg
-from aftershoq.interface import Isewself
-from aftershoq.numerics import Paraopt
+from aftershoq.interface import Isewself, Inegf
+from aftershoq.numerics import Paraopt, Gaussopt
 from matplotlib import pyplot as pl
+import aftershoq.utils.const as const
 
 
 if __name__ == '__main__':
     
     # the working directory:
-    path = "/Users/martin/git/Run/QWIP/samples/"
+    path = "/Users/martin/Projects/Optimization/ASQW/ASQWchi2/Mehrans/v3/"
     #path = os.getcwd()+"/"+path
     su.mkdir(path)
     
@@ -42,18 +43,12 @@ if __name__ == '__main__':
     print('Creating semiconductor materials and alloys:\n')
     print('       ( All CBO relative to GaAs )\n')
     
-    # create materials GaAs, AlAs, InAs:
+    # create materials GaAs and two AlGaAs:
     
     gaas = GaAs()
     alas = AlAs()
-    inas = InAs()
-    
-    # create Al_0.20Ga_0.80As 
-    x = 0.2
-    algaas = AlGaAs(x = x)
-    print("\n" + str(algaas) + ":\n")
-    for val in mp.valdict:
-        print(val + " = " + str(algaas.params[mp.valdict[val]]))
+    algaas1 = AlGaAs(name = "AlGaAs1", x = 0.22)
+    algaas2 = AlGaAs(name = "AlGaAs2", x = 0.43)
     
     print(sep)
     print('Creating a structure from generated materials:\n')
@@ -68,16 +63,15 @@ if __name__ == '__main__':
     s.setIFR(eta, lam)
     
     # Add layers:
-    # Add layers:
-    s.addLayerWM(3.0, algaas)
-    s.addLayerWM(20.0, algaas)
-    s.addLayerWM(7.0,gaas)
-    s.addLayerWM(2.0,algaas) # <-- doped layer 3
-    s.addLayerWM(7.0,gaas)
-    s.addLayerWM(20,algaas)
+    s.addLayerWM(7.4, algaas2)
+    s.addLayerWM(2.5, gaas) 
+    s.addLayerWM(0.5, gaas) # <-- doped layer 2
+    s.addLayerWM(2.5, gaas) 
+    s.addLayerWM(8.7, algaas1)
+    s.addLayerWM(7.4,algaas2)
     
     # define doping layer
-    zstart = 0; zend = 2.0; dopdens = 2e17; layer = 3
+    zstart = 0.01; zend = 0.499; dopdens = 2e19; layer = 2
     
     # add a doping layer
     s.addDoping(zstart, zend, dopdens, layer)
@@ -91,8 +85,8 @@ if __name__ == '__main__':
     
     # define variations in composition, layer widths,
     # and doping location/density:
-    dx = [0.0, 0.01, 0.0, 0.01, 0.0, 0.01]
-    dw = [0,0,2,2,2,0]
+    dx = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    dw = [0, 2, 0, 2, 4, 0]
     ddop = [0,0,0]
     
     # create a structure generator instance, based on our structure s above:
@@ -101,11 +95,13 @@ if __name__ == '__main__':
     # generate N random structures with the distribution in parameters defined above:
     #sg.genRanStructs(N)
     
-    # generate N random structures, along the Hilbert curve with p = 5
+    # generate N random structures, along the Hilbert curve with p = 7
+    
     coords = sg.genRanHilbertStructs(N, 7)
     
     for st in sg.structures:
         print(str(st.sid) + ' ' + str(st))
+        print(st.dopings)
         
     print(sep)
     
@@ -119,6 +115,7 @@ if __name__ == '__main__':
     
     # the binaries (change to your bin folder):
     binpath = "/Users/martin/git/Sewself_JF/bin/"
+    pathnegf = "/Users/martin/git/NEGFT8/bin/"
     
     print('Creating directory tree in: ' + path + '.\n')
     print('Please change variable "binpath" to match your binaries!\n')
@@ -131,26 +128,44 @@ if __name__ == '__main__':
     #pltfm = Euler(1,"1:00")
     
     # sewself interface:
-    material_list = [gaas,algaas]
-    model = Isewself(binpath,pltfm,material_list)
+    material_list = [gaas,alas]
+    commands = ['e', 'd', 'a210', 'a310', 'a320']
     
+    
+    
+    model = Isewself(binpath,pltfm,material_list,commands = commands)
+    #model = Inegf(pathnegf,pltfm,gaas)
+    
+    #model.writeWannier(s, path)
+    
+    
+    E1 = 0.162
+    E2 = 0.1536
+    gamma = 0.01
+    
+    model.target = [E1, E2, gamma]
+    
+    
+    
+    
+    
+    #model.numpar["efield0"] = 0.001
+    #model.numpar["Nomega"] = 1
+    #model.numpar["gen"] = 1e-3
     
     # to change parameters, change the dictionaries in isewself:
     model.sewselfpar["emin"] = -0.0001
+    model.sewselfpar["emax"] = 0.34
     model.numpar["efield"] = -0.0
+    model.sewselfpar["Espan"] = 1
     # (material parameters are atuo-generated from materials in material_list)
     
-    
-    # to create input files with default parameters:
-    model.writeStructFile(s, path)
-    model.writeParameterFile(path)
-    model.writeSewselfPar(path)
-    
     # define the merit function as max gain/current density, from a dictionary of merit funcs.:
-    model.merit = model.merits.get("QWIP")
-    model.target = 19.7
+    model.merit = model.merits.get("Chi2")
+    
+    
     model.numpar['lattice_temp'] = 77
-    model.numpar['el_temp'] = 120
+    model.numpar['el_temp'] = 77
     
     print(sep + 'Starting simulations in directory tree? This will overwrite any previous results.')
     proceed = eval(input("Yes = 1\nExit = 0"))
@@ -159,15 +174,22 @@ if __name__ == '__main__':
         dbg.close()
         exit()
     
-    # execute the model for simulating the structures:
-    model.runStructures(sg.structures, path)
+    #model.runStructures([s], path)
+    #model.waitforproc(2, "Simulation is running for orig....")
     
-    model.waitforproc(1, "sewself is running....")
+    # execute the model for simulating the structures:
+    model.runStructures([s] + sg.structures, path)
+    
+    model.waitforproc(2, "Simulation is running....")
     
     print(sep + 'Gathering results to: ' + path + '/results.log')
     
     # gather the results from the simulation of all structures:
-    model.gatherResults(sg.structures, path)
+    model.gatherResults([s] + sg.structures, path, runprog=True)
+    
+   
+    
+    
     
     print(sep + 'First results acheived. Proceed with optimization?')
     proceed = eval(input("Yes = 1\nExit = 0"))
@@ -175,39 +197,19 @@ if __name__ == '__main__':
         print(sep + "User exit. Good bye!")
         dbg.close()
         exit()
-    
-    # collect results from trial points
-    x0 = []
-    [x0.append( sg.hutil.interp_dist_from_coords( c ) ) for c in coords]
-    x0 = numpy.array(x0)
-    x0.sort()
-    x0 = x0.tolist()
-    print(x0)
-    y0 = []
-    xi = 0
-    for i in range(0,len(x0)):
-        try:
-            y0.append( -float(model.getMerit(sg.structures[i],path)) )
-        except( ValueError ):
-            del x0[xi]
-            xi-=1
-        xi +=1
-    
-    print('Array of trial results:\n' + str(y0))
-
+        
     # create optimization object
     print("imax = " + str(sg.hutil.imax))
-    tol, r, itmax, procmax = 0.001*sg.hutil.imax, 1.1, 100, 2
     
-    opt = Paraopt(tol,r,itmax,procmax,x0,y0)
+    
+    tol, r, itmax, procmax = 0.0001*sg.hutil.imax, 1.1, 100, 5
+    
+    opt = Paraopt(tol,r,itmax,procmax)
+    
+    opt.addEvaldPoints(model, sg, path, coords)
     
     conv = opt.minimize(model, sg, path)
     
-    print("Optimization distances: \n" + str(opt.x))
-    print("Optimization values: \n"    + str(opt.y))
-    
-    pl.plot(opt.x,opt.y)
-    pl.show()
     
     print(sep + 'Program completed! Good bye!')
     dbg.close()

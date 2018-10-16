@@ -157,6 +157,8 @@ class EV2016(Structure):
     '''
     Strained 8.5 micron design, seed for the genetically optimized design EV2017.
     Published in thesis of J. Wolf (ETH Zuerich, 2017)
+    and
+    Optics Express vol. 20(22) p.24272 (2012)
     '''
         
     def __init__(self):
