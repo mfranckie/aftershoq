@@ -6,7 +6,7 @@ Created on 26 Jan 2018
 Module containing core classes for materials, layers, and structures.
 '''
 
-import structure.matpar as mp
+from . import matpar as mp
 import copy
 
 class Layer:

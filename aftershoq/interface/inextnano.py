@@ -5,14 +5,14 @@ Created on 18 Jun 2018
 '''
 from typing import Any, Union
 
-from .interface import Interface
+from aftershoq.interface import Interface
 import datetime
 import xml.etree.ElementTree as ET
 from lxml import etree
-import utils.systemutil as su
+import aftershoq.utils.systemutil as su
 import subprocess
-import structure.matpar as mp
-import utils.const as const
+import aftershoq.structure.matpar as mp
+import aftershoq.utils.const as const
 import os
 
 class Inextnano(Interface):

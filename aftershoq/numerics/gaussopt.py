@@ -5,11 +5,11 @@ Created on 18 Jun 2018
 
 '''
 
-from .optimizer import Optimizer1D
+from aftershoq.numerics import Optimizer1D
 import numpy as np
 from matplotlib import pyplot as pl
 import scipy.optimize as so
-import utils.debug as dbg
+import aftershoq.utils.debug as dbg
 
 class Gaussopt(Optimizer1D):
     '''

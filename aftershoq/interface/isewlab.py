@@ -4,13 +4,13 @@ Created on 12 Mar 2018
 @author: Martin Franckie
 '''
 
-from .interface import Interface
-import structure.matpar as mp
-from utils import const
-import utils.systemutil as su
+from aftershoq.interface import Interface
+import aftershoq.structure.matpar as mp
+from aftershoq.utils import const
+import aftershoq.utils.systemutil as su
 import time
 import numpy as np
-import utils.debug as dbg
+import aftershoq.utils.debug as dbg
 
 class Isewlab(Interface):
     '''Interface for sewlab, which is documented in:

@@ -10,7 +10,7 @@ programs.
 from subprocess import call, Popen, PIPE
 import os
 import time
-import utils.debug as dbg
+import aftershoq.utils.debug as dbg
 from tempfile import TemporaryFile as tmp
 
 def mkdir(name):

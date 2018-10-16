@@ -23,8 +23,8 @@ References:
 [Bateman] Bateman et al., J. Appl. Phys. 33, 3309 (1962)
 '''
 
-from structure.classes import Material
-import structure.matpar as mp
+from aftershoq.structure import Material
+import aftershoq.structure.matpar as mp
 
 # Binaries:
 

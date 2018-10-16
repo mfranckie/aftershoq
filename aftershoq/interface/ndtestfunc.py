@@ -3,7 +3,7 @@ Created on 14 May 2018
 
 @author: Martin Franckie
 '''
-from .interface import Interface
+from aftershoq.interface import Interface
 import numpy as np
 import random as rm
 

@@ -4,9 +4,9 @@ Created on 2 Feb 2018
 @author: martin
 '''
 
-import utils.systemutil as su
+import aftershoq.utils.systemutil as su
 import time
-import utils.debug as dbg
+import aftershoq.utils.debug as dbg
 import subprocess
 
 class Platform(object):

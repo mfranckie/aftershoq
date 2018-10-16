@@ -5,8 +5,8 @@ Created on 13 Mar 2018
 '''
 
 import numpy as np
-from .optimizer import Optimizer1D
-import utils.debug as dbg
+from aftershoq.numerics.optimizer import Optimizer1D
+import aftershoq.utils.debug as dbg
 
 class Paraopt(Optimizer1D):
     '''

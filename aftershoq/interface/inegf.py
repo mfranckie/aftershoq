@@ -5,17 +5,17 @@ Created on 16 Mar 2018
 
 '''
 
-from .interface import Interface
-from structure.classes import Structure
-import structure.matpar as mp
-import utils.systemutil as su
-from numerics.runplatf import Local
+from aftershoq.interface import Interface
+from aftershoq.structure import Structure
+import aftershoq.structure.matpar as mp
+import aftershoq.utils.systemutil as su
+from aftershoq.numerics.runplatf import Local
 import time
-import utils.debug as dbg
+import aftershoq.utils.debug as dbg
 import subprocess
 from matplotlib import pyplot as pl
 import numpy as np
-from utils import const
+from aftershoq.utils import const
 
 class Inegf(Interface):
     '''

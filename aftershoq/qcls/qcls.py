@@ -8,8 +8,8 @@ layer sequences to this list! Please give a cited reference to each structure,
 where possible.
 '''
 
-from structure.classes import Structure
-from structure.materials import *
+from aftershoq.structure import Structure
+from aftershoq.materials import *
 
 class EV2416(Structure):
     '''

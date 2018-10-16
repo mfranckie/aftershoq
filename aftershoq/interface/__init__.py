@@ -1,3 +1,4 @@
+from aftershoq.interface.interface import Interface
 from aftershoq.interface.inegf import Inegf
 from aftershoq.interface.isewlab import Isewlab
 from aftershoq.interface.isewself import Isewself
