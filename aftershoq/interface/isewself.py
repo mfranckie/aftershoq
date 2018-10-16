@@ -269,6 +269,7 @@ class Isewself(Interface):
                 doping = 0
                 l0 = structure.layerPos(index)
                 l1 = structure.layerPos(index) + layer.width
+                '''
                 for dop in structure.dopings:
                     if dop[1] >= l0 and dop[0] <= l1:
                         if dop[0] > l0:
@@ -284,6 +285,8 @@ class Isewself(Interface):
                             
                             
                         doping += dop[2]*ol/(dop[1]-dop[0])
+                '''
+                doping = structure.layerDoping2D(index)
                 f.write( str( doping*1e-18 ) + "\n")
                 index += 1
 

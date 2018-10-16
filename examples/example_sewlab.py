@@ -6,30 +6,29 @@ Created on 15 Feb 2018
 import sys
 import os
 import numpy
-# change path as apropriate
-path_to_aftershoq = os.getcwd()
-sys.path.append(path_to_aftershoq)
-sys.path.append(path_to_aftershoq + '/hilbert_curve/')
 
-from structure.classes import Structure
-import structure.matpar as mp
-from structure.sgenerator import Sgenerator
-from structure.materials import GaAs, AlGaAs
-from numerics.runplatf import Local
-import utils.systemutil as su
-import utils.debug as dbg
-from utils.qcls import *
-from interface.isewlab import Isewlab
-from numerics.paraopt import Paraopt
+from aftershoq.structure import Structure
+import aftershoq.structure.matpar as mp
+from aftershoq.structure import Sgenerator
+from aftershoq.materials import GaAs, AlGaAs
+from aftershoq.numerics.runplatf import Local
+import aftershoq.utils.systemutil as su
+import aftershoq.utils.debug as dbg
+from aftershoq.qcls import *
+from aftershoq.interface import Isewlab
+from aftershoq.numerics import Paraopt
 from matplotlib import pyplot as pl
 import numpy as np
+import shutil
 
 
 if __name__ == '__main__':
     
     # the binaries (change to your bin folder):
-    binpath = "sewlab"
-    
+    print( os.environ["PATH"] )
+    print( sys.path )
+    binpath = shutil.which("sewlab")
+    print (binpath)
     # the working directory:
     path = "demo"
     path = os.getcwd()+"/"+path
@@ -91,9 +90,6 @@ if __name__ == '__main__':
     model.numpar["verbosity"] = "Silent"
     
     # The electric field in the simulation
-    efield0 = -1
-    defield = -0.5
-    Nefield = 1
     model.numpar["efield0"] = -0.100
     model.numpar["defield"] = -0.020
     model.numpar["Nefield"] = 5
@@ -106,7 +102,9 @@ if __name__ == '__main__':
     
     model.useKinBal(False) # Use of kinetic balance?
     model.useSuperself(False) # Use of superself?
-    model.computeLight(False) # Use of light computations (power, photon-driven current)
+    model.computeLight(True, m_loss = 10.0) # Use of light computations (power, photon-driven current)
+    model.setTlattice(300)
+    model.setTe(320)
     
     # to create input files with default parameters (automatically done via runStructures() below):
     model.writeSampleFile(mystruct, path)

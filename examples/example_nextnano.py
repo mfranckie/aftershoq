@@ -1,9 +1,9 @@
-from interface.inextnano import Inextnano
-from structure.materials import GaAs, AlGaAs
-from numerics.runplatf import Local
-from utils.qcls import EV2416
-import utils.systemutil as su
-import utils.debug as dbg
+from aftershoq.interface import Inextnano
+from aftershoq.materials import GaAs, AlGaAs
+from aftershoq.numerics.runplatf import Local
+from aftershoq.qcls import EV2416
+import aftershoq.utils.systemutil as su
+import aftershoq.utils.debug as dbg
 
 pathwd = "../demo/NextNano"
 su.mkdir(pathwd)
@@ -14,8 +14,8 @@ nnroot = "C:/Users/Martin Franckie/Documents/nextnanoQCL_2018_03_29/nextnano/201
 
 lic = nnroot + "../License/License_nnQCL.lic"
 
-model = Inextnano(nnroot, Local(), GaAs())
-model.license = lic
+model = Inextnano(nnroot, Local(), GaAs(), lic)
+
 s = EV2416()
 
 for l in s.layers:
@@ -34,6 +34,8 @@ model.numpar["Nz"] = 100
 #model.numpar["Ekmax"] = 0.060
 
 model.writeInputFile(s, pathwd)
+
+exit(0)
 
 proc = model.runStructures([s], pathwd)
 
