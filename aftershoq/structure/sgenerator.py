@@ -4,7 +4,7 @@
 '''
 
 
-from structure.classes import Structure
+from aftershoq.structure import Structure
 
 import random
 from hilbert import HilbertCurve
