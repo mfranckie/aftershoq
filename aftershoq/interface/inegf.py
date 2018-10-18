@@ -205,11 +205,14 @@ class Inegf(Interface):
                     su.mkdir(pathresults + ss.dirname)    
                     with open(pathresults + ss.dirname+"/chi2.log", 'w') as chif:
                             domega = 0.001
+                            if len( self.target ) > 0:
+                                E1 = self.target[0]
+                            else:
+                                E1  = ss.wslevels[0][2][4]-ss.wslevels[0][0][4]
                             if len( self.target ) < 3:
                                 gamma = None
                             else:
                                 gamma = self.target[2]
-                            E1 = self.target[0]
                             chif.write('# E2, E3, |Chi2(E1,E2,E3=E1-E2)| ')
                             chif.write('with E1 fixed to E1 = ' + str(E1) + '\n')
                             if gamma is None:
@@ -406,8 +409,14 @@ class Inegf(Interface):
             
         elif self.merit == self.merits["Chi2"]:
             
-            E1 = self.target[0]
-            E2 = self.target[1]
+            if len( self.target ) > 0:
+                E1 = self.target[0]
+            else:
+                E1  = None
+            if len(self.target ) > 1:
+                E2 = self.target[1]
+            else:
+                E2 = None
             
             if len( self.target ) > 2:
                 gamma = self.target[2]
@@ -694,9 +703,21 @@ class Inegf(Interface):
         return om_all, g_all
 
     def calcChi2(self, structure, E1, E2, gamma = None):
+        """
+        Calcualtes the second order susceptibility Chi(2) for the three-level
+        system |0>, |1>, |2>, where E_2 > E_1 > E_0 according to 
+        Dupont et al, IEEE J. Quant. Electron. 42, pp. 1157-1174 (2006)
         
-        E3 = E1-E2
+        Parameters:
+        structure: The structure to calculate Chi(2) for
+        E1: The pump photon energy hbar*omega (eV). If E1 is None, then
+        this is taken to be E_2-E_0
+        E2: The idler photon energy hbar*omega (eV). If E2 is None, then
+        this is taken to be E_1-E_0
+        gamma: The FWHM broadening to be used in the calculation for Chi(2).
+        If gamma is None, then this is calculated from the level broadenings.
         
+        """
         elevel = []
         nlevel = []
         glevel = []
@@ -718,6 +739,14 @@ class Inegf(Interface):
         if len(elevel) < 3 or len(dipoles) < 3 or self.checkWSdens(structure.wslevels[0][0][0], 0.1) == False:
             return -1
         
+        if E1 is None:
+            E1 = elevel[2] - elevel[0]
+        if E2 is None:
+            E2 = elevel[1] - elevel[0]
+        
+        E3 = E1-E2
+        
+        
         chi2 =  (nlevel[0]-nlevel[2])/( E1-elevel[2]+elevel[0] - 
                     (glevel[0] + glevel[2])*1j/2.)
         chi2 += (nlevel[0]-nlevel[1])/(-E2+elevel[1]-elevel[0] - 
@@ -727,5 +756,7 @@ class Inegf(Interface):
         chi2 /= (E3-elevel[2]+elevel[1] - 
                     (glevel[1] + glevel[2])*1j/2.)
         chi2 *= -const.qe/const.eps0/structure.length*1e4*1e-27*1e9*1e12
+        
+        self.chi2 = chi2
         
         return np.abs( chi2 )

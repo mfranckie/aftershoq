@@ -238,3 +238,55 @@ class EV2017(Structure):
         self.addDoping(0, 3.23, dop, 11)
         
         
+# DFG structures:
+
+class Dupont_DFG_ASQW(Structure):
+    """
+    Asymmetric quantum well structure for difference frequency generation
+    at omega_DFG = 
+    IEEE Journal of Quantum Electronics 42, pp. 1157-1174 (2006)
+    """
+     
+    def __init__(self):
+        Structure.__init__(self)
+        self.setIFR(0.1, 10)
+        well = GaAs()
+        barrier43 = AlGaAs(name="AlGaAs43", x = 0.43)
+        barrier16 = AlGaAs(name = "AlGaAs16", x = 0.16)
+        
+        self.addLayerWM(7.4, barrier43)
+        self.addLayerWM(3.3, well)
+        self.addLayerWM(0.5, well) # <----- # 2 delta-doped to 1.345*10^12 cm^-2
+        self.addLayerWM(3.3, well) 
+        self.addLayerWM(12.0, barrier16)
+        self.addLayerWM(7.4, barrier43)
+        
+        idop= 2
+        vdop = 2.69e19 # cm^-3
+        
+        self.addDoping(0, self.layers[idop].width, vdop, idop)
+        
+class Tymchenko_DFG_DQW(Structure):
+    """
+    Double quantum well structure for difference frequency generation
+    at omega_DFG = 24 meV
+    J. Opt. 19, 104001 (2017)
+    """
+        
+    def __init__(self):
+        Structure.__init__(self)
+        self.setIFR(0.1, 10)
+        well = InGaAs()
+        barrier = AlInAs()
+        
+        self.addLayerWM(4, barrier)
+        self.addLayerWM(3.4, well)
+        self.addLayerWM(2.7, barrier)
+        self.addLayerWM(9.1, well) # <----- # 3 uniformly doped to 1*10^18 cm^-3
+        self.addLayerWM(4, barrier)
+        
+        idop= 3
+        vdop = 1e18 # cm^-3
+        
+        self.addDoping(0, self.layers[idop].width, vdop, idop)
+        
