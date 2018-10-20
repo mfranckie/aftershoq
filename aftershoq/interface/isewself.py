@@ -50,10 +50,7 @@ class Isewself(Interface):
         "lambda":0.080
         }
     
-    numpar = {
-        "efield" : 0.0,
-        "lattice_temp" : 77,
-        "el_temp" : 120,
+    structpar = {
         "ldiff"  : 0.0,
         "nbswellinj":4,
         "nbswellact":4,
@@ -66,31 +63,26 @@ class Isewself(Interface):
         "incw":2
         }
 
-    def __init__(self, binpath, pltfm, material_list, commands = None):
+    def __init__(self, binpath, pltfm, material_list, commands = None,
+                 buildmatbin = "buildmatself", 
+                 sewselfbin="sewself"):
         '''
         Constructor. Baseclass-specific parameters:
         material_list: A list of the Materials that will be used.
         '''
         
         super(Isewself,self).__init__(binpath, pltfm)
+        self.numpar.update(self.structpar)
         self.material_list = material_list
         self.processes = []
-        self.buildmatself = binpath + "buildmatself_MAC"
-        self.sewself = binpath + "sewself.2.32_MAC"
+        self.buildmatself = binpath + buildmatbin
+        self.sewself = binpath + sewselfbin
         self.structfilename = "structure.txt"
         self.merits.update({'DeltaE_12' : 8, 'Elase' : 9, 'QWIP' : 10})
         self.merits.update({'absorption': 11})
         
         if commands == None:
             commands = ['e', 'd', 'c', 'a210']
-#             commands = ""
-#             commands  += "e\n"   # compute self-consitent potential
-#             commands += str(self.numpar.get('lattice_temp')) + "\n"
-#             commands += str(self.numpar.get('el_temp')) + "\n"
-#             commands += "d\n"   # compute abosrption from ground state
-#             commands += "c\n"   # compute qwip absorption from upper states
-#             commands += "a\n2\n1\n0\n" # compute dipole and lifetime between two states
-#             commands +=  "q\n"
         
         self.commands = commands
             
@@ -125,21 +117,21 @@ class Isewself(Interface):
                  "\n" + c[3] + "\n"
             elif c[0] == 'b':
                 commands += "b\n"
-                commands += str(self.numpar.get('lattice_temp')) + "\n"
-                commands += str(self.numpar.get('el_temp')) + "\n"
+                commands += str(self.numpar.get('Tlattice')) + "\n"
+                commands += str(self.numpar.get('Te')) + "\n"
             elif c[0] == 'c':
                 commands += "c\n"
             elif c[0] == 'd':
                 commands += "d\n"
             elif c[0] == 'e':
                 commands  += "e\n"   # compute self-consitent potential
-                commands += str(self.numpar.get('lattice_temp')) + "\n"
-                commands += str(self.numpar.get('el_temp')) + "\n"
+                commands += str(self.numpar.get('Tlattice')) + "\n"
+                commands += str(self.numpar.get('Te')) + "\n"
             elif c[0] == 'f':
                 commands  += "f\n"
             elif c[0] == 'g':
                 commands  += "g\n"
-                commands += str(self.numpar.get('el_temp')) + "\n"
+                commands += str(self.numpar.get('Te')) + "\n"
             else:
                 print("WARNING: Option " + c[0] + \
                 " not implemented in Isewself!")
@@ -177,10 +169,14 @@ class Isewself(Interface):
                 self.ebound.append(ebounds)
                 ss.ebound = ebounds
                 ss.dipoles = dipoles
+                ss.absorption = self.readAbsorption(path + "/" + 
+                                                    str(ss.dirname))
                 self.dipoles.append( self.readDipoles(ss) )
+                ss.merit = self.getMerit(ss, path)
                 
                 f.write(str(ss.sid)+" ")
-                f.write(str(self.getMerit(ss, path)) + " ")
+                f.write(str(ss.merit) + " ")
+                
                 for layer in ss.layers:
                     f.write(str(layer.width)+" ")
                 for doping in ss.dopings:
@@ -219,7 +215,14 @@ class Isewself(Interface):
     def readAbsorption(self,path):
         with open(path + '/absorption.dat') as f:
             line = f.read()
-        return line.split('\n')[0:-1]
+        absfile = line.split('\n')[0:-1]
+        freq = []
+        abs = []
+        
+        [freq.append(float(line.split()[0])) for line in absfile]
+        [abs.append(float(line.split()[1])) for line in absfile]
+        
+        return [freq, abs]
     
     def readDipoles(self, structure):
         out = structure.output.split()
@@ -228,6 +231,44 @@ class Isewself(Interface):
             if out[i] == 'z':
                 dipoles.append( float( out[i+2] ) )
         return dipoles
+    
+    def readBandPlot(self, path):
+        with open(path + '/pot2.dat') as potfile:
+            file = potfile.read()
+        potfile = file.split('\n')
+        
+        with open(path + '/pse.gr0') as wavefile:
+            file = wavefile.read()
+        wavefile = file.split('\n')
+        
+        z = []
+        v = []
+        #m = []
+        
+        try:
+            for line in potfile:
+                line = line.split()
+                z.append(float(line[0]))
+                v.append(float(line[1]))
+                #m.append(float(line[2]))
+        except(IndexError):
+            pass #reached end of file
+        psi = []
+        
+        Ncols = len(wavefile[0].split())
+        psi = []
+        for i in range(Ncols):
+            psi.append([])
+        try:
+            for line in wavefile:
+                line = line.split()
+                for i in range(Ncols):
+                    psi[i].append(float(line[i]))
+                
+        except(IndexError):
+            pass
+        
+        return [z,v,psi]
     
     def writeStructFile(self,structure,path):
         '''Writes the structure file self.structfilename.'''
@@ -239,7 +280,7 @@ class Isewself(Interface):
         
         filepath = path + "/" + self.structfilename
         with open(filepath,'w') as f:
-            f.write(str(self.numpar["efield"]) + " # efield\n")
+            f.write(str(self.numpar["efield0"]) + " # efield\n")
             f.write(str(self.numpar["ldiff"]) + " # diffusion length\n")
             f.write(str(len(structure.layers)) + " # number of layers\n")
             f.write(str(self.numpar["nbswellinj"]) + " # nbswellinjector\n")
@@ -269,23 +310,7 @@ class Isewself(Interface):
                 doping = 0
                 l0 = structure.layerPos(index)
                 l1 = structure.layerPos(index) + layer.width
-                '''
-                for dop in structure.dopings:
-                    if dop[1] >= l0 and dop[0] <= l1:
-                        if dop[0] > l0:
-                            if dop[1] > l1:
-                                ol = l1 - dop[0]
-                            else:
-                                ol = dop[1]-dop[0]
-                        else:
-                            if dop[1] > l1:
-                                ol = l1 - l0
-                            else:
-                                ol = dop[1]-l0
-                            
-                            
-                        doping += dop[2]*ol/(dop[1]-dop[0])
-                '''
+                
                 doping = structure.layerDoping2D(index)
                 f.write( str( doping*1e-18 ) + "\n")
                 index += 1
