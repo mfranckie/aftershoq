@@ -274,9 +274,17 @@ class Isewself(Interface):
         '''Writes the structure file self.structfilename.'''
         
         mat_list = []
+        # minEc shifts conduction band minimum to 0 eV.
+        minEc = 0.
         for layer in structure.layers:
-            if layer.material not in mat_list:
+            found = False
+            for mat in mat_list:
+                if(layer.material.name == mat.name):
+                    found=True
+            if not found:
                 mat_list.append(layer.material)
+                if layer.material.params[mp.Ec] < minEc:
+                    minEc = layer.material.params[mp.Ec]
         
         filepath = path + "/" + self.structfilename
         with open(filepath,'w') as f:
@@ -294,7 +302,7 @@ class Isewself(Interface):
             f.write(str(self.numpar["matchoice"]) + " matchoice\n")
             for mat in mat_list:
                 f.write(str(mat) + " ")
-                f.write(str(mat.params[mp.Ec]) + " ")
+                f.write(str(mat.params[mp.Ec]-minEc) + " ")
                 if mat.x is None:
                     f.write(str(0))
                 else:
