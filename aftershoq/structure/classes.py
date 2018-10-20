@@ -8,6 +8,7 @@ Module containing core classes for materials, layers, and structures.
 
 from . import matpar as mp
 import copy
+import numpy as np
 
 class Layer:
     ''' Defines a layer in the heterostructure. Each layer has a material
@@ -133,7 +134,7 @@ class Structure:
             
     def layerDoping2D(self, index):
         ''' Returns the sheet doping density in the layer with layer index
-        "Index". '''
+        "Index" (in units of cm^-2*nm^-1).'''
         doping = 0
         l0 = self.layerPos(index)
         l1 = self.layerPos(index) + self.layers[index].width
@@ -154,6 +155,21 @@ class Structure:
                 doping += dop[2]*ol/(dop[1]-dop[0])
                 
         return doping
+    
+    def convert_to_ML(self):
+        """
+        Converts this structure to integer monolayers. Assumes doping
+        spans entire layers and keeps sheet density constant.
+        Lattice constants are given in Å, layer widths in nm.
+        """
+        for i in range( len(self.layers) ):
+            layer = self.layers[i]
+            NML = np.round(layer.width/layer.material.params[mp.lattconst]*10.)
+            dop = self.layerDoping2D(i)
+            layer.width = NML*layer.material.params[mp.lattconst]/10.
+            if(dop>0):
+                self.addDoping(0, layer.width, dop/layer.width, i)
+            
     
     def __str__(self):
         s = "[width, Material, eta, lambda] (id="+str(self.sid) + ")\n" 

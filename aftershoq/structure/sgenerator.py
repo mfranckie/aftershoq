@@ -16,6 +16,14 @@ doping_modes = {"FOLLOW LAYER SHEET": 0,
                 "FIXED POSITION SHEET": 2,
                 "FIXED POSITION VOLUME": 3}
 
+comp_modes = {"UNLINKED":0,
+              "LINKED LAYERS": 1,
+              "LINKED ALL": 2}
+
+width_modes = {"CONTINUOUS": 0,
+               "MONOLAYER" : 1,
+               "DISCRETE"  : 2}
+
 class Sgenerator():
     
     
@@ -23,7 +31,9 @@ class Sgenerator():
     
     
     def __init__(self,origstruct,dw=None,dx=None,ddop=None,
-                 doping_mode = doping_modes.get("FOLLOW LAYER SHEET") ):
+                 doping_mode = doping_modes.get("FOLLOW LAYER SHEET"),
+                 comp_mode = comp_modes.get("UNLINKED"),
+                 width_mode = width_modes.get("CONTINUOUS") ):
         '''
         Constructor which takes:
         origstruct: original structure to modify, with N layers
@@ -31,13 +41,37 @@ class Sgenerator():
             The widths will vary in the interval w0-dw to w0+dw
         dx: list of length N with one range of composition for each layer
             The comp. will vary in the interval x0-dx to x0+dx
+            If comp_mode is specified to "LINKED LAYERS", in the end of the
+            list must follow M (number of dx[i] > 0) integers with tags 
+            specifying which layers are to be linked together 
+            (their x will always change together).
         ddop: (optional) a list of the structure [dpos, dw, ddens]
             where dops gives the range of positions, dw the range of
             doping layer widths, and ddens the range of doping densities.
+        doping_mode: (optional) Tells generator how to treat doping layers.
+            Can be the following (doping_modes):
+            FOLLOW LAYER SHEET*: Doping density follows original sheet dop.
+            FOLLOW LAYER VOLUME: Doping density follows original volume dop.
+            FIXED POSITION SHEET: Dop. remains at a fixed postion and sheet dop.
+            FIXED POSITION SHEET: Dop. remains at a fixed postion and vol. dop.
+        comp_mode: (optional) Tells generator how to treat composition changes.
+            Can be the following (comp_modes):
+            UNLINKED*: Each specified layer's x changes independently.
+            LINKED LAYERS: The specified layers' x changes synchronously.
+            LINKED ALL: All specified layers' x changes synchronously.
+            In the laset two cases, only the ranges of the first element of dx
+            is used.
+        width_mode: (optional) Tells generator to use continuous or discretized
+            widths when generating structures. 
+            Can be the following (width_modes):
+            CONTINUOUS*: Width can vary continuous
+            MONOLAYER: Width can vary in monolayers only.
         
         '''
         
         self.doping_mode = doping_mode
+        self.comp_mode = comp_mode
+        self.width_mode = width_mode
         
         if dx is None:
             dx = []
@@ -65,6 +99,7 @@ class Sgenerator():
         covers entire layer width. 
         Doping modes "FIXED WIDTH SHEET/VOLUME" changes doping pos.
         independently of layer widths.
+        TODO: Change compositions!
         """
         for _ in range(0,N):
             news = Structure(self.orig)
@@ -157,12 +192,36 @@ class Sgenerator():
         print("dopindex = " + str(dopindex))
                 
         # 3) Alloy composition x:
-        for i in range(0,len(self.dx)):
-            if self.dx[i] > 0:
-                params.append(self.orig.layers[i].material.x)
-                dparams.append(self.dx[i])
-                xindex.append(i)
-                ND += 1
+        if self.comp_mode == comp_modes.get("LINKED LAYERS"):
+            tags = []
+            self.tagindex = []
+            itag = 0
+            for i in range(0, len(self.orig.layers)):
+                if self.dx[i] > 0:
+                    tag = self.dx[len(self.orig.layers)+itag]
+                    itag += 1
+                    if tag not in tags:
+                        tags.append(tag)
+                        params.append(self.orig.layers[i].material.x)
+                        dparams.append(self.dx[i])
+                        ND += 1
+                    xindex.append(i)
+                    self.tagindex.append(tag)
+        else:                       
+        
+            for i in range(0,len(self.dx)):
+                if self.dx[i] > 0:
+                    params.append(self.orig.layers[i].material.x)
+                    dparams.append(self.dx[i])
+                    xindex.append(i)
+                    ND += 1
+                    if self.comp_mode == comp_modes.get("LINKED ALL"):
+                        # only include one dx in parameter space
+                        for j in range(i,len(self.dx)):
+                            if self.dx[j] > 0:
+                                xindex.append(j)
+                        break
+                    
   
         # 4) Add further parameters at this point...
         
@@ -281,9 +340,39 @@ class Sgenerator():
                 news.addDoping(z0,zend,doping)
             
             # Alloy composition:
+            tags = []
+            ptag = []
             for i in range(0,len(self.xindex)):
-                news.layers[self.xindex[i]].material.updateAlloy(par_unscaled[pindex])
-                pindex +=1
+                
+                
+                if self.comp_mode == comp_modes.get("UNLINKED"):
+                    news.layers[self.xindex[i]].material.updateAlloy(par_unscaled[pindex])
+                    pindex +=1
+                elif self.comp_mode == comp_modes.get("LINKED ALL"):
+                    news.layers[self.xindex[i]].material.updateAlloy(par_unscaled[pindex])
+                    pass
+                elif self.comp_mode == comp_modes.get("LINKED LAYERS"):
+                    print("Layers are linked:")
+                    tag = self.tagindex[i]
+                    print("tag = ", tag)
+                    if tag not in tags:
+                        tags.append(tag)
+                        ptag.append(pindex)
+                    else:
+                        pindex = ptag[tags.index(tag)]
+                    
+                    print("pindex = ", pindex)
+                    news.layers[self.xindex[i]].material.updateAlloy(par_unscaled[pindex])
+                    news.layers[self.xindex[i]].material.name += str(tag)
+                    
+                    
+                    if len(ptag) > 0:
+                        pindex = np.max(ptag) + 1
+                    else:
+                        pindex += 1
+                        
+            if self.width_mode == width_modes.get("MONOLAYER"):
+                news.convert_to_ML()
                 
             self.structures.append(news)
             

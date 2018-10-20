@@ -70,7 +70,8 @@ class AlAs(Material):
         paramsAlAs[mp.ELO] = 0.050
         paramsAlAs[mp.Ep] = 22
         paramsAlAs[mp.eps0] = 10.06
-        paramsAlAs[mp.epsinf] = 8.05 
+        paramsAlAs[mp.epsinf] = 8.05
+        paramsAlAs[mp.lattconst] = 5.6611
         super(AlAs,self).__init__(name,paramsAlAs)
         
     def copy(self):
