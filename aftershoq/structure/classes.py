@@ -162,13 +162,19 @@ class Structure:
         spans entire layers and keeps sheet density constant.
         Lattice constants are given in Å, layer widths in nm.
         """
+        
+        dops = []
+        [dops.append(self.layerDoping3D(i)) for i in range(len(self.layers))]
+        print("dops = ", dops)
+        
+        self.dopings = []
+        
         for i in range( len(self.layers) ):
             layer = self.layers[i]
             NML = np.round(layer.width/layer.material.params[mp.lattconst]*10.)
-            dop = self.layerDoping3D(i)
             layer.width = NML*layer.material.params[mp.lattconst]/10.
-            if(dop>0):
-                self.addDoping(0, layer.width, dop, i)
+            if(dops[i]>0):
+                self.addDoping(0, layer.width, dops[i], i)
             
     
     def __str__(self):
