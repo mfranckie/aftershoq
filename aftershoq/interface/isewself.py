@@ -319,7 +319,7 @@ class Isewself(Interface):
                 l0 = structure.layerPos(index)
                 l1 = structure.layerPos(index) + layer.width
                 
-                doping = structure.layerDoping2D(index)
+                doping = structure.layerDoping3D(index)
                 f.write( str( doping*1e-18 ) + "\n")
                 index += 1
 

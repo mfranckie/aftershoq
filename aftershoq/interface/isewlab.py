@@ -549,7 +549,7 @@ class Isewlab(Interface):
                 discont = discont - l.material.params[mp.Ec]
                 f.write('discont = ' + str(discont) + "; " )
                 
-                doping = structure.layerDoping2D(index)*1e-18
+                doping = structure.layerDoping3D(index)*1e-18
                 if doping > 0.0:
                     f.write('doping = ' + str(doping) + ";")
                 

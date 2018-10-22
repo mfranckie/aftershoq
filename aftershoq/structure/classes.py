@@ -132,7 +132,7 @@ class Structure:
             if pos<z:
                 return self.layers.index(li)
             
-    def layerDoping2D(self, index):
+    def layerDoping3D(self, index):
         ''' Returns the sheet doping density in the layer with layer index
         "Index" (in units of cm^-2*nm^-1).'''
         doping = 0
@@ -165,10 +165,10 @@ class Structure:
         for i in range( len(self.layers) ):
             layer = self.layers[i]
             NML = np.round(layer.width/layer.material.params[mp.lattconst]*10.)
-            dop = self.layerDoping2D(i)
+            dop = self.layerDoping3D(i)
             layer.width = NML*layer.material.params[mp.lattconst]/10.
             if(dop>0):
-                self.addDoping(0, layer.width, dop/layer.width, i)
+                self.addDoping(0, layer.width, dop, i)
             
     
     def __str__(self):
