@@ -28,7 +28,11 @@ To install aftershoq and all its dependencies, execute
 
 python setup.py install
 
-from the aftershoq/ AND aftershoq/hilbert_curve/ directories.
+from the aftershoq/ directory. You will also need to add the "hilbert_curve" directory to your python path. We are working on a more convenient solution at the moment, but for now this can be done by executing the following command in a terminal on Linux and MacOS (replace "path-to-aftershoq" with your own path):
+
+export PYTHONPATH="/path-to-aftershoq/hilbert_curve/:$PYTHONPATH"
+
+Put the above line into the file ~/.bash_profile or ~/.profile depending on your system, to permanently add it to the python path. On Windows, the PYTHONPATH environment variable can be set via the Control Panel gui.
 
 # Tutorials
 
@@ -43,7 +47,7 @@ jupyter notebook
 
 If you don't want to/can't use jupyter, the following examples have a similar content:
 
-1) "QCLexample.py" (Requires the NEGF8 program package)
+1) "QCLexample.py" (Requires a supported simulation program)
 2) "example_sewself.py" (Requires the sewself program)
 3) "example_sewlab.py" (Requires sewlab version 4.6.4 or later)
 4) "test_optim.py" (No requirements, this is a test of the optimization scheme)
