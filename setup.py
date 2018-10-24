@@ -11,7 +11,7 @@ import os
 class InstallWrapper(install):
 
     def run(self):
-        print("Wrapper fixing external module 'hilbert_curve'")
+        print("install wrapper fixing external module 'hilbert_curve'")
         self.initModules()
         install.run(self)
 
@@ -24,7 +24,7 @@ class InstallWrapper(install):
 setup(
     name="aftershoq",
     author = "Martin Franckie",
-    version = "0.1",
+    version = "0.1.dev0",
     author_email = "martin.franckie@phys.ethz.ch",
     url = "https://github.com/mfranckie/aftershoq",
     packages=find_packages(),
