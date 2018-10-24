@@ -28,11 +28,7 @@ To install aftershoq and all its dependencies, execute
 
 python setup.py install
 
-from the aftershoq/ directory. You will also need to add the "hilbert_curve" directory to your python path. We are working on a more convenient solution at the moment, but for now this can be done by executing the following command in a terminal on Linux and MacOS (replace "path-to-aftershoq" with your own path):
-
-export PYTHONPATH="/path-to-aftershoq/hilbert_curve/:$PYTHONPATH"
-
-Put the above line into the file ~/.bash_profile or ~/.profile depending on your system, to permanently add it to the python path. On Windows, the PYTHONPATH environment variable can be set via the Control Panel gui.
+from the aftershoq/ directory. 
 
 # Tutorials
 
