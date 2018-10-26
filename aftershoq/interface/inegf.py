@@ -343,6 +343,19 @@ class Inegf(Interface):
         '''Returns the merit function evaluated for the Structure structure,
         with base path "path". 
         '''
+        
+        # First try to see if results were already evaluated:
+        # assumes structure for results.log:
+        # sid | merit | ...
+        
+        if 'results.log' in su.ls(path):
+            with open(path + '/results.log') as f:
+                found = False
+                for line in f:
+                    line = line.split()
+                    if line[0] == str(structure.sid):
+                        return line[1]
+        
         path = path + "/" + structure.dirname + self.datpath
         
         results = []
@@ -586,6 +599,8 @@ class Inegf(Interface):
                     s.layers[i].width = lw
             structures.append(s)
         return structures
+    
+            
     
     def plotbands(self, structure, path, einspath = None):
         '''
