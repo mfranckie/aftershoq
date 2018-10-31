@@ -290,3 +290,42 @@ class Tymchenko_DFG_DQW(Structure):
         
         self.addDoping(0, self.layers[idop].width, vdop, idop)
         
+# Quantum cascade detectors
+#==========================
+
+class N1022(Structure):
+    """
+    Quantum cascade detector at 4.7 micron.
+    Hofstetter, Daniel, et al. “Mid-Infrared Quantum Cascade Detectors for Applications in 
+    Spectroscopy and Pyrometry.” In Quantum Sensing and Nanophotonic Devices VII, 7608:76081N. 
+    International Society for Optics and Photonics, 2010. https://doi.org/10.1117/12.853351.
+    """
+        
+    def __init__(self):
+        Structure.__init__(self)
+        self.setIFR(0.1, 10)
+        well = InGaAs()
+        barrier = AlInAs()
+        
+        self.addLayerWM(5.1, well) # <----- # 0 uniformly doped to 4*10^17 cm^-3
+        self.addLayerWM(7.5, barrier)
+        self.addLayerWM(1.25, well)
+        self.addLayerWM(6.5, barrier)
+        self.addLayerWM(1.45, well) 
+        self.addLayerWM(6.4, barrier)
+        self.addLayerWM(1.7, well)
+        self.addLayerWM(7.9, barrier)
+        self.addLayerWM(2.0, well)
+        self.addLayerWM(7.7, barrier)
+        self.addLayerWM(2.4, well) 
+        self.addLayerWM(7.5, barrier)
+        self.addLayerWM(2.9, well)
+        self.addLayerWM(7.1, barrier)
+        self.addLayerWM(3.5, well)
+        self.addLayerWM(6.8, barrier)
+        
+        idop= 0
+        vdop = 4e17 # cm^-3
+        
+        self.addDoping(0, self.layers[idop].width, vdop, idop)
+        
