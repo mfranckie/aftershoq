@@ -33,14 +33,14 @@ if __name__ == '__main__':
     
     sep = '\n----------------------------------------------\n'
     
-    print '------ Welcome to the ZnO/MgO test for of ------\n'
-    print '               "AFTERSHOQ" \n\n'
-    print '       Written by Martin Franckie 2018.'
-    print '       Please give credit where credit'
-    print '                   is due\n'
-    print sep
-    print 'Creating semiconductor materials and alloys:\n'
-    print '   ( All CBO relative to ZnO )\n'
+    print('------ Welcome to the ZnO/MgO test for of ------\n')
+    print('               "AFTERSHOQ" \n\n')
+    print('       Written by Martin Franckie 2018.')
+    print('       Please give credit where credit')
+    print('                   is due\n')
+    print(sep)
+    print('Creating semiconductor materials and alloys:\n')
+    print('   ( All CBO relative to ZnO )\n')
     
     # create materials ZnO, MgO, ZnMgO
     zno = mat.ZnO()
@@ -89,19 +89,19 @@ if __name__ == '__main__':
     x = 1-0.145
     znmgo.updateAlloy(x)
     
-    print "Using x = " + str(x) + " yields a CBO of " + str(znmgo.params[mp.Ec])
+    print("Using x = " + str(x) + " yields a CBO of " + str(znmgo.params[mp.Ec]))
     
     for val in mp.valdict:
-        print val + " = " + str(znmgo.params[mp.valdict[val]])
+        print(val + " = " + str(znmgo.params[mp.valdict[val]]))
     
-    s.addLayerMW(17.7, zno)
-    s.addLayerMW(3.1,znmgo)
-    s.addLayerMW(8.5, zno)
-    s.addLayerMW(1.8,znmgo)
+    s.addLayerWM(17.7, zno)
+    s.addLayerWM(3.1,znmgo)
+    s.addLayerWM(8.5, zno)
+    s.addLayerWM(1.8,znmgo)
     
     pot = []
     zarr = []
-    print s.length
+    print(s.length)
     for i in range(0,1000):
         z = float(i)*s.length/float(1000)*4
         zarr.append(z)
