@@ -7,7 +7,7 @@
 from aftershoq.structure import Structure
 
 import random
-from aftershoq.hilbert_curve.hilbert import HilbertCurve
+from hilbert_curve.hilbert import HilbertCurve
 from aftershoq.utils import HilbertUtil
 import numpy as np
 

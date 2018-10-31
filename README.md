@@ -28,7 +28,11 @@ To install aftershoq and all its dependencies, execute
 
 python setup.py install
 
-from the aftershoq/ directory. 
+from the aftershoq/ directory. To install on a system without root privileges, run
+
+python setyp.py install --user
+
+insead.
 
 # Tutorials
 

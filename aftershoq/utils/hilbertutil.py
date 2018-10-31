@@ -4,7 +4,7 @@ Created on 15 Mar 2018
 @author: Martin Franckie
 
 '''
-from aftershoq.hilbert_curve.hilbert import HilbertCurve
+from hilbert_curve.hilbert import HilbertCurve
 import numpy as np
 
 class HilbertUtil(object):

@@ -21,6 +21,7 @@ dictionaries and in __init__() call self.numpar.update( _new_dict_ )
 '''
 
 import time
+from aftershoq.structure import Structure
 
 class Interface(object):
     
@@ -119,3 +120,87 @@ class Interface(object):
         with base path "path". 
         '''
         pass
+    
+    @classmethod
+    def loadStructure(cls, resultpath, origs, sid):
+        """
+        Loads and returns the structure with id "sid" based on the "origs" Structure,
+        from the results file at "resultpath/results.log".
+        Returns None if no structure with the given id was found.
+        """
+        
+        s = Structure(origs)
+                      
+        Nl = len(origs.layers)
+        Ndop = len(origs.dopings)
+        
+        found = False
+        
+        with open(resultpath + "/results.log") as resfile:
+            try:
+                for line in resfile:
+                    line = line.split()
+                    if line[0] == str(sid):
+                        found=True
+                        break
+            except(IndexError):
+                pass
+            
+            if not found:
+                return None
+            
+            for il in range(Nl):
+                w = float( line[il+2] )
+                x = line[il+2+Ndop*3+Nl]
+                try:
+                      x = float(x)
+                      s.layers[il].material.updateAlloy(x)
+                except(ValueError):
+                    pass # x = 'None'
+                s.layers[il].width = w
+                
+            for idop in range(Ndop):
+                for i in range(3):
+                    s.dopings[idop][i] = float(line[Nl + 2 + idop*3 + i])
+                
+        return s
+    
+    @classmethod
+    def loadAllStructures(cls, resultpath, origs):
+
+
+
+        Nl = len(origs.layers)
+        Ndop = len(origs.dopings)
+        Structure.sid = 0
+        structures = []
+
+        with open(resultpath + "/results.log") as resfile:
+            for line in resfile:
+                
+                line = line.split()
+
+                try:
+                    sid = int(line[0])
+                except(ValueError, IndexError):
+                    continue # comment or empty line, skip
+                s = Structure(origs)
+                for il in range(Nl):
+                    w = float( line[il+2] )
+                    x = line[il+2+Ndop*3+Nl]
+                    try:
+                          x = float(x)
+                          s.layers[il].material.updateAlloy(x)
+                    except(ValueError):
+                        pass # x = 'None'
+                    s.layers[il].width = w
+
+                for idop in range(Ndop):
+                    for i in range(3):
+                        s.dopings[idop][i] = float(line[Nl + 2 + idop*3 + i])
+
+                structures.append(s)
+
+        return structures
+                
+        
