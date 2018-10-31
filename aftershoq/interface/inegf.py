@@ -71,10 +71,14 @@ class Inegf(Interface):
         self.numpar.update(self.hdiag_numpar)
         self.numpar["maxits"] = 40
         self.progwann = binpath+"wannier8.out"
-        if type(pltfm) == Local:
+        
+        if pltfm.paral == pltfm.paral_modes["SERIAL"]:
             self.prognegft = binpath + "negft8.out"
-        else:
-            self.prognegft = binpath+"negft8mpi.out"
+        elif pltfm.paral == pltfm.paral_modes["OMP"]:
+            self.prognegft = binpath + "negft8omp.out"
+        elif pltfm.paral == pltfm.paral_modes["MPI"]:
+            self.prognegft = binpath + "negft8mpi.out"
+        
         self.proghdiag = binpath+"hdiag8.out"
         self.progbandplot = binpath+"bandplot8.out"
         self.wellmat = wellmaterial
@@ -123,7 +127,7 @@ class Inegf(Interface):
             proc = local.submitandwait("sed",['-i',"--in-place=''",'2s/1/'+str(self.numpar["Nper"])+'/', "scatt3.inp"],spath)
             # to make sure file is closed:
             out, err = proc.communicate()
-            proc = local.submitandwait("cp",["scatt3.inp","." + self.datpath], spath)
+            proc = local.submitandwait("cp",["scatt3.inp","gw.inp","." + self.datpath], spath)
             out, err = proc.communicate()
             
             proc = self.pltfm.submitjob(self.prognegft,[],spath+self.datpath)
@@ -483,7 +487,7 @@ class Inegf(Interface):
                     f.write(" # Layer " + str(il))
                     il=il+1
                     f.write("\n")
-                f.write(str(struct.layers[0].material.params[mp.Ep])+"\n") # TODO: take average Ep?
+                f.write(str(self.wellmat.params[mp.Ep])+"\n")
                 f.write(str(len(struct.dopings))+"\n")
                 f.write("# Left and right end point of doped region (nm)\n"\
                         "# Doping density per volume (1/cm^3)\n"\
