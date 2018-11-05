@@ -12,6 +12,7 @@ import time
 import aftershoq.utils.debug as dbg
 import subprocess
 import numpy as np
+from matplotlib import pyplot as pl
 
 class Isewself(Interface):
     '''
@@ -269,6 +270,17 @@ class Isewself(Interface):
             pass
         
         return [z,v,psi]
+
+    def plotBands(self, structure, path):
+        [z, v, psi] = self.readBandPlot(path + "/" + structure.dirname)
+        pl.plot(z, v)
+        zpsi = psi[0]
+        psi = psi[1:-1]
+        for wavef in psi:
+            pl.plot(zpsi, wavef)
+        pl.show()
+        
+        
     
     def writeStructFile(self,structure,path):
         '''Writes the structure file self.structfilename.'''

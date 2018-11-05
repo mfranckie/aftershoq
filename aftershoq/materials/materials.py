@@ -182,7 +182,7 @@ class AlGaAs(Material):
 
     def __init__(self, name = None, x=None):
         if name is None:
-            name = "AlGaAs"
+            name = "Al_" + str(x) + "GaAs"
         mat1 = AlAs()
         mat2 = GaAs()
         C = []
@@ -205,10 +205,10 @@ class AlGaAs(Material):
 class InGaAs(Material):
     '''In_xGa_1-xAs. Bowing parameters from [Vurgaftman2001] and [Ioffe].'''
     def __init__(self,name = None, x = None):
-        if name is None:
-            name = "GaInAs"
         if x is None:
             x = 0.47
+        if name is None:
+            name = "Ga_" + str(x) + "InAs"
         mat1 = GaAs()
         mat2 = InAs()
         A = []
@@ -231,9 +231,10 @@ class InGaAs(Material):
 class AlInAs(Material):
     '''Al_xIn_1-xAs. Bowing parameters from [Vurgaftman2001].'''
     def __init__(self,name = None, x = None):
-        
+        if x is None:
+            x = 0.48
         if name is None:
-            name = "AlInAs"
+            name = "Al_" + str(x) + "InAs"
         
         mat1 = AlAs()
         mat2 = InAs()
@@ -244,8 +245,7 @@ class AlInAs(Material):
         A[mp.Ep] = -4.81
         A[mp.Vdef] = -1.4
         A[mp.Ec] = 0.094 # (= Cvbo + Cgap, Vurgaftman)
-        if x is None:
-            x = 0.48
+     
             
         super(AlInAs,self).__init__(name,[],mat1, mat2, A, x)
         
