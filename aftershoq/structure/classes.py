@@ -46,7 +46,7 @@ class Structure:
     
     sid = 0
     
-    def __init__(self, orig=None):
+    def __init__(self, orig=None, name = None):
         ''' Constructur. Optionally copies from Structure object orig.
         Each structure receives an id (sid) and a dirname, which defaults to 
         sid.
@@ -55,6 +55,10 @@ class Structure:
         self.sid = Structure.sid
         Structure.sid +=1
         
+        if name is None:
+            self.name = type(self).__name__
+        else:
+            self.name = name
         self.dirname = str(self.sid)
         self.length = 0
         self.dopings = []
@@ -201,6 +205,14 @@ class Structure:
         for l in self.dopings:
             sd += (l[1]-l[0])*l[2]
         return sd*1e-7
+    
+    def prettyPrint(self):
+        s = self.name + ":\n"
+        s += "width\tMaterial\tVol. doping\n(nm)\t\t\t(cm-3)\n"
+        for i in range(0, len(self.layers)):
+            l = self.layers[i]
+            s+= str(l.width)+"\t"+str(l.material)+"\t"+str(self.layerDoping3D(i))+"\n"
+        return s
 
 class Material(object):
     '''Defines a material or alloy between two materials.'''

@@ -42,7 +42,7 @@ class EV1157(Structure):
     '''
     
     def __init__(self):
-        Structure.__init__(self)
+        Structure.__init__(self, name="EV1157")
         
         self.setIFR(0.1, 10)
         well = GaAs()
@@ -113,6 +113,90 @@ class N471(Structure):
         vdop = 2.4e16 # cm^-3
         
         self.addDoping(0, self.layers[idop].width, vdop, idop)  
+        
+class EV1429(Structure):
+    '''
+    Strained 4.3 micron design. Published in thesis of J. Wolf (ETH Zuerich, 2017)
+    '''
+    
+    def __init__(self):
+        Structure.__init__(self)
+        
+        self.setIFR(0.1, 10)
+        
+        alinas_s = AlInAs(x = 0.665)
+        gainas_s = InGaAs(x = 0.635)
+        
+        
+        self.addLayerWM(3.5, alinas_s)
+        self.addLayerWM(1.1, gainas_s)
+        self.addLayerWM(1.3, alinas_s)
+        self.addLayerWM(3.8, gainas_s)
+        self.addLayerWM(1.0, alinas_s)
+        self.addLayerWM(3.5, gainas_s)
+        self.addLayerWM(1.8, alinas_s)
+        self.addLayerWM(2.7, gainas_s)
+        self.addLayerWM(1.9, alinas_s)
+        self.addLayerWM(2.6, gainas_s) 
+        self.addLayerWM(1.5, alinas_s) 
+        self.addLayerWM(2.3, gainas_s) 
+        self.addLayerWM(1.4, alinas_s)
+        self.addLayerWM(2.1, gainas_s) #13 <---- Doped 
+        self.addLayerWM(2.2, alinas_s) #
+        self.addLayerWM(1.9, gainas_s) #
+        self.addLayerWM(2.0, alinas_s) #
+        self.addLayerWM(1.9, gainas_s) #17 <-- until here
+        self.addLayerWM(1.9, alinas_s)
+        self.addLayerWM(1.7, gainas_s)
+        self.addLayerWM(2.4, alinas_s)
+        self.addLayerWM(1.7, gainas_s)
+        
+        dop = 0.099e18
+        idop = [13,14,15,16,17]
+        [self.addDoping(0, self.layers[i].width, dop, i) for i in idop]
+        
+class EV2138a(Structure):
+    '''
+    Genetically optimized strained 4.6 micron design. 
+    Based on EV1429, part of heterogeneous EV2138
+    Published in thesis of J. Wolf (ETH Zuerich, 2017)
+    '''
+    
+    def __init__(self):
+        Structure.__init__(self)
+        
+        self.setIFR(0.1, 10)
+        
+        alinas_s = AlInAs(x = 0.665)
+        gainas_s = InGaAs(x = 0.635)
+        
+        
+        self.addLayerWM(3.5, alinas_s)
+        self.addLayerWM(1.31, gainas_s)
+        self.addLayerWM(1.48, alinas_s)
+        self.addLayerWM(3.76, gainas_s)
+        self.addLayerWM(1.03, alinas_s)
+        self.addLayerWM(3.29, gainas_s)
+        self.addLayerWM(1.99, alinas_s)
+        self.addLayerWM(2.76, gainas_s)
+        self.addLayerWM(1.4, alinas_s)
+        self.addLayerWM(2.41, gainas_s) 
+        self.addLayerWM(1.48, alinas_s) 
+        self.addLayerWM(2.46, gainas_s) 
+        self.addLayerWM(1.33, alinas_s)
+        self.addLayerWM(2.19, gainas_s) #13 <---- Doped 
+        self.addLayerWM(1.58, alinas_s) #
+        self.addLayerWM(1.85, gainas_s) #
+        self.addLayerWM(1.97, alinas_s) #
+        self.addLayerWM(1.74, gainas_s) #17 <-- until here
+        self.addLayerWM(2.06, alinas_s)
+        self.addLayerWM(1.47, gainas_s)
+        self.addLayerWM(2.17, alinas_s)
+        self.addLayerWM(1.56, gainas_s)
+        
+        dop = 0.1554e18
+        idop = [13,14,15,16,17]
+        [self.addDoping(0, self.layers[i].width, dop, i) for i in idop]
         
 
 class EV1907(Structure):
@@ -236,7 +320,81 @@ class EV2017(Structure):
         self.addDoping(0, 3.79, dop, 9)
         self.addDoping(0, 1.29, dop, 10)
         self.addDoping(0, 3.23, dop, 11)
+       
+class EV2103(Structure):
+    '''
+    Lattice matched 8.5 micron design. 
+    Published in Bismuto Appl. Phys. Lett. 96, 141105 (2010)
+    '''
+    
+    def __init__(self):
+        Structure.__init__(self)
         
+        self.setIFR(0.1, 10)
+        
+        alinas = AlInAs()
+        gainas = InGaAs()
+        
+        self.addLayerWM(4.0,alinas)
+        self.addLayerWM(1.8, gainas)
+        self.addLayerWM(0.8,alinas)
+        self.addLayerWM(5.3, gainas)
+        self.addLayerWM(1.0,alinas)
+        self.addLayerWM(4.8, gainas)
+        self.addLayerWM(1.1,alinas)
+        self.addLayerWM(4.3, gainas)
+        self.addLayerWM(1.4,alinas)
+        self.addLayerWM(3.6, gainas) 
+        self.addLayerWM(1.7,alinas)
+        self.addLayerWM(3.3, gainas) 
+        self.addLayerWM(2.4,alinas)
+        self.addLayerWM(3.1, gainas) #13 <---- Doped
+        self.addLayerWM(3.4,alinas)  #14 <---- Doped
+        self.addLayerWM(2.9, gainas)
+        
+        dop = 0.1538e18
+        
+        idop = [13, 14]
+        
+        [self.addDoping(0, self.layers[i].width, dop, i) for i in idop]
+         
+class EV2104(Structure):
+    '''
+    Genetically optimized lattice matched 8.5 micron design.
+    Based on EV2103.
+    Published in thesis of J. Wolf (ETH Zuerich, 2017)
+    '''
+    
+    def __init__(self):
+        Structure.__init__(self)
+        
+        self.setIFR(0.1, 10)
+        
+        alinas = AlInAs()
+        gainas = InGaAs()
+        
+        self.addLayerWM(4.0,alinas)
+        self.addLayerWM(1.67, gainas)
+        self.addLayerWM(0.86,alinas)
+        self.addLayerWM(5.06, gainas)
+        self.addLayerWM(0.92,alinas)
+        self.addLayerWM(4.66, gainas)
+        self.addLayerWM(1.04,alinas)
+        self.addLayerWM(3.93, gainas)
+        self.addLayerWM(1.76,alinas)
+        self.addLayerWM(3.2, gainas) 
+        self.addLayerWM(1.71,alinas)
+        self.addLayerWM(2.84, gainas) 
+        self.addLayerWM(1.91,alinas)
+        self.addLayerWM(2.74, gainas) #13 <---- Doped
+        self.addLayerWM(2.78,alinas)  #14 <---- Doped
+        self.addLayerWM(2.55, gainas)
+        
+        dop = 0.181e18
+        
+        idop = [13, 14]
+        
+        [self.addDoping(0, self.layers[i].width, dop, i) for i in idop]
         
 # DFG structures:
 

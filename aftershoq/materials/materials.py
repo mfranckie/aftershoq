@@ -200,17 +200,44 @@ class AlGaAs(Material):
     def copy(self):
         return AlGaAs(self.name,self.x)
     
+
+class InGaAs_on_GaAs(Material):
+    '''
+    In_xGa_1-xAs on GaAs. Bowing parameters from [ArentJAP1989].
+    Tested experimentally up to x = 0.28.
+    '''
+    def __init__(self,name = None, x = None):
+        if name is None:
+            name = "Ga_" + str(x) + "InAs/GaAs"
+        mat1 = InAs()
+        mat2 = GaAs()
+        mat1.params[mp.Eg] = 0.435
+        mat1.params[mp.Ec] = -0.8672
+        A = []
+        mp.initList(A)
+        A[mp.Eg] = -0.496
+        A[mp.meff] = 0.0091 # same as InP
+        A[mp.Ep] = -1.48 # same as InP
+        A[mp.Vdef] = 2.61 # same as InP
+        A[mp.eps0] = -0.67 # same as InP
+        A[mp.ELO] = 0.002 # same as InP
+        A[mp.Ec] = 0.397
+        super(InGaAs_on_GaAs,self).__init__(name,[],mat1, mat2, A, x)
+        
+    def copy(self):
+        return InGaAs_on_GaAs(self.name,self.x)
+    
     
     
 class InGaAs(Material):
-    '''In_xGa_1-xAs. Bowing parameters from [Vurgaftman2001] and [Ioffe].'''
+    '''In_xGa_1-xAs on InP. Bowing parameters from [Vurgaftman2001] and [Ioffe].'''
     def __init__(self,name = None, x = None):
         if x is None:
-            x = 0.47
+            x = 0.53
         if name is None:
             name = "Ga_" + str(x) + "InAs"
-        mat1 = GaAs()
-        mat2 = InAs()
+        mat1 = InAs()
+        mat2 = GaAs()
         A = []
         mp.initList(A)
         A[mp.Eg] = 0.477
@@ -222,14 +249,16 @@ class InGaAs(Material):
         A[mp.Ec] = 0.060 # (= Cvbo + Cgap, Vurgaftman)
         super(InGaAs,self).__init__(name,[],mat1, mat2, A, x)
         
-        if x == 0.47:
+        if x == 0.53:
             self.params[mp.Eg] = 0.789
         
     def copy(self):
         return InGaAs(self.name,self.x)
+    
+
         
 class AlInAs(Material):
-    '''Al_xIn_1-xAs. Bowing parameters from [Vurgaftman2001].'''
+    '''Al_xIn_1-xAs on InP. Bowing parameters from [Vurgaftman2001].'''
     def __init__(self,name = None, x = None):
         if x is None:
             x = 0.48
