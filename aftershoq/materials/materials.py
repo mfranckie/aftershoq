@@ -424,7 +424,7 @@ class AlInAs(Material):
         A["meff"] = 0.049
         A["Ep"] = -4.81
         A["ac"] = -1.4
-        A["Ec"] = 0.06 # (= Cvbo + Cgap, Vurgaftman)
+        A["Ec"] = -0.0383 # (= Cvbo + Cgap + mod, Vurgaftman, mod to match LM DeltaEc)
      
             
         super(AlInAs,self).__init__(name,Material.params_dict.copy(),
