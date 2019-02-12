@@ -7,7 +7,6 @@ Created on 16 Mar 2018
 
 from aftershoq.interface import Interface
 from aftershoq.structure import Structure
-import aftershoq.structure.matpar as mp
 import aftershoq.utils.systemutil as su
 from aftershoq.numerics.runplatf import Local
 import time
@@ -445,7 +444,18 @@ class Inegf(Interface):
                 return "ERROR"
             else:
                 return chi2
-                
+        elif self.merit == self.merits["photocurrent"]:
+            omegat = self.target[0]
+            if len(self.target > 1):
+                a = self.taget[1]
+            else:
+                a = 0.010 # eV
+            currlist = values[Inegf.idat.get("j")]
+            imax = np.argmax(currlist)
+            jmax = currlist[imax]
+            omegamax = values[Inegf.idat.get("omega")][imax]
+            
+            return jmax*np.exp(-np.abs(omegamax - omegat)/a)
         else:
             print("No such merit function!")
         
@@ -460,14 +470,14 @@ class Inegf(Interface):
             path = dirpath + "/material.inp"
         with open(path, 'w') as f:
             f.write(nametag + "\n")
-            f.write(str(material.params[mp.meff])+"\n")
-            f.write(str(material.params[mp.eps0])+"\n")
-            f.write(str(material.params[mp.epsinf])+"\n")
-            f.write(str(material.params[mp.ELO])+"\n")
-            f.write(str(material.params[mp.Vdef])+"\n")
-            f.write(str(material.params[mp.vlong])+"\n")
-            f.write(str(material.params[mp.massdens])+"\n")
-            f.write(str(material.params[mp.molV]))
+            f.write(str(material.params["meff"])+"\n")
+            f.write(str(material.params["eps0"])+"\n")
+            f.write(str(material.params["epsinf"])+"\n")
+            f.write(str(material.params["ELO"])+"\n")
+            f.write(str(material.params["ac"])+"\n")
+            f.write(str(material.params["vlong"])+"\n")
+            f.write(str(material.params["massdens"])+"\n")
+            f.write(str(material.params["molV"]))
         f.closed
 
     def writeWannier(self,struct,dirpath=None):
@@ -480,7 +490,7 @@ class Inegf(Interface):
         
         # re-scaling of the CBO to lowest energy:
         Ec = []
-        [Ec.append(l.material.params[mp.Ec]) for l in struct.layers]
+        [Ec.append(l.material.params["Ec"]) for l in struct.layers]
         Ecmin = min(Ec)
         
         
@@ -494,13 +504,13 @@ class Inegf(Interface):
                 il = 1
                 for l in struct.layers:
                     f.write(str(l.width)+" ")
-                    f.write(str(l.material.params[mp.Ec]-Ecmin)+ " ")
-                    f.write(str(l.material.params[mp.meff])+ " ")
-                    f.write(str(l.material.params[mp.Valloy])+ " ")
+                    f.write(str(l.material.params["Ec"]-Ecmin)+ " ")
+                    f.write(str(l.material.params["meff"])+ " ")
+                    f.write(str(l.material.params["Valloy"])+ " ")
                     f.write(" # Layer " + str(il))
                     il=il+1
                     f.write("\n")
-                f.write(str(self.wellmat.params[mp.Ep])+"\n")
+                f.write(str(self.wellmat.params["Ep"])+"\n")
                 f.write(str(len(struct.dopings))+"\n")
                 f.write("# Left and right end point of doped region (nm)\n"\
                         "# Doping density per volume (1/cm^3)\n"\

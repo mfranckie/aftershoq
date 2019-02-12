@@ -6,7 +6,6 @@ Created on 26 Jan 2018
 Module containing core classes for materials, layers, and structures.
 '''
 
-from . import matpar as mp
 import copy
 import numpy as np
 
@@ -175,8 +174,8 @@ class Structure:
         
         for i in range( len(self.layers) ):
             layer = self.layers[i]
-            NML = np.round(layer.width/layer.material.params[mp.lattconst]*10.)
-            layer.width = NML*layer.material.params[mp.lattconst]/10.
+            NML = np.round(layer.width/layer.material.params["lattconst"]*10.*2.)
+            layer.width = NML*layer.material.params["lattconst"]/10./2.
             if(dops[i]>0):
                 self.addDoping(0, layer.width, dops[i], i)
             
@@ -217,27 +216,59 @@ class Structure:
 class Material(object):
     '''Defines a material or alloy between two materials.'''
     
-    def __init__(self,name,params,mat1=None,mat2=None,C=None,x=None):
+    # parameter dictionary:
+    params_dict = {
+        "meff": 0,   # effective mass
+        "Ec" : 0,     # Conduction band offset (eV)
+        "Eg" : 0,     # Gamma valley band gap (eV)
+        "EX" : 0,     # X valley band gap (eV)
+        "Ep" : 0,     # Kane energy (eV)
+        "Valloy" : 0, # Alloy scattering potential (eV)
+        "ELO" : 0,    # Longitudinal optical phonon energy (eV)
+        "ETO" : 0,    # Transversal optical phonon energy (eV)
+        "eps0" : 0,   # Static dielectric constant
+        "epsinf" : 0, # High-frequency dielectric function
+        "ac" : 0,   # Conduction band deformation potential (eV)
+        "av":0,   # Valence band deformation potential (eV)
+        "c11"  : 0,   # Elastic constant
+        "c12"  : 0,   # Elastic constant
+        "c44"  : 0,   # Elastic constant
+        "vlong" : 0,  # Longitudinal sound velocity (m/s)
+        "massdens" : 0,   # Mass density (kg/m^3)
+        "molV" : 0,  # Mol volume (nm^3/mol) = alc**3/4 for Zinc Blende
+        "lattconst" : 0  # Lattice constant (A)
+    }
+    
+    def __init__(self,name,params_in=None,mat1=None,mat2=None,C=None,x=None, subs=None):
         '''Constructor. Parameters:
         name:  The name of this material
-        params:  Material parameters. Set via module matpar.
+        params: Material parameters dictionary.
         mat1:   Optional, Material one in new alloy
         mat2:   Optional, Material two in new alloy
         C:      Optional, Bowing parameters for new alloy. All default to 0.
         x:      Optional, relative compositon of mat1 to mat2
+        subs:   Optional, substrate material, for strain calculation. If None, then
+                substrate is the material itself (no strain)
         '''
         self.name = name
-        self.params = params
+        self.substrate = subs
+        if (params_in is None):
+            self.params = Material.params_dict.copy()
+        else:
+            self.params = params_in.copy()
         self.mat1 = mat1
         self.mat2 = mat2
-        self.C = C
+        if (C is None):
+            self.C = Material.params_dict.copy()
+        else:
+            self.C = C.copy()
         self.x = x
         if (x is not None):
             if x > 1:
                 print("ERROR: x > 1 in material creation! Stopping.")
                 exit(1)
-            self.updateAlloy(x)
-            
+            self.updateAlloy(x)      
+      
     def updateAlloy(self,x):
         '''Updates the alloy composition of this alloy material with x
         as the new composition.
@@ -247,6 +278,38 @@ class Material(object):
             self.x = x
             self.params = self.alloy(self.mat1,self.mat2,self.C,self.x)
         
+    
+    def calcStrain(self):
+        '''Calculates the strain effects on band parameters. Corrects 
+        Eg and Ec accorcing to model-solid theory by [van de Walle PRB 1989] 
+        and [Gresch Thesis ETH Zuerich 2009].
+        '''
+        if self.substrate is None:
+            # If no substrate is given, then material is assumed relaxed
+            return
+        
+        # relaxed lattice constant
+        ar = self.params["lattconst"]
+        # a-parallel. Here, we assume that the material is fully strained
+        aII = self.substrate.params["lattconst"]
+        # Poisson ratio (assuming substrate is in 001 direction
+        D001 = 2*self.params["c12"]/self.params["c11"]
+        # epsilon-parallel
+        epsII = aII/ar - 1.
+        # a-perpendicular
+        aL = ar*(1. - D001*epsII)
+        # epsilon-perpendicular
+        epsL = aL/ar - 1.
+        
+        # DeltaOmega/Omega
+        DOm = 2*epsII + epsL
+        
+        # Valence band shift:
+        DEv = self.params["av"]*DOm
+        # Conduction band shift (naive):
+        self.params["Ec"] += self.params["ac"]*DOm
+        
+    
     def __str__(self):
         return self.name
     
@@ -263,9 +326,9 @@ class Material(object):
         x is the alloy fraction of mat1 to mat2.
         '''
         
-        params3=[]
-        for i in range(0,mp.Nparam):
-            params3.append(mat1.params[i]*x + mat2.params[i]*(1-x) - C[i]*x*(1-x))
+        params3=Material.params_dict.copy()
+        for key in mat1.params:
+            params3[key]=(mat1.params[key]*x + mat2.params[key]*(1-x) - C[key]*x*(1-x))
         # Alloy scattering:
-        params3[mp.Valloy] = x*(1-x)*(mat1.params[mp.Ec]-mat2.params[mp.Ec])
+        params3["Valloy"] = x*(1-x)*(mat1.params["Ec"]-mat2.params["Ec"])
         return params3

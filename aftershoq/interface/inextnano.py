@@ -11,7 +11,6 @@ import xml.etree.ElementTree as ET
 from lxml import etree
 import aftershoq.utils.systemutil as su
 import subprocess
-import aftershoq.structure.matpar as mp
 import aftershoq.utils.const as const
 import os
 
@@ -205,7 +204,7 @@ class Inextnano(Interface):
         # get CBO:
         CBO = 0
         for i in range(len(matlist)-1):
-            CBO_test = abs(matlist[i].params[mp.Ec] - matlist[i+1].params[mp.Ec])
+            CBO_test = abs(matlist[i].params["Ec"] - matlist[i+1].params["Ec"])
             if( CBO_test > CBO):
                 CBO = CBO_test
 

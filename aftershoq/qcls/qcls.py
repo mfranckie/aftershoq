@@ -352,7 +352,7 @@ class EV2103(Structure):
         self.addLayerWM(3.4,alinas)  #14 <---- Doped
         self.addLayerWM(2.9, gainas)
         
-        dop = 0.1538e18
+        dop = 0.12e18
         
         idop = [13, 14]
         

@@ -5,7 +5,6 @@ Created on 12 Mar 2018
 '''
 
 from aftershoq.interface import Interface
-import aftershoq.structure.matpar as mp
 from aftershoq.utils import const
 import aftershoq.utils.systemutil as su
 import time
@@ -295,8 +294,8 @@ class Isewself(Interface):
                     found=True
             if not found:
                 mat_list.append(layer.material)
-                if layer.material.params[mp.Ec] < minEc:
-                    minEc = layer.material.params[mp.Ec]
+                if layer.material.params["Ec"] < minEc:
+                    minEc = layer.material.params["Ec"]
         
         filepath = path + "/" + self.structfilename
         with open(filepath,'w') as f:
@@ -314,7 +313,7 @@ class Isewself(Interface):
             f.write(str(self.numpar["matchoice"]) + " matchoice\n")
             for mat in mat_list:
                 f.write(str(mat) + " ")
-                f.write(str(mat.params[mp.Ec]-minEc) + " ")
+                f.write(str(mat.params["Ec"]-minEc) + " ")
                 if mat.x is None:
                     f.write(str(0))
                 else:
@@ -344,7 +343,7 @@ class Isewself(Interface):
             f.write("mwell, mbarrier, Gamma, hlo, kp0\n")
             wellind = 0
             for i in range(1,len(self.material_list)):
-                if self.material_list[i].params[mp.Ec] < self.material_list[wellind].params[mp.Ec]:
+                if self.material_list[i].params["Ec"] < self.material_list[wellind].params["Ec"]:
                     wellind = i
             if wellind < len(self.material_list)-1:
                 barrind = wellind + 1
@@ -352,13 +351,13 @@ class Isewself(Interface):
                 barrind = wellind -1
             well = self.material_list[wellind]
             barr = self.material_list[barrind]
-            f.write(str(well.params[mp.meff]) + " ")
-            f.write(str(barr.params[mp.meff]) + " ")
+            f.write(str(well.params["meff"]) + " ")
+            f.write(str(barr.params["meff"]) + " ")
             gamma = const.hbar_eV**2*const.qe/(2*const.me)
-            gamma = gamma / well.params[mp.Eg] / well.params[mp.meff]
+            gamma = gamma / well.params["Eg"] / well.params["meff"]
             f.write(str(gamma) + " ")
-            f.write(str(well.params[mp.ELO]) + " ")
-            epsp = 1./well.params[mp.epsinf] - 1./well.params[mp.eps0]
+            f.write(str(well.params["ELO"]) + " ")
+            epsp = 1./well.params["epsinf"] - 1./well.params["eps0"]
             f.write(str(1./epsp) + " ")
             f.write(str(well) + "/" + str(barr) + "\n")
             

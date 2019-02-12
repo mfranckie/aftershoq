@@ -24,32 +24,36 @@ References:
 '''
 
 from aftershoq.structure import Material
-import aftershoq.structure.matpar as mp
 
 # Binaries:
 
 class GaAs(Material):
     '''GaAs, band parameters from [Vurgaftman2001]. Other parameters from
-    [Ioffe].
+    [Ioffe]. Elastic constants and hydrostatic potentials from 
+    [vandeWalle1989].
     '''
     
     def __init__(self,name = None):
         if name is None:
             name = "GaAs"
-        paramsGaAs = []
-        mp.initList(paramsGaAs)
-        paramsGaAs[mp.meff] = 0.067
-        paramsGaAs[mp.Ec] = 0.0
-        paramsGaAs[mp.Eg] = 1.519
-        paramsGaAs[mp.ELO] = 0.0376
-        paramsGaAs[mp.Ep] = 22
-        paramsGaAs[mp.eps0] = 12.9
-        paramsGaAs[mp.epsinf] = 10.89
-        paramsGaAs[mp.Vdef] = -7.17
-        paramsGaAs[mp.vlong] = 4730
-        paramsGaAs[mp.massdens] = 5317
-        paramsGaAs[mp.molV] = 0.04517
-        paramsGaAs[mp.lattconst] = 5.653
+        paramsGaAs = Material.params_dict.copy()
+        paramsGaAs["meff"] = 0.067
+        paramsGaAs["Ec"] = 0.0
+        paramsGaAs["Eg"] = 1.519
+        paramsGaAs["EX"] = 1.981
+        paramsGaAs["ELO"] = 0.0376
+        paramsGaAs["Ep"] = 22
+        paramsGaAs["eps0"] = 12.9
+        paramsGaAs["epsinf"] = 10.89
+        paramsGaAs["ac"] = -7.17
+        paramsGaAs["av"] = 1.16
+        paramsGaAs["c11"] = 1.223
+        paramsGaAs["c12"] = 0.571
+        paramsGaAs["c44"] = 0.600
+        paramsGaAs["vlong"] = 4730
+        paramsGaAs["massdens"] = 5317
+        paramsGaAs["molV"] = 0.04517
+        paramsGaAs["lattconst"] = 5.653
         super(GaAs,self).__init__(name,paramsGaAs)
         
     def copy(self):
@@ -57,21 +61,31 @@ class GaAs(Material):
 
 class AlAs(Material):
     '''AlAs, band parameters from [Vurgaftman2001]. Other parameters from
-    [Ioffe].
+    [Ioffe]. Elastic constants and hydrostatic potentials from 
+    [vandeWalle1989].
     '''
     def __init__(self,name = None):
         if name is None:
             name = "AlAs"
-        paramsAlAs = []
-        mp.initList(paramsAlAs)
-        paramsAlAs[mp.meff] = 0.15
-        paramsAlAs[mp.Ec] = 0.99
-        paramsAlAs[mp.Eg] = 3.099
-        paramsAlAs[mp.ELO] = 0.050
-        paramsAlAs[mp.Ep] = 22
-        paramsAlAs[mp.eps0] = 10.06
-        paramsAlAs[mp.epsinf] = 8.05
-        paramsAlAs[mp.lattconst] = 5.6611
+        paramsAlAs = Material.params_dict.copy()
+        
+        paramsAlAs["meff"] = 0.15
+        paramsAlAs["Ec"] = 0.99
+        paramsAlAs["Eg"] = 3.099
+        paramsAlAs["EX"] = 2.24
+        paramsAlAs["ELO"] = 0.050
+        paramsAlAs["Ep"] = 22
+        paramsAlAs["eps0"] = 10.06
+        paramsAlAs["epsinf"] = 8.05
+        paramsAlAs["lattconst"] = 5.6611
+        paramsAlAs["ac"] = -7.17
+        paramsAlAs["av"] = 1.16
+        paramsAlAs["c11"] = 1.250
+        paramsAlAs["c12"] = 0.534
+        paramsAlAs["c44"] = 0.542
+        paramsAlAs["molV"] = 0.04536
+        paramsAlAs["massdens"] = 3760
+        paramsAlAs["vlong"] = 5650
         super(AlAs,self).__init__(name,paramsAlAs)
         
     def copy(self):
@@ -79,30 +93,160 @@ class AlAs(Material):
 
 class InAs(Material):
     '''InAs, band parameters from [Vurgaftman2001]. Other parameters from
-    [Ioffe].
+    [Ioffe]. Elastic constants and hydrostatic potentials from 
+    [vandeWalle1989].
     '''    
     def __init__(self,name = None):
         
         if name is None:
             name = "InAs"
-            params = []
-            mp.initList(params)
-            params[mp.meff] = 0.026
-            params[mp.Ec] = -0.892
-            params[mp.Eg] = 0.417
-            params[mp.ELO] = 0.0298 # Ioffe
-            params[mp.Ep] = 21.5
-            params[mp.eps0] = 15.1 # Ioffe
-            params[mp.epsinf] = 12.3
-            params[mp.Vdef] = -5.08
-            params[mp.vlong] = 3830
-            params[mp.lattconst] = 6.0583
-            params[mp.massdens] = 5680
-            params[mp.molV] = 0.0556
+            params = Material.params_dict.copy()
+            params["meff"] = 0.026
+            params["Ec"] = -0.892
+            params["Eg"] = 0.417
+            params["EX"] = 1.433
+            params["ELO"] = 0.0298 # Ioffe
+            params["Ep"] = 21.5
+            params["eps0"] = 15.1 # Ioffe
+            params["epsinf"] = 12.3
+            params["ac"] = -5.08
+            params["av"] = 1.00
+            params["c11"] = 0.833
+            params["c12"] = 0.453
+            params["c44"] = 0.396
+            params["vlong"] = 3830
+            params["lattconst"] = 6.0583
+            params["massdens"] = 5680
+            params["molV"] = 0.0556
+            
             super(InAs,self).__init__(name,params)
             
     def copy(self):
         return InAs(self.name)
+    
+class InP(Material):
+    '''InP, band parameters from [Vurgaftman2001]. Other parameters from
+    [Ioffe]. Elastic constants and hydrostatic potentials from 
+    [vandeWalle1989].
+    '''    
+    def __init__(self,name = None):
+        
+        if name is None:
+            name = "InP"
+            params = Material.params_dict.copy()
+            params["meff"] = 0.0795
+            params["Ec"] = -0.2854 # Vurgaftman VBO GaAs/InP = 0.19
+            params["Eg"] = 1.4236
+            params["ELO"] = 0.043 # Ioffe
+            params["Ep"] = 20.7
+            params["eps0"] = 12.5 # Ioffe
+            params["epsinf"] = 9.61
+            params["ac"] = -5.04
+            params["av"] = 1.27
+            params["c11"] = 1.022
+            params["c12"] = 0.576
+            params["c44"] = 0.460
+            params["vlong"] = 4580
+            params["lattconst"] = 5.8697
+            params["massdens"] = 4810
+            params["molV"] = 0.05056
+            super(InP,self).__init__(name,params)
+            
+    def copy(self):
+        return InP(self.name)
+    
+class GaSb(Material):
+    '''GaSb, band parameters from [Vurgaftman2001]. Other parameters from
+    [Ioffe]. Elastic constants and hydrostatic potentials from 
+    [vandeWalle1989].
+    '''    
+    def __init__(self,name = None):
+        
+        if name is None:
+            name = "GaSb"
+            params = Material.params_dict.copy()
+            params["meff"] = 0.039
+            params["Ec"] = 0.063
+            params["Eg"] = 0.812
+            params["ELO"] = 0.0297 # Ioffe
+            params["Ep"] = 27.0
+            params["eps0"] = 15.7 # Ioffe
+            params["epsinf"] = 14.4
+            params["ac"] = -7.5
+            params["av"] = 0.79
+            params["c11"] = 0.908
+            params["c12"] = 0.413
+            params["c44"] = 0.445
+            params["vlong"] = 3970
+            params["lattconst"] = 6.0959
+            params["massdens"] = 5610
+            params["molV"] = 0.05663
+            super(GaSb,self).__init__(name,params)
+            
+    def copy(self):
+        return GaSb(self.name)
+    
+class AlSb(Material):
+    '''GaSb, band parameters from [Vurgaftman2001]. Other parameters from
+    [Adachi1999]. Elastic constants and hydrostatic potentials from 
+    [vandeWalle1989].
+    '''    
+    def __init__(self,name = None):
+        
+        if name is None:
+            name = "AlSb"
+            params = Material.params_dict.copy()
+            params["meff"] = 0.14
+            params["Ec"] = 1.257
+            params["Eg"] = 2.386 #direct gap (indirect gap =1.6 eV)
+            params["ELO"] = 0.0298
+            params["Ep"] = 18.7
+            params["eps0"] = 12.04
+            params["epsinf"] = 10.24
+            params["ac"] = -4.5
+            params["av"] = 1.38
+            params["c11"] = 0.877
+            params["c12"] = 0.434
+            params["c44"] = 0.408
+            params["vlong"] = 3830
+            params["lattconst"] = 6.1355
+            params["massdens"] = 5680
+            params["molV"] = 0.05774
+            super(AlSb,self).__init__(name,params)
+            
+    def copy(self):
+        return AlSb(self.name)
+    
+class InSb(Material):
+    '''GaSb, band parameters from [Vurgaftman2001]. Other parameters from
+    [Ioffe]. Elastic constants and hydrostatic potentials from 
+    [vandeWalle1989].
+    '''    
+    def __init__(self,name = None):
+        
+        if name is None:
+            name = "InSb"
+            params = Material.params_dict.copy()
+            params["meff"] = 0.0135
+            params["Ec"] = -0.484
+            params["Eg"] = 0.235
+            params["ELO"] = 0.025 # Ioffe
+            params["Ep"] = 23.3
+            params["eps0"] = 16.8 # Ioffe
+            params["epsinf"] = 15.7
+            params["ac"] = -6.94
+            params["av"] = 0.36
+            params["c11"] = 0.659
+            params["c12"] = 0.356
+            params["c44"] = 0.300
+            params["vlong"] = 3400
+            params["lattconst"] = 6.4794
+            params["massdens"] = 5770
+            params["molV"] = 0.06800
+            super(InSb,self).__init__(name,params)
+            
+    def copy(self):
+        return InSb(self.name)
 
 class ZnO(Material):
     '''ZnO, parameters from [Janotti2007] and [Bateman1962].
@@ -111,20 +255,23 @@ class ZnO(Material):
     def __init__(self,name = None):
         if name is None:
             name = "ZnO"
-        params = []
-        mp.initList(params)
-        params[mp.meff] = 0.22
-        params[mp.Ec] = 0
-        params[mp.Eg] = 3.4 # [Janotti2007]
-        params[mp.ELO] = 0.072
-        params[mp.Ep] = 21.5
-        params[mp.eps0] = 8.49
-        params[mp.epsinf] = 3.72
-        params[mp.Vdef] = -2.3 # [Janotti2007]
-        params[mp.vlong] = 6090 # Bateman JAP 33, 1962
-        params[mp.massdens] = 5606
-        params[mp.molV] = 0.0145
-        params[mp.lattconst] = 5.2
+        params = Material.params_dict.copy()
+        params["meff"] = 0.22
+        params["Ec"] = -0.44 # ±0.23 [ZhangAPL2008]
+        params["Eg"] = 3.4 # [Janotti2007]
+        params["ELO"] = 0.072
+        params["Ep"] = 21.5
+        params["eps0"] = 8.49
+        params["epsinf"] = 3.72
+        params["ac"] = -2.3 # [Janotti2007]
+        params["av"] = -0.6 # [Janotti2007]
+        params["c11"] = 0.419 # JemmyCinitA 2014
+        params["c12"] = 0.0384 # JemmyCinitA 2014
+        params["c44"] = -0.0587 # JemmyCinitA 2014
+        params["vlong"] = 6090 # Bateman JAP 33, 1962
+        params["massdens"] = 5606
+        params["molV"] = 0.0145
+        params["lattconst"] = 5.2
         super(ZnO,self).__init__(name,params)
         
     def copy(self):
@@ -138,17 +285,20 @@ class MgO(Material):
         
         if name is None:
             name = "MgO"
-        params = []
-        mp.initList(params)
-        params[mp.meff] = 0.37
-        params[mp.Ec] = 1.7 # Janotti, van der Walle PRB 2007
-        params[mp.Eg] = 6.3 # Janotti, van der Walle PRB 2007
-        params[mp.ELO] = 0.089
-        params[mp.Ep] = 21.5
-        params[mp.eps0] = 9.6
-        params[mp.epsinf] = 2.98
-        params[mp.Vdef] = -4.3
-        params[mp.lattconst] = 4.21
+        params = Material.params_dict.copy()
+        params["meff"] = 0.37
+        params["Ec"] = 1.26 # Janotti, van der Walle PRB 2007 (-0.44 eV)
+        params["Eg"] = 6.3 # Janotti, van der Walle PRB 2007
+        params["ELO"] = 0.089
+        params["Ep"] = 21.5
+        params["eps0"] = 9.6
+        params["epsinf"] = 2.98
+        params["ac"] = -4.3 # [Janotti2007]
+        params["av"] =  2.0 # [Janotti2007]
+        params["c11"] = 0.2979 # Strauch, "Semiconductors" 2017
+        params["c12"] = 0.0958 # Strauch, "Semiconductors" 2017
+        params["c44"] = 0.1542 # Strauch, "Semiconductors" 2017
+        params["lattconst"] = 4.21
         super(MgO,self).__init__(name,params)
         
     def copy(self):
@@ -158,17 +308,16 @@ class MgOzoterac(Material):
     '''MgO, parameters used in the Zoterac (ERC) project.'''
     
     def __init__(self,name = 'MgOzoterac'):
-        params = []
-        mp.initList(params)
-        params[mp.meff] = 0.22
-        params[mp.Ec] = 1.3 # Deliverable D1.3 1/9/2017
-        params[mp.Eg] = 5.3 # Deliverable D1.3 1/9/2017
-        params[mp.ELO] = 0.089
-        params[mp.Ep] = 21.5
-        params[mp.eps0] = 9.6
-        params[mp.epsinf] = 2.98
-        params[mp.Vdef] = -4.3
-        params[mp.lattconst] = 4.21
+        params = Material.params_dict.copy()
+        params["meff"] = 0.22
+        params["Ec"] = 0.86 # 1.3-0.44 Deliverable D1.3 1/9/2017
+        params["Eg"] = 5.3 # Deliverable D1.3 1/9/2017
+        params["ELO"] = 0.089
+        params["Ep"] = 21.5
+        params["eps0"] = 9.6
+        params["epsinf"] = 2.98
+        params["ac"] = -4.3
+        params["lattconst"] = 4.21
         super(MgOzoterac,self).__init__(name,params)
 
     def copy(self):
@@ -180,22 +329,26 @@ class AlGaAs(Material):
     '''Al_xGa_1-xAs. Bowing parameters from [Vurgaftman2001]. 
     CBO from Yi et al, PRB 81, 235325 (2010)'''
 
-    def __init__(self, name = None, x=None):
+    def __init__(self, name = None, x=0.):
         if name is None:
             name = "Al_" + str(x) + "GaAs"
         mat1 = AlAs()
         mat2 = GaAs()
-        C = []
-        mp.initList(C)
-        C[mp.Eg] = -0.127 + 1.310*x
-        super(AlGaAs,self).__init__(name, [], mat1, mat2, C, x)
+        C = Material.params_dict.copy()
+        C["Eg"] = -0.127 + 1.310*x
+        C["EX"] = 0.055
+        C["Ec"] = -0.127 + 1.310*x
+        super(AlGaAs,self).__init__(name, Material.params_dict.copy(), mat1, mat2, C, x)
             
     def updateAlloy(self,x):
+        self.C["Eg"] = -0.127 + 1.310*x
+        self.C["Ec"] = -0.127 + 1.310*x
         super(AlGaAs,self).updateAlloy(x)
         if x < 0.42:
-            self.params[mp.Ec] = 0.831*x
+            self.params["Ec"] = 0.831*x
         else:
-            self.params[mp.Ec] = 0.332 + 0.054*x
+            #self.params["Ec"] = 0.332 + 0.054*x #indirect gap
+            self.params["Ec"] = -0.115 + 1.105*x  #direct gap
             
     def copy(self):
         return AlGaAs(self.name,self.x)
@@ -206,23 +359,24 @@ class InGaAs_on_GaAs(Material):
     In_xGa_1-xAs on GaAs. Bowing parameters from [ArentJAP1989].
     Tested experimentally up to x = 0.28.
     '''
-    def __init__(self,name = None, x = None):
+    def __init__(self,name = None, x = 0.):
         if name is None:
-            name = "Ga_" + str(x) + "InAs/GaAs"
+            name = "In_" + str(x) + "GaAs/GaAs"
         mat1 = InAs()
         mat2 = GaAs()
-        mat1.params[mp.Eg] = 0.435
-        mat1.params[mp.Ec] = -0.8672
-        A = []
-        mp.initList(A)
-        A[mp.Eg] = -0.496
-        A[mp.meff] = 0.0091 # same as InP
-        A[mp.Ep] = -1.48 # same as InP
-        A[mp.Vdef] = 2.61 # same as InP
-        A[mp.eps0] = -0.67 # same as InP
-        A[mp.ELO] = 0.002 # same as InP
-        A[mp.Ec] = 0.397
-        super(InGaAs_on_GaAs,self).__init__(name,[],mat1, mat2, A, x)
+        mat1.params["Eg"] = 0.435
+        mat1.params["Ec"] = -0.8672
+        A = Material.params_dict.copy()
+        
+        A["Eg"] = -0.496
+        A["meff"] = 0.0091 # same as InP
+        A["Ep"] = -1.48 # same as InP
+        A["ac"] = 2.61 # same as InP
+        A["eps0"] = -0.67 # same as InP
+        A["ELO"] = 0.002 # same as InP
+        A["Ec"] = 0.397
+        super(InGaAs_on_GaAs,self).__init__(name,Material.params_dict.copy(),
+                                            mat1, mat2, A, x, GaAs())
         
     def copy(self):
         return InGaAs_on_GaAs(self.name,self.x)
@@ -235,22 +389,20 @@ class InGaAs(Material):
         if x is None:
             x = 0.53
         if name is None:
-            name = "Ga_" + str(x) + "InAs"
+            name = "In_" + str(x) + "GaAs"
         mat1 = InAs()
         mat2 = GaAs()
-        A = []
-        mp.initList(A)
-        A[mp.Eg] = 0.477
-        A[mp.meff] = 0.0091
-        A[mp.Ep] = -1.48
-        A[mp.Vdef] = 2.61
-        A[mp.eps0] = -0.67 # Ioffe
-        A[mp.ELO] = 0.002 # fit to Ioffe 34 meV lattice matched
-        A[mp.Ec] = 0.060 # (= Cvbo + Cgap, Vurgaftman)
-        super(InGaAs,self).__init__(name,[],mat1, mat2, A, x)
+        A = Material.params_dict.copy()
         
-        if x == 0.53:
-            self.params[mp.Eg] = 0.789
+        A["Eg"] = 0.477
+        A["meff"] = 0.0091
+        A["Ep"] = -1.48
+        A["ac"] = 2.61
+        A["eps0"] = -0.67 # Ioffe
+        A["ELO"] = 0.002 # fit to Ioffe 34 meV lattice matched
+        A["Ec"] = 0.097 # (= Cvbo + Cgap, Vurgaftman)
+        super(InGaAs,self).__init__(name,Material.params_dict.copy(),
+                                    mat1, mat2, A, x, InP())
         
     def copy(self):
         return InGaAs(self.name,self.x)
@@ -267,38 +419,167 @@ class AlInAs(Material):
         
         mat1 = AlAs()
         mat2 = InAs()
-        A = []
-        mp.initList(A)
-        A[mp.Eg] = 0.70
-        A[mp.meff] = 0.049
-        A[mp.Ep] = -4.81
-        A[mp.Vdef] = -1.4
-        A[mp.Ec] = 0.094 # (= Cvbo + Cgap, Vurgaftman)
+        A = Material.params_dict.copy()
+        A["Eg"] = 0.70
+        A["meff"] = 0.049
+        A["Ep"] = -4.81
+        A["ac"] = -1.4
+        A["Ec"] = 0.06 # (= Cvbo + Cgap, Vurgaftman)
      
             
-        super(AlInAs,self).__init__(name,[],mat1, mat2, A, x)
-        
-        if x == 0.48:
-            self.params[mp.Ec] = 0.032294
-            self.params[mp.meff] = 0.080
-            self.params[mp.Eg] = 1.404
+        super(AlInAs,self).__init__(name,Material.params_dict.copy(),
+                                    mat1, mat2, A, x, InP())
         
     def copy(self):
         return AlInAs(self.name,self.x)
         
+class GaInSb(Material):
+    '''Ga_xIn_(1-x)Sb/GaSb. Bowing parameters from [Vurgaftman2001].'''
+    
+    def __init__(self, name = None, x = None):
+        if x is None:
+            x = 0.0
+        if name is None:
+            name = "Ga_" + str(x) + "InSb"
+        
+        mat1 = GaSb()
+        mat2 = InSb()
+        A = Material.params_dict.copy()
+        A["Eg"] = 0.415
+        A["EX"] = 0.33
+        A["meff"] = 0.0092
+        A["Ec"] = 0.415 # (= Cvbo + Cgap, Vurgaftman)
+     
+            
+        super(GaInSb,self).__init__(name,Material.params_dict.copy(),
+                                    mat1, mat2, A, x, GaSb())
+        
+    def copy(self):
+        return GaInSb(self.name,self.x)
 
+class AlInSb(Material):
+    '''Al_xIn_(1-x)Sb/GaSb. Bowing parameters from [Vurgaftman2001].'''
+    
+    def __init__(self, name = None, x = None):
+        if x is None:
+            x = 0.0
+        if name is None:
+            name = "Al_" + str(x) + "InSb"
+        
+        mat1 = AlSb()
+        mat2 = InSb()
+        A = Material.params_dict.copy()
+        A["Eg"] = 0.43
+        A["Ec"] = 0.43 # (= Cvbo + Cgap, Vurgaftman)
+            
+        super(AlInSb,self).__init__(name,Material.params_dict.copy(),
+                                    mat1, mat2, A, x, GaSb())
+        
+    def copy(self):
+        return AlInSb(self.name,self.x)
 
+class AlGaSb(Material):
+    '''Al_xGa_(1-x)Sb/GaSb. Bowing parameters from [Vurgaftman2001].'''
+    
+    def __init__(self, name = None, x = None):
+        if x is None:
+            x = 0.0
+        if name is None:
+            name = "Al_" + str(x) + "InSb"
+        
+        mat1 = AlSb()
+        mat2 = GaSb()
+        A = Material.params_dict.copy()
+        A["Eg"] = -0.044 + 1.22*x
+        A["Ec"] = -0.044 + 1.22*x # (= Cvbo + Cgap, Vurgaftman)
+            
+        super(AlGaSb,self).__init__(name,Material.params_dict.copy(),
+                                    mat1, mat2, A, x, GaSb())
+    def updateAlloy(self,x):
+        
+        self.C["Eg"] = -0.044 + 1.22*x 
+        self.C["Ec"] = -0.044 + 1.22*x  
+        
+        super(AlGaSb,self).updateAlloy(x)
+               
+     
+    def copy(self):
+        return AlGaSb(self.name,self.x)
+
+class GaAsSb(Material):
+    '''Ga_xAs_(1-x)Sb/GaSb. Bowing parameters from [Vurgaftman2001].'''
+    
+    def __init__(self, name = None, x = None):
+        if x is None:
+            x = 0.0
+        if name is None:
+            name = "Ga_" + str(x) + "AsSb"
+        
+        mat1 = GaAs()
+        mat2 = GaSb()
+        A = Material.params_dict.copy()
+        A["Eg"] = 1.43
+        A["Ec"] = 0.37 # (= Cvbo + Cgap, Vurgaftman)
+            
+        super(GaAsSb,self).__init__(name,Material.params_dict.copy(),
+                                    mat1, mat2, A, x, GaSb())
+        
+    def copy(self):
+        return GaAsSb(self.name,self.x)
+    
+class InAsSb(Material):
+    '''In_xAs_(1-x)Sb/GaSb. Bowing parameters from [Vurgaftman2001].'''
+    
+    def __init__(self, name = None, x = None):
+        if x is None:
+            x = 0.0
+        if name is None:
+            name = "InAs_" + str(x) + "Sb"
+        
+        mat1 = InAs()
+        mat2 = InSb()
+        A = Material.params_dict.copy()
+        A["Eg"] = 0.67
+        A["meff"] = 0.035
+        A["Ec"] = 0.67 # (= Cvbo + Cgap, Vurgaftman)
+            
+        super(InAsSb,self).__init__(name,Material.params_dict.copy(),
+                                    mat1, mat2, A, x, GaSb())
+        
+    def copy(self):
+        return InAsSb(self.name,self.x)
+    
+class AlAsSb(Material):
+    '''AlAs_(1-x)Sb_x/GaSb. Bowing parameters from [Vurgaftman2001].'''
+    
+    def __init__(self, name = None, x = None):
+        if x is None:
+            x = 0.0
+        if name is None:
+            name = "AlAs_(1-" + str(x) + ")Sb_x"
+        
+        mat1 = AlSb()
+        mat2 = AlAs()
+        A = Material.params_dict.copy()
+        A["Eg"] = 0.8
+        A["Ec"] = -0.91 # (= Cvbo + Cgap, Vurgaftman)
+            
+        super(AlAsSb,self).__init__(name,Material.params_dict.copy(),
+                                    mat1, mat2, A, x, GaSb())
+        
+    def copy(self):
+        return AlAsSb(self.name,self.x)
+    
 class ZnMgO(Material):
     '''Zn_xMg_1-xO. Only linear mixing.'''
-    def __init__(self,name = None,x = None):
+    def __init__(self,name = None,x = 0.):
         if name is None:
             name = "Zn_"+str(x)+"Mg_"+str(1-x)+"O"
         mat1 = ZnO()
         mat2 = MgO()
         # Bowing paremeters:Unknown
-        A = []
-        mp.initList(A)
-        super(ZnMgO,self).__init__(name,[],mat1,mat2,A,x)
+        A = Material.params_dict.copy()
+        super(ZnMgO,self).__init__(name,Material.params_dict.copy(),mat1,mat2,A,x,ZnO())
         
     def copy(self):
         return ZnMgO(self.name,self.x)
@@ -333,18 +614,17 @@ class AlInGaAs(Material):
             mat1 = AlInAs()
             mat2 = InGaAs()
             
-            A = []
-            mp.initList(A)
-            A[mp.Eg] = 0.22
-            A[mp.meff] = -0.016
-            super(AlInGaAs,self).__init__(name,[],mat1,mat2,A,x)
+            A = Material.params_dict.copy()
+            A["Eg"] = 0.22
+            A["meff"] = -0.016
+            super(AlInGaAs,self).__init__(name,Material.params_dict.copy(),mat1,mat2,A,x)
             
         def copy(self):
             return AlInGaAs(self.x, self.name)
         
         def updateAlloy(self, x):
             Material.updateAlloy(self, x)
-            self.params[mp.Valloy] = self.mat1.params[mp.Valloy]*x + \
-                self.mat2.params[mp.Valloy]*(1-x)
-            self.params[mp.Ec] = 0.73*(0.712*x - 0.22*x*(1-x)) + self.mat2.params[mp.Ec]
+            self.params["Valloy"] = self.mat1.params["Valloy"]*x + \
+                self.mat2.params["Valloy"]*(1-x)
+            self.params["Ec"] = 0.73*(0.712*x - 0.22*x*(1-x)) + self.mat2.params["Ec"]
         

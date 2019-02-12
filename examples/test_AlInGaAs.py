@@ -55,10 +55,10 @@ if __name__ == '__main__':
     alingaas = AlInGaAs(1)
     ingaas = InGaAs()
     inalas = InAlAs()
-    print(ingaas.params[mp.Valloy])
-    print(ingaas.params[mp.Ec])
-    print(inalas.params[mp.Valloy])
-    print(alingaas.params[mp.Ec])
+    print(ingaas.params["Valloy"])
+    print(ingaas.params["Ec"])
+    print(inalas.params["Valloy"])
+    print(alingaas.params["Ec"])
     
     print(alingaas)
     
@@ -73,9 +73,9 @@ if __name__ == '__main__':
         z.append( float(i)/float(N) )
         x.append( z[i]*0.48 )
         alingaas.updateAlloy(z[i])
-        ec.append(alingaas.params[mp.Ec]-ingaas.params[mp.Ec])
-        m.append(alingaas.params[mp.meff])
-        va.append(alingaas.params[mp.Valloy])
+        ec.append(alingaas.params["Ec"]-ingaas.params["Ec"])
+        m.append(alingaas.params["meff"])
+        va.append(alingaas.params["Valloy"])
     
     # reproducing plot from Ohtani APL 2013:
     pl.plot(x,m)
@@ -92,7 +92,7 @@ if __name__ == '__main__':
     x = 0.23/0.48
     alingaas.updateAlloy(x)
     
-    print("Using x = " + str(x) + " yields a CBO of " + str(alingaas.params[mp.Ec]-ingaas.params[mp.Ec]))
+    print("Using x = " + str(x) + " yields a CBO of " + str(alingaas.params["Ec"]-ingaas.params["Ec"]))
     
     for val in mp.valdict:
         print(val + " = " + str(alingaas.params[mp.valdict[val]]))
@@ -110,7 +110,7 @@ if __name__ == '__main__':
         zarr.append(z)
         while z >= s.length:
             z -= s.length
-        pot.append(s.layers[s.layerIndex(z)].material.params[mp.Ec])
+        pot.append(s.layers[s.layerIndex(z)].material.params["Ec"])
     
     pl.figure(3)
     pl.plot(zarr,pot)
