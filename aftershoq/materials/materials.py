@@ -147,7 +147,7 @@ class InP(Material):
             params["c12"] = 0.576
             params["c44"] = 0.460
             params["vlong"] = 4580
-            params["lattconst"] = 5.8697
+            params["lattconst"] = 5.8687
             params["massdens"] = 4810
             params["molV"] = 0.05056
             super(InP,self).__init__(name,params)
