@@ -9,7 +9,7 @@ import time
 import aftershoq.utils.debug as dbg
 import subprocess
 import os
-import psutil
+#import psutil
 
 class Platform(object):
     '''
@@ -52,8 +52,7 @@ class Euler(Platform):
             paral_in = self.paral_modes.get("MPI")
         
         self.paral = paral_in
-        if self.paral == self.paral_modes.get("OMP"):
-            os.environ["OMP_NUM_THREADS"] = str(Nproc)
+        
         self.Nproc = Nproc
         self.wtime = wtime
         self.subcommand = "bsub"
@@ -64,6 +63,9 @@ class Euler(Platform):
             Nproc = self.Nproc
         if wtime is None:
             wtime = self.wtime
+            
+        if self.paral == self.paral_modes.get("OMP"):
+            os.environ["OMP_NUM_THREADS"] = str(Nproc)
         
         progargs = []
         jobname = str(dirpath)
@@ -78,7 +80,7 @@ class Euler(Platform):
         progargs.append(str(wtime))
         progargs.append("-J")
         progargs.append(jobname)
-        if Nproc>1 and self.paral == paral_modes.get("MPI"):
+        if Nproc>1 and self.paral == self.paral_modes.get("MPI"):
             progargs.append("mpirun")
         progargs.append(prog)
         [progargs.append(a) for a in args]
@@ -138,7 +140,8 @@ class MPI(Platform):
     def __init__(self, logical = False):
         super(MPI, self).__init__("MPI")
         self.paral = self.paral_modes["MPI"]
-        self.Nproc = psutil.cpu_count(logical=logical)
+        #self.Nproc = psutil.cpu_count(logical=logical)
+        self.Nproc = 1
         
     def submitjob(self, prog, args, dirpath, Nproc = None, wtime = None):
         if Nproc is None:
