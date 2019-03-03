@@ -27,16 +27,40 @@ class Platform(object):
 
     def __init__(self, name=None):
         '''
-        Constructor
+        Superclass constructor. This class contains the following
+        attributes:
+        
+        paral: Parallelization mode. Can be one of the Platform.paral_modes:
+            "MPI"
+            "OMP"
+            "SERIAL"
+        commlist: A list of commands to be executed next. Commands are added
+            through the method addcomm(command), and executed by execcomm().
         '''
         
         self.paral = self.paral_modes["SERIAL"]
+        self.commlist = []
         
     def submitjob(self,prog,args,dirpath,Nproc=None,wtime=None):
         pass
     
     def jobstatus(self,proc):
         pass
+    
+    def addcomm(self, command):
+        """
+        Add command "command" to list of commands to be executed.
+        """
+        self.commlist.append(command)
+        
+    def execcomm(self):
+        """
+        Executes all the commands in Platform.commlist, and subsequently
+        empties the list.
+        """
+    
+        pass
+    
     
 class Euler(Platform):
     
@@ -98,6 +122,21 @@ class Euler(Platform):
             return False
         else:
             return True
+        
+    def execcomm(self):
+        
+        progargs = []
+        
+        if len(self.commlist < 1):
+            return
+        
+        if len(self.commlist > 2):
+            for c in self.commlist[1:-1]:
+                for cc in c:
+                    progargs.append(cc)
+                progargs.append(';')
+        
+        self.commlist = []
         
 class Local(Platform):
     """
