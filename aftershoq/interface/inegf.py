@@ -15,6 +15,7 @@ import subprocess
 from matplotlib import pyplot as pl
 import numpy as np
 from aftershoq.utils import const
+from aftershoq.materials import GaAs
 
 class Inegf(Interface):
     '''
@@ -57,7 +58,7 @@ class Inegf(Interface):
     # index of data in negft.dat
     idat = {"eFd":0,"omega":1,"eFacd":2,"j":3,"gain":4,"dk":5,"konv":6,"errdyn":7,"ierror":8}
 
-    def __init__(self,binpath,pltfm,wellmaterial,einspath = "./"):
+    def __init__(self,binpath="",pltfm=Local(),wellmaterial=GaAs(),einspath = "./"):
         '''
         Constructor. Subclass specific parameters:
         wellmaterial: Material of the well of the structure (used for
@@ -446,11 +447,11 @@ class Inegf(Interface):
                 return chi2
         elif self.merit == self.merits["photocurrent"]:
             omegat = self.target[0]
-            if len(self.target > 1):
-                a = self.taget[1]
+            if len(self.target) > 1:
+                a = self.target[1]
             else:
                 a = 0.010 # eV
-            currlist = values[Inegf.idat.get("j")]
+            currlist = np.abs( values[Inegf.idat.get("j")] )
             imax = np.argmax(currlist)
             jmax = currlist[imax]
             omegamax = values[Inegf.idat.get("omega")][imax]
@@ -730,6 +731,99 @@ class Inegf(Interface):
                 pl.plot(om, g)
                 
         return om_all, g_all
+    
+    def plotResolve(self, path, structure = None, einspath = None):
+
+        if structure is not None:
+            path = path + "/" + structure.dirname
+        
+        path = path + "/" + self.datpath + "/eins/"
+
+        if einspath == None:
+            dirlist = su.listdirs(path)
+            subdirs = []
+            for d in dirlist:
+                if "resolve8.info" in su.ls(path + "/" + d):
+                    subdirs.append(d)
+            dirlist = subdirs
+        else:
+            dirlist = [einspath]
+
+        Nplots = len(dirlist)
+        Nrows = int( np.sqrt(Nplots) )
+        Ncols = int( Nplots/Nrows + 0.5 )
+
+        iplot = 1
+
+        fig1 = pl.figure() # Figure for current
+        fig2 = pl.figure() # Figure for density
+
+        for dir in dirlist:
+            pathdir = path + "/" + dir
+            bandplot = np.transpose( np.loadtxt(pathdir + "/bandplot.dat") )
+            plotak = True
+            try:
+                ak0 =  np.loadtxt( pathdir + "/resolve_ak.dat")
+            except FileNotFoundError:
+                plotak = False
+            dens = np.loadtxt( pathdir + "/resolve_dens.dat")
+            curr = np.loadtxt( pathdir + "/resolve_curr.dat")
+
+            info = open(pathdir + "/resolve8.info","r")
+
+            for line in info:
+                if "columns" in line.split():
+                    Nz, zmin, zmax = int(line.split()[0]), float(line.split()[6]), float(line.split()[8])
+                elif "rows" in line.split():
+                    NE, Emin, Emax = int(line.split()[0]), float(line.split()[6]), float(line.split()[8])
+
+            z = np.linspace(zmin,zmax,Nz)
+            E = np.linspace(Emin*1000,Emax*1000,NE)
+
+            N = 512 # number of colors to use
+            zeros = [[0,0],[0,0]]
+
+            pl.figure(fig1.number)
+            if Nplots > 1:
+                pl.subplot(Nrows, Ncols, iplot)
+                #iplot += 1
+            pl.title(dir)
+            pl.plot(bandplot[0],bandplot[1],'b')
+            if plotak:
+                pl.contour(z,E,ak0,cmap='cool')
+            else:
+                for i in range(2,len(bandplot)):
+                    pl.plot(bandplot[0],bandplot[i],'b')
+                    
+            f=pl.contourf(z,E,curr,N, cmap = 'hot')
+            pl.colorbar()
+            pl.xlim(zmin,zmax)
+            pl.xlabel("z (nm)")
+            pl.ylabel("E (meV)")
+            Emin2 = pl.ylim()[0]
+            pl.contourf([zmin,zmax],[Emin2,Emin*1000],zeros,cmap='hot',levels=f.levels)
+
+            pl.figure(fig2.number)
+            if Nplots > 1:
+                pl.subplot(Nrows, Ncols, iplot)
+                iplot += 1
+            pl.title(dir)
+            pl.plot(bandplot[0],bandplot[1],'b')
+            if plotak:
+                pl.contour(z,E,ak0,cmap='cool')
+            else:
+                for i in range(2,len(bandplot)):
+                    pl.plot(bandplot[0],bandplot[i],'b')
+            f=pl.contourf(z,E,dens,N, cmap = 'hot')
+            pl.colorbar()
+            pl.xlim(zmin,zmax)
+            pl.xlabel("z (nm)")
+            pl.ylabel("E (meV)")
+            Emin2 = pl.ylim()[0]
+            pl.contourf([zmin,zmax],[Emin2,Emin*1000],zeros,cmap='hot',levels=f.levels)
+            
+        return fig1, fig2
+   
 
     def calcChi2(self, structure, E1, E2, gamma = None):
         """

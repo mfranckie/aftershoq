@@ -86,6 +86,8 @@ class HilbertUtil(object):
             for iparam in range(d2):
                 #xmin = x[i][iparam] - dx[i][iparam]
                 xs = x[i][iparam]*dx[i][iparam]*2./float(self.pmax) + xmin[i][iparam]
+                if np.abs(np.squeeze(xs)) < 1e-10:
+                    xs = 0.
                 xi.append(xs)
             xscaled.append(xi)
         return xscaled
@@ -111,6 +113,8 @@ class HilbertUtil(object):
                 #xmin = ranges[iparam][0]
                 #xmax= ranges[iparam][1]
                 xs = (float(x[i][iparam])-xmin[i][iparam])/(2.*dx[i][iparam])*float(self.pmax)
+                if np.abs(np.squeeze(xs)) < 1e-10:
+                    xs = 0.
                 xi.append(xs)
             xscaled.append(xi)
         return xscaled
