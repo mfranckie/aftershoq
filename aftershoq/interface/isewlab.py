@@ -5,7 +5,6 @@ Created on 12 Mar 2018
 '''
 
 from aftershoq.interface import Interface
-import aftershoq.structure.matpar as mp
 from aftershoq.utils import const
 import aftershoq.utils.systemutil as su
 import time
@@ -259,7 +258,7 @@ class Isewlab(Interface):
         self.merits.update({
             'DeltaE_12' : 8, 'Elase' : 9
             })
-        self.transport_params["hlo-energy"] = wellmaterial.params[mp.ELO]
+        self.transport_params["hlo-energy"] = wellmaterial.params["ELO"]
         
     def __str__(self):
         return "Sewself"
@@ -540,13 +539,13 @@ class Isewlab(Interface):
                     f.write('x = ')
                     f.write(str(l.material.x))
                 f.write("; ")
-                f.write('mass = ' + str(l.material.params[mp.meff]) + "; " )
-                f.write('gap = ' + str(l.material.params[mp.Eg]) + "; " )
+                f.write('mass = ' + str(l.material.params["meff"]) + "; " )
+                f.write('gap = ' + str(l.material.params["Eg"]) + "; " )
                 if index < len(structure.layers)-1:
-                    discont = structure.layers[index + 1].material.params[mp.Ec]
+                    discont = structure.layers[index + 1].material.params["Ec"]
                 else:
-                    discont = structure.layers[0].material.params[mp.Ec]
-                discont = discont - l.material.params[mp.Ec]
+                    discont = structure.layers[0].material.params["Ec"]
+                discont = discont - l.material.params["Ec"]
                 f.write('discont = ' + str(discont) + "; " )
                 
                 doping = structure.layerDoping3D(index)*1e-18
@@ -627,20 +626,20 @@ class Isewlab(Interface):
         f.write('\t\talias\t= ')
         f.write(str(material) + ';\n')
         f.write('\t\tmass\t= ')
-        f.write(str(material.params[mp.meff]) + ';\n')
+        f.write(str(material.params["meff"]) + ';\n')
         f.write('\t\tepsilon-inf\t= ')
-        f.write(str(material.params[mp.epsinf]) + ';\n')
+        f.write(str(material.params["epsinf"]) + ';\n')
         f.write('\t\tepsilon-zero\t= ')
-        f.write(str(material.params[mp.eps0]) + ';\n')
+        f.write(str(material.params["eps0"]) + ';\n')
         f.write('\t\thLO\t= ')
-        f.write(str(material.params[mp.ELO]) + ';\n')
+        f.write(str(material.params["ELO"]) + ';\n')
         f.write('\t\thTO\t= ')
         # TODO: include ETO in material description
-        f.write(str(material.params[mp.ELO]) + ';\n')
+        f.write(str(material.params["ELO"]) + ';\n')
         f.write('\t\tdirect-gap\t= ')
-        f.write(str(material.params[mp.Eg]) + ';\n')
+        f.write(str(material.params["Eg"]) + ';\n')
         f.write('\t\tlattice-const\t= ')
-        f.write(str(material.params[mp.lattconst]) + ';\n')
+        f.write(str(material.params["lattconst"]) + ';\n')
         f.write('\t}\n\n')
         
     def writeAlloy(self,material,f):
@@ -666,7 +665,7 @@ class Isewlab(Interface):
         f.write('\t\tright-material = ')
         f.write(str(mat2) + ";\n")
         f.write('\t\tdiscontinuity = ')
-        discont = mat2.params[mp.Ec]-mat1.params[mp.Ec]
+        discont = mat2.params["Ec"]-mat1.params["Ec"]
         f.write(str(discont) + ";\n")
         f.write('\t}\n\n')
         

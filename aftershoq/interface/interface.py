@@ -33,7 +33,8 @@ class Interface(object):
               "threshold current density":5,
               "estimated gain":6,
               "Chi2":7,
-              "custom figure of merit":8
+              "photocurrent":8,
+              "custom figure of merit":9
               }
     
     # Energies in meV, temperatures in K
