@@ -20,21 +20,21 @@ from aftershoq.materials import GaAs
 class Inegf(Interface):
     '''
     Inteface for the NEGF8 program package, documented in:
-    [Wacker2013] Wacker et al., IEEE Sel. Top. Quant. Electron. 19, 
-                 1200611 (2013) 
+    [Wacker2013] Wacker et al., IEEE Sel. Top. Quant. Electron. 19,
+                 1200611 (2013)
     [Lindskog2013] Lindskog et al., Proc. SPIE 8846, 884603 (2013)
     [Franckie2016] Franckie, PhD Thesis, Lund Univesity (May, 2016)
     [Winge2016a]   Winge et al., J. Phys.: Conf. Series 696,
                  012013 (2016)
     [Winge2016b]   Winge, PhD Thesis, Lund University (Nov, 2016)
     '''
-    
+
     negf_numpar = {
         "Npint" : 5,
         "cshift" : 0,
         "Lbound" : 1.E-3,
         "Ubound" : 1.E-4,
-        "Blochtol" :1.E-6, 
+        "Blochtol" :1.E-6,
         "Nh" : 0,
         "Igauge": 1,
         "Eminsub" : 0,
@@ -46,7 +46,7 @@ class Inegf(Interface):
         "boolPrinc" : False,
         "boolEins" : False
         }
-    
+
     hdiag_numpar = {
         "fgr_omega0" : 0,
         "fgr_omegaf" : 0.1,
@@ -54,7 +54,7 @@ class Inegf(Interface):
         "fgr_gamma"  : 0.005,
         "zshift_trials" : 2
         }
-    
+
     # index of data in negft.dat
     idat = {"eFd":0,"omega":1,"eFacd":2,"j":3,"gain":4,"dk":5,"konv":6,"errdyn":7,"ierror":8}
 
@@ -65,30 +65,30 @@ class Inegf(Interface):
         dielectric and phonon properties).
         einspath: Path to eins-files used for accelerating convergence.
         '''
-        
+
         super(Inegf,self).__init__(binpath, pltfm)
         self.numpar.update(self.negf_numpar)
         self.numpar.update(self.hdiag_numpar)
         self.numpar["maxits"] = 40
         self.progwann = binpath+"wannier8.out"
-        
+
         if pltfm.paral == pltfm.paral_modes["SERIAL"]:
             self.prognegft = binpath + "negft8.out"
         elif pltfm.paral == pltfm.paral_modes["OMP"]:
             self.prognegft = binpath + "negft8omp.out"
         elif pltfm.paral == pltfm.paral_modes["MPI"]:
             self.prognegft = binpath + "negft8mpi.out"
-        
+
         self.proghdiag = binpath+"hdiag8.out"
         self.progbandplot = binpath+"bandplot8.out"
         self.wellmat = wellmaterial
         self.processes= []
         self.einspath = einspath
         self.datpath = "/IV/"
-        
+
     def __str__(self):
         return "Inegf"
-        
+
     def initdir(self,ss,path):
         '''Initialize the dierctory for Structure s, with base path "path".'''
         pathNegf=path+self.datpath
@@ -96,15 +96,15 @@ class Inegf(Interface):
         self.writeWannier(ss,path)
         self.writeMaterial(self.wellmat, "# "+str(self.wellmat.name),path)
         self.writeNegftInp(su.abspath(path), self.einspath ,pathNegf)
-        
+
     def runStructures(self,structures,path):
         '''Run simulations for all structures in the given structure list with
         the base path "path". This method dispatches all processes and returns
         the user has to wait for processes to finish before accessing results.
-        
+
         Stores started processes in self.processes
         '''
-        
+
         local = Local()
         for ss in structures:
             spath = path+"/"+str(ss.dirname)
@@ -129,32 +129,32 @@ class Inegf(Interface):
             out, err = proc.communicate()
             proc = local.submitandwait("cp",["scatt3.inp","gw.inp","." + self.datpath], spath)
             out, err = proc.communicate()
-            
+
             proc = self.pltfm.submitjob(self.prognegft,[],spath+self.datpath)
-            
+
             self.processes.append(proc)
         return self.processes
-        
-    
-            
+
+
+
     def checkactive(self):
         pactive = False
         for p in self.processes:
                 if self.pltfm.jobstatus(p):
                     pactive=True
         return pactive
-        
-    
+
+
     def gatherResults(self, structures, pathwd, pathresults = None, runprog = True):
         '''Write results to pathresults/results.log and run hdiag and bandplot
-        in pathwd/s.dirname/self.datpath/eins/x/ for each i and x. Stores WS 
-        resutls as a new attribute levels[directory][WS level][data field] in 
+        in pathwd/s.dirname/self.datpath/eins/x/ for each i and x. Stores WS
+        resutls as a new attribute levels[directory][WS level][data field] in
         each Structure object in the list structures.
         '''
-        
+
         if(pathresults is None):
             pathresults = pathwd
-        
+
         with open(pathresults+'/results.log','a') as f:
             f.write('# Results for structures:\nID | merit | \
             N times layer width | Ndop times (zi, zf, nvol) | N times x \n')
@@ -176,24 +176,24 @@ class Inegf(Interface):
                     gamma  = self.numpar["fgr_gamma"]
                     if runprog:
                         self.runHdiag(einspath,omega0=omega0,omegaf=omegaf, Nomega = Nomega, gamma=gamma)
-                        
+
                         # Check if daigolalization failed, try zshift_trial times with zshift:
                         zshift = 0.
                         for _ in range(self.hdiag_numpar["zshift_trials"]-1):
                             if self.checkWSdens(einspath) == False:
                                 zshift += ss.length/self.hdiag_numpar["zshift_trials"]
-                                self.runHdiag(einspath,zshift=zshift, omega0=omega0,omegaf=omegaf, 
+                                self.runHdiag(einspath,zshift=zshift, omega0=omega0,omegaf=omegaf,
                                           Nomega = Nomega, gamma=gamma)
                             else:
                                 break
                         self.runBandplot(einspath, ss)
-                        
+
                     (levels, dipoles) = self.getWSdata(einspath)
                     ss.wslevels.append(levels)
                     ss.dipoles.append(dipoles)
-                
+
                 ss.merit = self.getMerit(ss, pathwd)
-                
+
                 f.write(str(ss.dirname) + " ")
                 f.write(str(ss.merit) + " " )
                 for layer in ss.layers:
@@ -203,10 +203,10 @@ class Inegf(Interface):
                         f.write( str(val) +" ")
                 for layer in ss.layers:
                     f.write(str(layer.material.x)+" ")
-                
+
                 f.write("\n")
                 if self.merit == self.merits["Chi2"]:
-                    su.mkdir(pathresults + ss.dirname)    
+                    su.mkdir(pathresults + ss.dirname)
                     with open(pathresults + ss.dirname+"/chi2.log", 'w') as chif:
                             domega = 0.001
                             if len( self.target ) > 0:
@@ -223,14 +223,14 @@ class Inegf(Interface):
                                 chif.write("# gamma from NEGF \n")
                             else:
                                 chif.write("# gamma = " + str(gamma) + "\n")
-        
+
                             for i in range(0, 1000):
                                 E2 = i*domega
                                 chif.write(str( E2 ) + " " + str( E1-E2 ) + " " )
                                 chif.write(str( self.calcChi2(ss, E1, E2, gamma))
                                             + "\n")
-            
-                
+
+
     def runHdiag(self, path, zshift=0, omega0=0, omegaf=1, Nomega = 1000,
                   Nper=1, gamma = 0.0001, Nk = 0, dEk = 0.001, Ek = -1):
         '''Run hdiag8 program in path "path" to diagonalize the basis for a
@@ -243,28 +243,28 @@ class Inegf(Interface):
         Spectral function A_i(E,E_k) and Im(G^<_i(E,E_k) in Wannier-Stark
         basis (for Ek eV).
         '''
-        
+
         if omega0 == -1:
             commands = str(zshift)+"\n-1\n0\n-1\n"
         else:
             commands = str(zshift)+"\n"+str(omega0)+"\n"+str(omegaf)+"\n"+str(Nomega)
             commands += "\n"+str(Nper) +"\n"+str(gamma)+"\n"+str(Nk)+"\n"
-        
+
         if Nk > 0:
             commands += str(dEk) + "\n"
         commands += str(Ek)
-        
+
         proc = su.dispatch(self.proghdiag, [], path, infile = subprocess.PIPE, outfile = subprocess.PIPE, errfile = subprocess.PIPE)
         out, err = proc.communicate(commands)
         dbg.debug("from hdiag: " + str(out) + str(", ") + str(err), dbg.verb_modes["chatty"], self.__class__)
         su.waitforproc(proc, 0.1)
         return proc
-    
+
     def checkWSdens(self, einspath, tolerance = 0.1):
         '''Check if doping density in diagonalized basis matches
         the intended doping. Default tolerance is 10%.
         '''
-        
+
         with open(einspath + "/wslevelsRediag.dat", 'r') as f:
             for line in f:
                 dopdiag = -1
@@ -277,15 +277,15 @@ class Inegf(Interface):
                         break
                 if dopdiag != -1:
                     break
-        
+
         if dopdiag == -1:
             return False
         elif (abs(dopdiag - doping) > tolerance*doping):
             return False
         else:
             return True
-                        
-    
+
+
     def getWSdata(self,path):
         '''Get the Wannier-Stark data from wslevels.dat and matrixWS.dat.'''
         levels = []
@@ -317,13 +317,13 @@ class Inegf(Interface):
                 for i in range(nlevels):
                     row.append( float(line[i] ) )
                 dipoles.append(row)
-            
+
         return levels, dipoles
-        
-    def runBandplot(self, path, structure, valence = 0, localdata = 1, eFd = 0, plotWS = 1, 
+
+    def runBandplot(self, path, structure, valence = 0, localdata = 1, eFd = 0, plotWS = 1,
                     whichWS = 1, square = 1, renorm = 0.3, pmin = -1, pmax = 1, zmin = None, zmax = None):
         '''Runs the bandplot program and saves a plottable file "bandplot.dat".'''
-        
+
         if zmin is None:
             zmin = -structure.length
         if zmax is None:
@@ -338,20 +338,20 @@ class Inegf(Interface):
         else:
             raise Exception("mpameter not valid: plot local data = "+localdata)
         commands += str(zmin) + "\n" + str(zmax) + "\n" + str(pmin) + "\n" + str(pmax) + "\n" + str(square) + "\n" + str(renorm) + "\n"
-        
+
         proc = su.dispatch(self.progbandplot, [], path, infile = subprocess.PIPE)
         proc.communicate(commands)
         return proc
 
     def getMerit(self,structure,path):
         '''Returns the merit function evaluated for the Structure structure,
-        with base path "path". 
+        with base path "path".
         '''
-        
+
         # First try to see if results were already evaluated:
         # assumes structure for results.log:
         # sid | merit | ...
-        
+
         if 'results.log' in su.ls(path):
             with open(path + '/results.log') as f:
                 found = False
@@ -359,11 +359,11 @@ class Inegf(Interface):
                     line = line.split()
                     if line[0] == str(structure.sid):
                         return line[1]
-        
+
         path = path + "/" + structure.dirname + self.datpath
-        
+
         results = []
-        
+
         try:
             with open(path+"/negft.dat",'r') as f:
                 for line in f:
@@ -377,33 +377,33 @@ class Inegf(Interface):
                 if results == []:
                     return "NO CONV"
             f.closed
-            
+
         except (OSError, IOError):
             print("\nWARNING: Could not find directory: " + path)
             return "ERROR"
         except ValueError:
             print("\nWarning: Error when getting results from: " + path)
             return "ERROR"
-        
+
         values = []
         for i in range(0, len(Inegf.idat)):
             datval = []
             for row in results:
                 datval.append(float(row[i]))
             values.append(datval)
-        
+
         if self.merit==Interface.merits.get("max gain") :
 
             out = max(values[Inegf.idat.get("gain")])
-            
+
         elif self.merit == Interface.merits.get("(max gain)/(current density)"):
-            
+
             gain = values[Inegf.idat.get("gain")]
             j = values[Inegf.idat.get("j")]
             gainj = []
             [gainj.append(gain[i]/j[i]) for i in range(0,len(gain))]
             out = max(gainj)
-                
+
         elif self.merit == self.merits.get("estimated gain") :
             try:
                 dirlist = su.listdirs(path+"/eins/")
@@ -421,11 +421,11 @@ class Inegf(Interface):
                                 maxgain.append( float( linestr[1] ) )
                             except( IndexError ):
                                 pass
-                
+
             out = max(maxgain)
-            
+
         elif self.merit == self.merits["Chi2"]:
-            
+
             if len( self.target ) > 0:
                 E1 = self.target[0]
             else:
@@ -434,12 +434,12 @@ class Inegf(Interface):
                 E2 = self.target[1]
             else:
                 E2 = None
-            
+
             if len( self.target ) > 2:
                 gamma = self.target[2]
             else:
                 gamma = None
-            
+
             chi2 = self.calcChi2(structure, E1, E2, gamma)
             if chi2 < 0:
                 return "ERROR"
@@ -455,47 +455,47 @@ class Inegf(Interface):
             imax = np.argmax(currlist)
             jmax = currlist[imax]
             omegamax = values[Inegf.idat.get("omega")][imax]
-            
+
             return jmax*np.exp(-np.abs(omegamax - omegat)/a)
         else:
             print("No such merit function!")
-        
+
         return out
-    
+
     def writeMaterial(self,material,nametag,dirpath = None):
         '''Writes the material.inp input file.'''
-        
+
         if dirpath is None:
             path="material.inp"
         else:
             path = dirpath + "/material.inp"
         with open(path, 'w') as f:
             f.write(nametag + "\n")
-            f.write(str(material.params["meff"])+"\n")
-            f.write(str(material.params["eps0"])+"\n")
-            f.write(str(material.params["epsinf"])+"\n")
-            f.write(str(material.params["ELO"])+"\n")
-            f.write(str(material.params["ac"])+"\n")
-            f.write(str(material.params["vlong"])+"\n")
-            f.write(str(material.params["massdens"])+"\n")
-            f.write(str(material.params["molV"]))
+            f.write(str(material.params["meff"])+" # meff\n")
+            f.write(str(material.params["eps0"])+" # eps0\n")
+            f.write(str(material.params["epsinf"])+" # epsinf\n")
+            f.write(str(material.params["ELO"])+" # ELO\n")
+            f.write(str(material.params["ac"])+" # deformation potential\n")
+            f.write(str(material.params["vlong"])+" # vlong\n")
+            f.write(str(material.params["massdens"])+" # mass density\n")
+            f.write(str(material.params["molV"])+ " # mol volume")
         f.closed
 
     def writeWannier(self,struct,dirpath=None):
         '''Writes the wannier8.inp input file.'''
-        
+
         if dirpath is None:
             path="wannier8.inp"
         else:
             path = dirpath + "/wannier8.inp"
-        
+
         # re-scaling of the CBO to lowest energy:
         Ec = []
         [Ec.append(l.material.params["Ec"]) for l in struct.layers]
         Ecmin = min(Ec)
-        
-        
-        try:   
+
+
+        try:
             with open(path,'w') as f:
                 f.write(str(struct.Nl))
                 f.write("\n# NS lines follow below containing 4 parameters for each layer")
@@ -533,10 +533,10 @@ class Inegf(Interface):
             f.closed
         except IOError:
             print("WARNING: Directory "+dirpath+" not found!")
-        
+
     def writeNegftInp(self,pathwann,patheins,dirpath=None):
         '''Writes the negft8.inp input file.'''
-        
+
         if self.numpar["boolEins"]:
             readeins = ".TRUE."
         else:
@@ -581,23 +581,23 @@ class Inegf(Interface):
                 else:
                     f.write(".FALSE.")
                 f.write(" #\n")
-                
+
             f.closed
         except IOError:
             print("WARNING: Directory "+dirpath+" not found!")
-    
+
     def loadStructures(self, origs, path):
         '''
-        Load structures from directory tree. Assumes the following structure: 
+        Load structures from directory tree. Assumes the following structure:
         path/sid/wannier8.inp/, where sid is the structure id (integer).
-        
+
         Parameters
-        
-        origs: model structure, where layer widths will be replaced by read 
+
+        origs: model structure, where layer widths will be replaced by read
         widths, for each structure
         path: path to root directory of tree.
         '''
-        
+
         structures = []
         dirs = su.listdirs(path)
         for folder in dirs:
@@ -614,48 +614,48 @@ class Inegf(Interface):
                     s.layers[i].width = lw
             structures.append(s)
         return structures
-    
-            
-    
+
+
+
     def plotbands(self, structure, path, einspath = None):
         '''
-        Plot the band structure and Wannier-Stark states for a structure. 
+        Plot the band structure and Wannier-Stark states for a structure.
         Must first have run gatherResults() for structure.
-        
+
         Parameters
-        
+
         structure: Structure for which to plot the bands.
         path: The path to the base of the tree
-        einspath (optional): specifies which parameters to plot for 
+        einspath (optional): specifies which parameters to plot for
         '''
-        
+
         path = path + "/" + structure.dirname + "/" + self.datpath + "/eins/"
-        
+
         if einspath == None:
             dirlist = su.listdirs(path)
         else:
             dirlist = [einspath]
-            
+
         Nplots = len(dirlist)
         Nrows = int( np.sqrt(Nplots) )
         Ncols = int( Nplots/Nrows + 0.5 )
-            
+
         z_all = []
         Ec_all = []
         wavef_all = []
-        
+
         iplot = 1
-        
+
         for dir in dirlist:
             with open(path + "/" + dir + "/bandplot.dat", 'r') as bandplot:
-                
+
                 eFd = float( bandplot.readline().split()[2] )
                 for _ in range(2):
                     bandplot.readline()   # read comments
                 nnu = int( bandplot.readline().split()[1] )
                 nz  = int( bandplot.readline().split()[2] )
-                
-                
+
+
                 z = []
                 Ec = []
                 wavef = []
@@ -666,77 +666,77 @@ class Inegf(Interface):
                     Ec.append( float( data[1] ) )
                     for nu in range(2, len(data) ):
                         wavef[nu-2].append( float( data[nu] ) )
-                
+
                 z_all.append(z)
                 Ec_all.append(Ec)
                 wavef_all.append(wavef)
-                
+
                 if Nplots > 1:
                     pl.subplot(Nrows, Ncols, iplot)
                     iplot += 1
                 pl.plot(z, Ec)
                 for nu in range(0, nnu):
                     pl.plot(z, wavef[nu] , hold = True)
-                
-                
-    
+
+
+
         return z_all, Ec_all, wavef_all
-    
+
     def plotGainFGR(self, structure, path, einspath = None):
         '''
         Plot the gain calculated from Fermi's golden rule for a structure.
         Must first have run gatherResults() for structure.
-        
+
         Parameters
-        
+
         structure: Structure for which to plot the bands.
         path: The path to the base of the tree
-        einspath (optional): specifies which parameters to plot for 
+        einspath (optional): specifies which parameters to plot for
         '''
-        
+
         path = path + "/" + structure.dirname + "/" + self.datpath + "/eins/"
-        
+
         if einspath == None:
             dirlist = su.listdirs(path)
         else:
             dirlist = [einspath]
-            
+
         Nplots = len(dirlist)
         Nrows = int( np.sqrt(Nplots) )
         Ncols = int( Nplots/Nrows + 0.5 )
-            
+
         om_all = []
         g_all = []
-        
+
         iplot = 1
-        
+
         for dir in dirlist:
             with open(path + "/" + dir + "/gainFGR.dat", 'r') as gain:
-                
+
                 gain.readline()   # one comment line
-                
+
                 om = []
                 g = []
                 for l in gain:
                     data = l.split()
                     om.append( float( data[0] ) )
                     g.append( float( data[1] ) )
-                    
+
                 om_all.append(om)
                 g_all.append(g)
-                
+
                 if Nplots > 1:
                     pl.subplot(Nrows, Ncols, iplot)
                     iplot += 1
                 pl.plot(om, g)
-                
+
         return om_all, g_all
-    
+
     def plotResolve(self, path, structure = None, einspath = None):
 
         if structure is not None:
             path = path + "/" + structure.dirname
-        
+
         path = path + "/" + self.datpath + "/eins/"
 
         if einspath == None:
@@ -794,7 +794,7 @@ class Inegf(Interface):
             else:
                 for i in range(2,len(bandplot)):
                     pl.plot(bandplot[0],bandplot[i],'b')
-                    
+
             f=pl.contourf(z,E,curr,N, cmap = 'hot')
             pl.colorbar()
             pl.xlim(zmin,zmax)
@@ -821,16 +821,16 @@ class Inegf(Interface):
             pl.ylabel("E (meV)")
             Emin2 = pl.ylim()[0]
             pl.contourf([zmin,zmax],[Emin2,Emin*1000],zeros,cmap='hot',levels=f.levels)
-            
+
         return fig1, fig2
-   
+
 
     def calcChi2(self, structure, E1, E2, gamma = None):
         """
         Calcualtes the second order susceptibility Chi(2) for the three-level
-        system |0>, |1>, |2>, where E_2 > E_1 > E_0 according to 
+        system |0>, |1>, |2>, where E_2 > E_1 > E_0 according to
         Dupont et al, IEEE J. Quant. Electron. 42, pp. 1157-1174 (2006)
-        
+
         Parameters:
         structure: The structure to calculate Chi(2) for
         E1: The pump photon energy hbar*omega (eV). If E1 is None, then
@@ -839,7 +839,7 @@ class Inegf(Interface):
         this is taken to be E_1-E_0
         gamma: The FWHM broadening to be used in the calculation for Chi(2).
         If gamma is None, then this is calculated from the level broadenings.
-        
+
         """
         elevel = []
         nlevel = []
@@ -852,34 +852,34 @@ class Inegf(Interface):
                 glevel.append( level[6] )
             else:
                 glevel.append(gamma)
-            
+
         dipoles = structure.dipoles[0]
         dopdens = 0.
         for d in structure.dopings:
             dopdens += (d[1]-d[0])*d[2]
         dopdens /= structure.length
-        
+
         if len(elevel) < 3 or len(dipoles) < 3 or self.checkWSdens(structure.wslevels[0][0][0], 0.1) == False:
             return -1
-        
+
         if E1 is None:
             E1 = elevel[2] - elevel[0]
         if E2 is None:
             E2 = elevel[1] - elevel[0]
-        
+
         E3 = E1-E2
-        
-        
-        chi2 =  (nlevel[0]-nlevel[2])/( E1-elevel[2]+elevel[0] - 
+
+
+        chi2 =  (nlevel[0]-nlevel[2])/( E1-elevel[2]+elevel[0] -
                     (glevel[0] + glevel[2])*1j/2.)
-        chi2 += (nlevel[0]-nlevel[1])/(-E2+elevel[1]-elevel[0] - 
+        chi2 += (nlevel[0]-nlevel[1])/(-E2+elevel[1]-elevel[0] -
                     (glevel[0] + glevel[1])*1j/2.)
         chi2 *= dipoles[0][1]*dipoles[0][2]*dipoles[2][1]
         chi2 *= structure.length**3 # from Z0/d -> nm
-        chi2 /= (E3-elevel[2]+elevel[1] - 
+        chi2 /= (E3-elevel[2]+elevel[1] -
                     (glevel[1] + glevel[2])*1j/2.)
         chi2 *= -const.qe/const.eps0/structure.length*1e4*1e-27*1e9*1e12
-        
+
         self.chi2 = chi2
-        
+
         return np.abs( chi2 )
