@@ -8,15 +8,18 @@ Module containing core classes for materials, layers, and structures.
 
 import copy
 import numpy as np
+from path import Path
+from lxml import etree
+import datetime
 
 class Layer:
     ''' Defines a layer in the heterostructure. Each layer has a material
     or alloy, interface roughness mean height eta and correlation length
     lam. These are defined as the roughness parameters for the interface
     between this one and the following layer.
-    
-    ''' 
-    
+
+    '''
+
     def __init__(self,width,material,eta,lam):
         '''Constructor. Parameters:
         width:  Width of the layer in nm
@@ -24,16 +27,16 @@ class Layer:
         eta:  Interface roughness mean height
         lam:  Interface roughness correlation length
         '''
-        
+
         self.width = width
         self.material = copy.deepcopy(material)
-        
+
         self.lam = lam
         self.eta = eta
-        
+
     def __str__(self):
         return str([self.width,self.material,self.eta,self.lam])
-        
+
     def __repr__(self):
         return str(self)
 
@@ -42,18 +45,18 @@ class Structure:
     '''Defines an entire heterostructure, consisting of several
     Layers and doping regions.
     '''
-    
+
     sid = 0
-    
+
     def __init__(self, orig=None, name = None):
         ''' Constructur. Optionally copies from Structure object orig.
-        Each structure receives an id (sid) and a dirname, which defaults to 
+        Each structure receives an id (sid) and a dirname, which defaults to
         sid.
         '''
-        
+
         self.sid = Structure.sid
         Structure.sid +=1
-        
+
         if name is None:
             self.name = type(self).__name__
         else:
@@ -71,39 +74,39 @@ class Structure:
                 self.addLayer(Layer(l.width,l.material,l.eta,l.lam))
             for dl in orig.dopings:
                 self.addDoping(dl[0], dl[1], dl[2])
-        
+
     def setIFR(self,eta,lam):
         ''' Manually set interface roughness parameters.'''
-        
+
         self.eta = eta
         self.lam = lam
-        
+
         for l in self.layers:
             l.eta = self.eta
             l.lam = self.lam
-    
+
     def addLayer(self,layer):
         '''Add a Layer to this structure.'''
         self.layers.append(layer)
         self.Nl+=1
         self.length += layer.width
-    
+
     def addLayerIFR(self,width,material,eta,lam):
-        '''Add a new Layer, created from 
+        '''Add a new Layer, created from
         width:   Width in nm
         material:  Material object for new layer
         eta:  Interface roughness mean height
         lam:  Interface roughness correlation length
-        
+
         '''
         self.addLayer(Layer(width,material,eta,lam))
-        
+
     def addLayerWM(self,width,material):
         '''Add a new layer based on width (nm) and Material.
         Uses pre-defined interface roughness parameters (set via setIFR )
         '''
         self.addLayer(Layer(width,material,self.eta,self.lam))
-        
+
     def addDoping(self,zi,zf,density,layerindex = None):
         '''Add a doping layer.
         zi:  starting position of layer
@@ -111,13 +114,13 @@ class Structure:
         density:  volume doping density (cm^-3)
         layerindex: optional, set (zi, zf) relative to Layer start
         '''
-        
+
         if layerindex is not None:
             lp = self.layerPos(layerindex)
             zi += lp
             zf += lp
         self.dopings.append([zi,zf,density])
-        
+
     def layerPos(self,index):
         '''Returns the position of Layer with index "index"
         '''
@@ -125,16 +128,16 @@ class Structure:
         for l in self.layers[0:index]:
             pos += l.width
         return pos
-    
+
     def layerIndex(self,pos):
         '''Returns the index of the Layer covering the position pos.'''
-        
+
         z = 0
         for li in self.layers:
             z += li.width
             if pos<z:
                 return self.layers.index(li)
-            
+
     def layerDoping3D(self, index):
         ''' Returns the sheet doping density in the layer with layer index
         "Index" (in units of cm^-2*nm^-1).'''
@@ -153,58 +156,58 @@ class Structure:
                         ol = l1 - l0
                     else:
                         ol = dop[1]-l0
-                    
-                    
+
+
                 doping += dop[2]*ol/(dop[1]-dop[0])
-                
+
         return doping
-    
+
     def convert_to_ML(self):
         """
         Converts this structure to integer monolayers. Assumes doping
         spans entire layers and keeps sheet density constant.
         Lattice constants are given in Å, layer widths in nm.
         """
-        
+
         dops = []
         [dops.append(self.layerDoping3D(i)) for i in range(len(self.layers))]
         print("dops = ", dops)
-        
+
         self.dopings = []
-        
+
         for i in range( len(self.layers) ):
             layer = self.layers[i]
             NML = np.round(layer.width/layer.material.params["lattconst"]*10.*2.)
             layer.width = NML*layer.material.params["lattconst"]/10./2.
             if(dops[i]>0):
                 self.addDoping(0, layer.width, dops[i], i)
-            
-    
+
+
     def __str__(self):
-        s = "[width, Material, eta, lambda] (id="+str(self.sid) + ")\n" 
+        s = "[width, Material, eta, lambda] (id="+str(self.sid) + ")\n"
         for l in self.layers:
             s += str(l) + "\n"
         return s
-    
+
     def layername(self):
-        '''Generates and returns a name for this structure, based on 
+        '''Generates and returns a name for this structure, based on
         layer widths.
         '''
         name = ""
         for l in self.layers:
             name = name + str(l.width) + "_"
         return name
-        
+
     layers=[]
     dopings=[]
-    
+
     def getSheetDop(self):
         '''Returns the sheet doping density per period in cm^-2.'''
         sd = 0.
         for l in self.dopings:
             sd += (l[1]-l[0])*l[2]
         return sd*1e-7
-    
+
     def prettyPrint(self):
         s = self.name + ":\n"
         s += "width\tMaterial\tVol. doping\n(nm)\t\t\t(cm-3)\n"
@@ -213,9 +216,19 @@ class Structure:
             s+= str(l.width)+"\t"+str(l.material)+"\t"+str(self.layerDoping3D(i))+"\n"
         return s
 
+    def save(self, path, name = None):
+        if name is None:
+            name = str(self.sid)
+        name = name + ".aqst"
+        f = open(Path.joinpath(path, name))
+        pass
+
+    def load(cls, path):
+        pass
+
 class Material(object):
     '''Defines a material or alloy between two materials.'''
-    
+
     # parameter dictionary:
     params_dict = {
         "meff": 0,   # effective mass
@@ -238,7 +251,7 @@ class Material(object):
         "molV" : 0,  # Mol volume (nm^3/mol) = alc**3/4 for Zinc Blende
         "lattconst" : 0  # Lattice constant (A)
     }
-    
+
     def __init__(self,name,params_in=None,mat1=None,mat2=None,C=None,x=None, subs=None):
         '''Constructor. Parameters:
         name:  The name of this material
@@ -252,6 +265,7 @@ class Material(object):
         '''
         self.name = name
         self.substrate = subs
+        self.strained = False
         if (params_in is None):
             self.params = Material.params_dict.copy()
         else:
@@ -267,27 +281,28 @@ class Material(object):
             if x > 1:
                 print("ERROR: x > 1 in material creation! Stopping.")
                 exit(1)
-            self.updateAlloy(x)      
-      
+            self.updateAlloy(x)
+
     def updateAlloy(self,x):
         '''Updates the alloy composition of this alloy material with x
         as the new composition.
         '''
-        
+
         if(self.x is not None):
             self.x = x
             self.params = self.alloy(self.mat1,self.mat2,self.C,self.x)
-        
-    
+
+
     def calcStrain(self):
-        '''Calculates the strain effects on band parameters. Corrects 
-        Eg and Ec accorcing to model-solid theory by [van de Walle PRB 1989] 
+        '''Calculates the strain effects on band parameters. Corrects
+        Eg and Ec accorcing to model-solid theory by [van de Walle PRB 1989]
         and [Gresch Thesis ETH Zuerich 2009].
         '''
+
         if self.substrate is None:
             # If no substrate is given, then material is assumed relaxed
             return
-        
+
         # relaxed lattice constant
         ar = self.params["lattconst"]
         # a-parallel. Here, we assume that the material is fully strained
@@ -300,22 +315,140 @@ class Material(object):
         aL = ar*(1. - D001*epsII)
         # epsilon-perpendicular
         epsL = aL/ar - 1.
-        
+
         # DeltaOmega/Omega
         DOm = 2*epsII + epsL
-        
+
         # Valence band shift:
         DEv = self.params["av"]*DOm
         # Conduction band shift (naive):
         self.params["Ec"] += self.params["ac"]*DOm
-        
-    
+
+        self.strained = True
+
+
     def __str__(self):
         return self.name
-    
+
     def __repr__(self):
         return str(self)
-    
+
+    def save(self, path, name = None):
+        """
+        Saves this Material
+
+        Parameters:
+        path : string
+            The path to the directory where the material is saved.
+
+        Returns:
+            The file name string if the saved file.
+        """
+
+        if name is None:
+            name = self.name
+
+        root = etree.Element("Material")
+
+        # Header:
+        author = "[aftershoq] " + str(datetime.datetime.now()) + ""
+        content = "This is an autogenerated file."
+        header = etree.SubElement(root, "Header")
+        etree.SubElement(header, "Author").text = author
+        etree.SubElement(header, "Content").text = content
+        # Basic information
+        etree.SubElement(root, "Name").text = self.name
+        etree.SubElement(root, "Strained").text = str(self.strained)
+        etree.SubElement(root, "Alloy").text = str(self.mat1 is not None)
+        fileSubst = "None"
+        if self.substrate is not None:
+            fileSubst = self.substrate.save("")
+        etree.SubElement(root, "Substrate").text = fileSubst
+
+        parameters = etree.SubElement(root, "Params")
+        for key in self.params:
+            etree.SubElement(parameters, key).text = str(self.params[key])
+
+        bowings = etree.SubElement(root, "Bowing")
+        for key in self.C:
+            etree.SubElement(bowings, key).text = str(self.C[key])
+
+        if self.mat1 is not None:
+            filemat1 = self.mat1.save("")
+            etree.SubElement(root, "Mat1").text = filemat1
+
+        if self.mat2 is not None:
+            filemat2 = self.mat2.save("")
+            etree.SubElement(root, "Mat2").text = filemat2
+
+        if self.x is not None:
+            etree.SubElement(root, "x").text = str(self.x)
+
+
+        # Print to file
+        filename = name + ".aqmtrl"
+        file = Path.joinpath(path, filename)
+        etree.ElementTree(root).write(file, xml_declaration=True, encoding="utf-8", pretty_print=True)
+
+        return filename
+
+    @staticmethod
+    def load(filename):
+        """
+        Static method for loading a Material from a file
+
+        Parameters:
+        filename: string
+            the name of the file to load
+
+        Returns:
+            A new Material instance
+        """
+        root = etree.parse(filename)
+        mat = root.getroot()
+        params = {}
+        C = {}
+        mat1, mat2 = None, None
+        x = None
+        for el in mat:
+            if el.tag == "Name":
+                name = el.text
+            elif el.tag == "Substrate":
+                if el.text != "None":
+                    substrate = Material.load(el.text)
+                else:
+                    substrate = None
+            if el.tag == "Params":
+                parEl = el
+            elif el.tag == "Bowing":
+                parBow = el
+            elif el.tag == "Alloy":
+                alloy = el.text
+            elif el.tag == "Mat1":
+                if el.text != "None":
+                    mat1 = Material.load(el.text)
+            elif el.tag == "Mat2":
+                if el.text != "None":
+                    mat2 = Material.load(el.text)
+            elif el.tag == "x":
+                x = float(el.text)
+
+        for el in parEl:
+            try:
+                val = float(el.text)
+            except ValueError:
+                pass
+            params.update({el.tag : val})
+
+        for el in parBow:
+            try:
+                val = float(el.text)
+            except ValueError:
+                pass
+            C.update({el.tag : val})
+
+        return Material(name,params_in=params,mat1=mat1,mat2=mat2,C=C,x=x, subs=substrate)
+
     @staticmethod
     def alloy(mat1,mat2,C,x):
         '''Creates and returns a new set of material parameters, which are
@@ -325,7 +458,7 @@ class Material(object):
         newparams = x*param1 + (1-x)*param2 - C*x*(1-x)
         x is the alloy fraction of mat1 to mat2.
         '''
-        
+
         params3=Material.params_dict.copy()
         for key in mat1.params:
             params3[key]=(mat1.params[key]*x + mat2.params[key]*(1-x) - C[key]*x*(1-x))
