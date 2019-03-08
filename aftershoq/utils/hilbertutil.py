@@ -68,7 +68,7 @@ class HilbertUtil(object):
     def scale_coordinates(self, x, dx, xmin):
         '''
         Returns the scaled coordinates on the interval [xmin,xmax],
-        where "dx" contains the range in each parameter in xself.
+        where "dx" contains the range in each parameter in x.
         "xmin" is the overall minimum possible value for each parameter.
         '''
 
@@ -93,7 +93,7 @@ class HilbertUtil(object):
     def unscale_coordinates(self, x, dx, xmin):
         '''
         Returns the unscaled coordinates on the interval [0,pmax] , where
-        "dx" contains the range in each parameter in xself.
+        "dx" contains the range in each parameter in x.
         "xmin" is the overall minimum possible value for each parameter.
         '''
         xscaled = []
@@ -111,6 +111,8 @@ class HilbertUtil(object):
                 #xmin = ranges[iparam][0]
                 #xmax= ranges[iparam][1]
                 xs = (float(x[i][iparam])-xmin[i][iparam])/(2.*dx[i][iparam])*float(self.pmax)
+                if np.abs(xs) < 1e-10:
+                    xs = 0.
                 xi.append(xs)
             xscaled.append(xi)
         return xscaled

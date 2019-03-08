@@ -33,23 +33,24 @@ class Optimizer1D(object):
         self.converged = 0
         if(len(x0) > 0 and len(y0) > 0):
             self.addpoints(x0, y0)
-        
+
     def addpoints(self,newx,newy):
         '''
         Add the newly evaluated y-values newy at the coordinates newx.
         The new results will be sorted and convergence checked.
         '''
-        
-        [self.x.append(xx) for xx in newx]
-        [self.y.append(yy) for yy in newy]
-        
+
+        # Make sure each element is a scalar
+        [self.x.append(np.squeeze(xx)) for xx in newx]
+        [self.y.append(np.squeeze(yy)) for yy in newy]
+
         self.t = np.argmin(np.array(self.y))
         self.check_conv()
-        
+
     def addEvaldPoints(self, model, sg, path, coords):
         '''
-        Convert the evaluated points in N-dim. paramtere space in the 
-        structure generator "sg", already evaluated with the Inteface 
+        Convert the evaluated points in N-dim. paramtere space in the
+        structure generator "sg", already evaluated with the Inteface
         "model", to points along the Hilbert curve and add them.
         '''
         # collect results from trial points
@@ -58,7 +59,7 @@ class Optimizer1D(object):
         x0 = np.array(x0)
         x0.sort()
         x0 = x0.tolist()
-        
+
         y0 = []
         xi = 0
         for i in range(0,len(x0)):
@@ -68,16 +69,16 @@ class Optimizer1D(object):
                 del x0[xi]
                 xi-=1
             xi +=1
-            
+
         y0 = np.array(y0)
-            
+
         self.addpoints(x0,y0)
-        
+
         return x0,y0
-    
+
     def nextstep(self):
         pass
-    
+
     def check_conv(self):
         '''
         Check if the minimization has converged.
@@ -86,7 +87,7 @@ class Optimizer1D(object):
         1 if it has converged
         -1 if it has reached the maximum allowed iterations
         '''
-        
+
         if self.iter > self.maxits:
             self.converged = -1
             return
@@ -100,12 +101,12 @@ class Optimizer1D(object):
                 self.converged = 1
                 return
         self.converged = 0
-        
+
     def minimize(self, model, sgenerator, pathwd, pathresults = None):
         pass
-    
+
     def minimize_parameters(self, model, hutil):
         pass
-    
+
     def getbest(self):
         pass

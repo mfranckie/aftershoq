@@ -14,9 +14,9 @@ class Layer:
     or alloy, interface roughness mean height eta and correlation length
     lam. These are defined as the roughness parameters for the interface
     between this one and the following layer.
-    
-    ''' 
-    
+
+    '''
+
     def __init__(self,width,material,eta,lam):
         '''Constructor. Parameters:
         width:  Width of the layer in nm
@@ -24,16 +24,16 @@ class Layer:
         eta:  Interface roughness mean height
         lam:  Interface roughness correlation length
         '''
-        
+
         self.width = width
         self.material = copy.deepcopy(material)
-        
+
         self.lam = lam
         self.eta = eta
-        
+
     def __str__(self):
         return str([self.width,self.material,self.eta,self.lam])
-        
+
     def __repr__(self):
         return str(self)
 
@@ -42,18 +42,18 @@ class Structure:
     '''Defines an entire heterostructure, consisting of several
     Layers and doping regions.
     '''
-    
+
     sid = 0
-    
+
     def __init__(self, orig=None, name = None):
         ''' Constructur. Optionally copies from Structure object orig.
-        Each structure receives an id (sid) and a dirname, which defaults to 
+        Each structure receives an id (sid) and a dirname, which defaults to
         sid.
         '''
-        
+
         self.sid = Structure.sid
         Structure.sid +=1
-        
+
         if name is None:
             self.name = type(self).__name__
         else:
@@ -71,39 +71,39 @@ class Structure:
                 self.addLayer(Layer(l.width,l.material,l.eta,l.lam))
             for dl in orig.dopings:
                 self.addDoping(dl[0], dl[1], dl[2])
-        
+
     def setIFR(self,eta,lam):
         ''' Manually set interface roughness parameters.'''
-        
+
         self.eta = eta
         self.lam = lam
-        
+
         for l in self.layers:
             l.eta = self.eta
             l.lam = self.lam
-    
+
     def addLayer(self,layer):
         '''Add a Layer to this structure.'''
         self.layers.append(layer)
         self.Nl+=1
         self.length += layer.width
-    
+
     def addLayerIFR(self,width,material,eta,lam):
-        '''Add a new Layer, created from 
+        '''Add a new Layer, created from
         width:   Width in nm
         material:  Material object for new layer
         eta:  Interface roughness mean height
         lam:  Interface roughness correlation length
-        
+
         '''
         self.addLayer(Layer(width,material,eta,lam))
-        
+
     def addLayerWM(self,width,material):
         '''Add a new layer based on width (nm) and Material.
         Uses pre-defined interface roughness parameters (set via setIFR )
         '''
         self.addLayer(Layer(width,material,self.eta,self.lam))
-        
+
     def addDoping(self,zi,zf,density,layerindex = None):
         '''Add a doping layer.
         zi:  starting position of layer
@@ -111,13 +111,13 @@ class Structure:
         density:  volume doping density (cm^-3)
         layerindex: optional, set (zi, zf) relative to Layer start
         '''
-        
+
         if layerindex is not None:
             lp = self.layerPos(layerindex)
             zi += lp
             zf += lp
         self.dopings.append([zi,zf,density])
-        
+
     def layerPos(self,index):
         '''Returns the position of Layer with index "index"
         '''
@@ -125,16 +125,16 @@ class Structure:
         for l in self.layers[0:index]:
             pos += l.width
         return pos
-    
+
     def layerIndex(self,pos):
         '''Returns the index of the Layer covering the position pos.'''
-        
+
         z = 0
         for li in self.layers:
             z += li.width
             if pos<z:
                 return self.layers.index(li)
-            
+
     def layerDoping3D(self, index):
         ''' Returns the sheet doping density in the layer with layer index
         "Index" (in units of cm^-2*nm^-1).'''
@@ -153,58 +153,83 @@ class Structure:
                         ol = l1 - l0
                     else:
                         ol = dop[1]-l0
-                    
-                    
+
+
                 doping += dop[2]*ol/(dop[1]-dop[0])
-                
+
         return doping
-    
+
+    def calcStrain(self):
+        """
+        Calculates return the total strain in one period h, and the averaged
+        critical strain per period Sc. The structure is estimated to relax when
+        abs(h) > abs(Sc) (or after N periods where N * abs(h) > abs(Sc) ).
+
+        Returns: h, Sc
+        """
+
+        # All layers must have the same substrate
+        asub = self.layers[0].material.substrate.params["lattconst"]
+
+        h = 0. # total strain per period, to be summed
+        Sc = 0. # critical strain averaged over two periods
+        for l in self.layers*2:
+            l.material.calcStrain()
+            h += (l.material.params["lattconst"] - asub)/asub*l.width
+            Sc += (l.material.params["lattconst"] - asub)/asub*l.material.hcrit()
+
+        h /= 2.
+        # averaged critical strain per period (absolute value)
+        Sc /= len(self.layers)*2
+        return h, Sc
+
+
     def convert_to_ML(self):
         """
         Converts this structure to integer monolayers. Assumes doping
         spans entire layers and keeps sheet density constant.
         Lattice constants are given in Å, layer widths in nm.
         """
-        
+
         dops = []
         [dops.append(self.layerDoping3D(i)) for i in range(len(self.layers))]
         print("dops = ", dops)
-        
+
         self.dopings = []
-        
+
         for i in range( len(self.layers) ):
             layer = self.layers[i]
             NML = np.round(layer.width/layer.material.params["lattconst"]*10.*2.)
             layer.width = NML*layer.material.params["lattconst"]/10./2.
             if(dops[i]>0):
                 self.addDoping(0, layer.width, dops[i], i)
-            
-    
+
+
     def __str__(self):
-        s = "[width, Material, eta, lambda] (id="+str(self.sid) + ")\n" 
+        s = "[width, Material, eta, lambda] (id="+str(self.sid) + ")\n"
         for l in self.layers:
             s += str(l) + "\n"
         return s
-    
+
     def layername(self):
-        '''Generates and returns a name for this structure, based on 
+        '''Generates and returns a name for this structure, based on
         layer widths.
         '''
         name = ""
         for l in self.layers:
             name = name + str(l.width) + "_"
         return name
-        
+
     layers=[]
     dopings=[]
-    
+
     def getSheetDop(self):
         '''Returns the sheet doping density per period in cm^-2.'''
         sd = 0.
         for l in self.dopings:
             sd += (l[1]-l[0])*l[2]
         return sd*1e-7
-    
+
     def prettyPrint(self):
         s = self.name + ":\n"
         s += "width\tMaterial\tVol. doping\n(nm)\t\t\t(cm-3)\n"
@@ -215,7 +240,7 @@ class Structure:
 
 class Material(object):
     '''Defines a material or alloy between two materials.'''
-    
+
     # parameter dictionary:
     params_dict = {
         "meff": 0,   # effective mass
@@ -238,7 +263,7 @@ class Material(object):
         "molV" : 0,  # Mol volume (nm^3/mol) = alc**3/4 for Zinc Blende
         "lattconst" : 0  # Lattice constant (A)
     }
-    
+
     def __init__(self,name,params_in=None,mat1=None,mat2=None,C=None,x=None, subs=None):
         '''Constructor. Parameters:
         name:  The name of this material
@@ -251,7 +276,12 @@ class Material(object):
                 substrate is the material itself (no strain)
         '''
         self.name = name
-        self.substrate = subs
+        self.hc = None
+
+        if subs is None:
+            self.substrate = self
+        else:
+            self.substrate = subs
         if (params_in is None):
             self.params = Material.params_dict.copy()
         else:
@@ -267,27 +297,27 @@ class Material(object):
             if x > 1:
                 print("ERROR: x > 1 in material creation! Stopping.")
                 exit(1)
-            self.updateAlloy(x)      
-      
+            self.updateAlloy(x)
+
     def updateAlloy(self,x):
         '''Updates the alloy composition of this alloy material with x
         as the new composition.
         '''
-        
+
         if(self.x is not None):
             self.x = x
             self.params = self.alloy(self.mat1,self.mat2,self.C,self.x)
-        
-    
+
+
     def calcStrain(self):
-        '''Calculates the strain effects on band parameters. Corrects 
-        Eg and Ec accorcing to model-solid theory by [van de Walle PRB 1989] 
+        '''Calculates the strain effects on band parameters. Corrects
+        Eg and Ec accorcing to model-solid theory by [van de Walle PRB 1989]
         and [Gresch Thesis ETH Zuerich 2009].
         '''
-        if self.substrate is None:
+        if self.substrate is self:
             # If no substrate is given, then material is assumed relaxed
             return
-        
+
         # relaxed lattice constant
         ar = self.params["lattconst"]
         # a-parallel. Here, we assume that the material is fully strained
@@ -300,22 +330,58 @@ class Material(object):
         aL = ar*(1. - D001*epsII)
         # epsilon-perpendicular
         epsL = aL/ar - 1.
-        
+
         # DeltaOmega/Omega
         DOm = 2*epsII + epsL
-        
+
         # Valence band shift:
         DEv = self.params["av"]*DOm
         # Conduction band shift (naive):
         self.params["Ec"] += self.params["ac"]*DOm
-        
-    
+
+    def hcrit(self, Nself = 10):
+        """
+        Returns the critical thickness in Å (calculates it the first time).
+        Uses the Matthews and Blakeslee 1974 formula.
+
+        Nself = 10: number of self-consistent iterations. The default is 10, but
+        5 also normally gives sufficient precision for evaluation of structures.
+        """
+        if self.substrate is self:
+            return 10000000.0
+
+        if self.hc is None:
+
+            b = self.params["lattconst"]/2. # Burgers vector
+
+            hc0 = self.__hrec__(b)
+            for i in range(Nself):
+                hc0 = self.__hrec__(hc0)
+
+            self.hc = hc0
+
+        return self.hc
+
+    def __hrec__(self, hc):
+        """
+        Uses Matthews and Blakeslee 1974 for threading dislocation.
+        """
+        a = self.params["lattconst"]
+        asub = self.substrate.params["lattconst"]
+        b = a/np.sqrt(2.) # Burgers vector
+        f = np.abs(a-asub)/asub # Lattice mismatch
+        # Poisson ratio:
+        nu = self.params["c12"]/(self.params["c11"]+self.params["c12"])
+
+        return b*(1-nu/4)/(4*np.pi*f*(1+nu))*(np.log(hc/b)+1)
+
+
     def __str__(self):
         return self.name
-    
+
     def __repr__(self):
         return str(self)
-    
+
     @staticmethod
     def alloy(mat1,mat2,C,x):
         '''Creates and returns a new set of material parameters, which are
@@ -325,10 +391,11 @@ class Material(object):
         newparams = x*param1 + (1-x)*param2 - C*x*(1-x)
         x is the alloy fraction of mat1 to mat2.
         '''
-        
+
         params3=Material.params_dict.copy()
         for key in mat1.params:
-            params3[key]=(mat1.params[key]*x + mat2.params[key]*(1-x) - C[key]*x*(1-x))
+            params3[key]=(mat1.params[key]*x + mat2.params[key]*(1-x) -
+                          C[key]*x*(1-x))
         # Alloy scattering:
         params3["Valloy"] = x*(1-x)*(mat1.params["Ec"]-mat2.params["Ec"])
         return params3
