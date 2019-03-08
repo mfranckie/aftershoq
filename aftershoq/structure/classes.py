@@ -46,7 +46,7 @@ class Structure:
     Layers and doping regions.
     '''
 
-    postfix = ".asqst"
+    postfix = ".aqst"
 
     sid = 0
 
@@ -218,7 +218,7 @@ class Structure:
             s+= str(l.width)+"\t"+str(l.material)+"\t"+str(self.layerDoping3D(i))+"\n"
         return s
 
-    def save(self, path = "", name = None):
+    def save(self, path = ".", name = None):
         """
         Saves this Structure
 
@@ -250,7 +250,7 @@ class Structure:
         layers = etree.SubElement(root, "Layers")
         for l in self.layers:
             # TODO only save if material occures for first time
-            filename = l.material.save()
+            filename = l.material.save(path)
             layer = etree.SubElement(layers, "Layer")
             etree.SubElement(layer, "w").text = str(l.width)
             etree.SubElement(layer, "material").text = filename
@@ -288,16 +288,39 @@ class Structure:
         root = etree.parse(filename)
         struct = root.getroot()
 
-        # for el in struct:
-        #     if el.tag == "Layers":
-        #         for l in el:
-        #             for key in l:
+        for el in struct:
+            if el.tag == "Layers":
+                for l in el:
+                    for key in l:
+                        if key.tag == "w":
+                            width = float(key.text)
+                        elif key.tag == "material":
+                            material = Material.load(key.text)
+                        elif key.tag == "eta":
+                            eta = float(key.text)
+                        elif key.tag == "lambda":
+                            lam = float(key.text)
+                    s.addLayerIFR(width, material, eta, lam)
+            elif el.tag == "Doping":
+                for l in el:
+                    for key in l:
+                        if key.tag == "zi":
+                            zi = float(key.text)
+                        elif key.tag == "zf":
+                            zf = float(key.text)
+                        elif key.tag == "dens":
+                            dens = float(key.text)
+                    s.addDoping(zi, zf, dens)
+            elif el.tag == "Name":
+                s.name = el.text
+
+        return s
 
 
 class Material(object):
     '''Defines a material or alloy between two materials.'''
 
-    postfix = ".asqmt"
+    postfix = ".aqmt"
 
     # parameter dictionary:
     params_dict = {
@@ -403,7 +426,7 @@ class Material(object):
     def __repr__(self):
         return str(self)
 
-    def save(self, path = "", name = None):
+    def save(self, path = ".", name = None):
         """
         Saves this Material
 
@@ -432,7 +455,7 @@ class Material(object):
         etree.SubElement(root, "Alloy").text = str(self.mat1 is not None)
         fileSubst = "None"
         if self.substrate is not None:
-            fileSubst = self.substrate.save("")
+            fileSubst = self.substrate.save(path)
         etree.SubElement(root, "Substrate").text = fileSubst
 
         parameters = etree.SubElement(root, "Params")
@@ -444,11 +467,11 @@ class Material(object):
             etree.SubElement(bowings, key).text = str(self.C[key])
 
         if self.mat1 is not None:
-            filemat1 = self.mat1.save("")
+            filemat1 = self.mat1.save(path)
             etree.SubElement(root, "Mat1").text = filemat1
 
         if self.mat2 is not None:
-            filemat2 = self.mat2.save("")
+            filemat2 = self.mat2.save(path)
             etree.SubElement(root, "Mat2").text = filemat2
 
         if self.x is not None:
