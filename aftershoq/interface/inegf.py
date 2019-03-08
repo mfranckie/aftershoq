@@ -16,6 +16,7 @@ from matplotlib import pyplot as pl
 import numpy as np
 from aftershoq.utils import const
 from aftershoq.materials import GaAs
+from scipy.interpolate import interp1d
 
 class Inegf(Interface):
     '''
@@ -85,6 +86,7 @@ class Inegf(Interface):
         self.processes= []
         self.einspath = einspath
         self.datpath = "/IV/"
+        self.target = None
 
     def __str__(self):
         return "Inegf"
@@ -457,6 +459,69 @@ class Inegf(Interface):
             omegamax = values[Inegf.idat.get("omega")][imax]
 
             return jmax*np.exp(-np.abs(omegamax - omegat)/a)
+
+        elif self.merit == self.merits["gain integral"]:
+            # Optimize the area under the gain curve
+
+            gain = values[Inegf.idat.get("gain")]
+            omega = values[Inegf.idat.get("omega")]
+            efd = values[Inegf.idat.get("eFd")]
+
+            sum = 0.
+            sums = []
+            efd0 = efd[0]
+            domega = omega[1] - omega[0]
+            for i in range(len(gain)):
+                if efd[i] != efd0:
+                    sums.append(sum)
+                    sum  = 0.
+                    efd0 = efd[i]
+                sum = sum + gain[i]*domega
+            sums.append(sum)
+            # Scaling output to prevent sharp narrow peaks
+            return np.max(sums)/np.max(np.abs(gain))
+
+        elif self.merit == self.merits["gain FWHM"]:
+            # Opitmize the width of the gain peak
+
+            if self.target is not None:
+                losses = self.target[0]
+            else:
+                losses = 0.
+
+            gain = values[Inegf.idat.get("gain")]
+            omega = values[Inegf.idat.get("omega")]
+            efd = values[Inegf.idat.get("eFd")]
+            efd0 = efd[0]
+            FWHMs = []
+            omega_efd = []
+            gain_efd = []
+            for i in range(len(gain)):
+                omega_efd.append(omega[i])
+                gain_efd.append(gain[i])
+                if efd[i] != efd0 or i == len(gain) -1:
+                    efd0 = efd[i]
+                    # end of eFd period
+                    om0 = None
+                    om1 = None
+                    for j in range(len(omega_efd)-1):
+                        if (gain[j]-losses)*(gain[j+1]-losses) < 0:
+                            f = interp1d([gain[j], gain[j+1]],
+                                         [omega[j], omega[j+1]])
+                            om0 = f(losses)
+                        if (gain[j]-losses)*(gain[j+1]-losses) < 0 and om0 is not None:
+                            f = interp1d([gain[j], gain[j+1]],
+                                         [omega[j], omega[j+1]])
+                            om1 = f(losses)
+                    if om0 is None or om1 is None or np.max(gain_efd) < 0:
+                        FWHMs.append(0.)
+                    else:
+                        FWHMs.append(abs(om1-om0))
+                    omega_efd = []
+                    gain_efd = []
+                    om1, om0 = None, None
+
+                    out = np.max(FWHMs)
         else:
             print("No such merit function!")
 
