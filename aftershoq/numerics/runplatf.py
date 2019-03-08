@@ -9,7 +9,7 @@ import time
 import aftershoq.utils.debug as dbg
 import subprocess
 import os
-import psutil
+#import psutil
 
 class Platform(object):
     '''
@@ -27,16 +27,40 @@ class Platform(object):
 
     def __init__(self, name=None):
         '''
-        Constructor
+        Superclass constructor. This class contains the following
+        attributes:
+        
+        paral: Parallelization mode. Can be one of the Platform.paral_modes:
+            "MPI"
+            "OMP"
+            "SERIAL"
+        commlist: A list of commands to be executed next. Commands are added
+            through the method addcomm(command), and executed by execcomm().
         '''
         
         self.paral = self.paral_modes["SERIAL"]
+        self.commlist = []
         
     def submitjob(self,prog,args,dirpath,Nproc=None,wtime=None):
         pass
     
     def jobstatus(self,proc):
         pass
+    
+    def addcomm(self, command):
+        """
+        Add command "command" to list of commands to be executed.
+        """
+        self.commlist.append(command)
+        
+    def execcomm(self):
+        """
+        Executes all the commands in Platform.commlist, and subsequently
+        empties the list.
+        """
+    
+        pass
+    
     
 class Euler(Platform):
     
@@ -52,8 +76,7 @@ class Euler(Platform):
             paral_in = self.paral_modes.get("MPI")
         
         self.paral = paral_in
-        if self.paral == self.paral_modes.get("OMP"):
-            os.environ["OMP_NUM_THREADS"] = str(Nproc)
+        
         self.Nproc = Nproc
         self.wtime = wtime
         self.subcommand = "bsub"
@@ -64,6 +87,9 @@ class Euler(Platform):
             Nproc = self.Nproc
         if wtime is None:
             wtime = self.wtime
+            
+        if self.paral == self.paral_modes.get("OMP"):
+            os.environ["OMP_NUM_THREADS"] = str(Nproc)
         
         progargs = []
         jobname = str(dirpath)
@@ -78,7 +104,7 @@ class Euler(Platform):
         progargs.append(str(wtime))
         progargs.append("-J")
         progargs.append(jobname)
-        if Nproc>1 and self.paral == paral_modes.get("MPI"):
+        if Nproc>1 and self.paral == self.paral_modes.get("MPI"):
             progargs.append("mpirun")
         progargs.append(prog)
         [progargs.append(a) for a in args]
@@ -98,6 +124,21 @@ class Euler(Platform):
             return False
         else:
             return True
+        
+    def execcomm(self):
+        
+        progargs = []
+        
+        if len(self.commlist < 1):
+            return
+        
+        if len(self.commlist > 2):
+            for c in self.commlist[1:-1]:
+                for cc in c:
+                    progargs.append(cc)
+                progargs.append(';')
+        
+        self.commlist = []
         
 class Local(Platform):
     """
@@ -138,7 +179,8 @@ class MPI(Platform):
     def __init__(self, logical = False):
         super(MPI, self).__init__("MPI")
         self.paral = self.paral_modes["MPI"]
-        self.Nproc = psutil.cpu_count(logical=logical)
+        #self.Nproc = psutil.cpu_count(logical=logical)
+        self.Nproc = 1
         
     def submitjob(self, prog, args, dirpath, Nproc = None, wtime = None):
         if Nproc is None:

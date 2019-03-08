@@ -22,6 +22,7 @@ dictionaries and in __init__() call self.numpar.update( _new_dict_ )
 
 import time
 from aftershoq.structure import Structure
+from aftershoq.numerics.runplatf import Local
 
 class Interface(object):
     
@@ -37,47 +38,51 @@ class Interface(object):
               "custom figure of merit":9
               }
     
-    # Energies in meV, temperatures in K
-    numpar = {"efield0":0,
-              "defield":0.001,
-              "Nefield":1,
-              "omega0":0.001,
-              "domega":0.001,
-              "Nomega":1,
-              "efac0": 0,
-              "defac": 0.010,
-              "Nefac": 1,
-              "Tlattice": 77,
-              "Te": 125,
-              "Nstates":5,
-              "Nper":1,
-              "maxits":50,
-              "NE":1000,
-              "Emax":1.0,
-              "Nk":800,
-              "Ekmax":1.0,
-              "Nz":400,
-              "Nq":400,
-              "use-ifr":True,
-              "use-alloy":True,
-              "use-acc": True,
-              "use-LO": True,
-              "use-TO": True,
-              "use-imp": True,
-              "use-e-e": False,
-              "use-poisson": True,
-              "use-poisson": True
-              }
-    
-    def __init__(self,binpath,pltfm):
+    def __init__(self,binpath = "" ,pltfm = Local()):
         '''Constructor.
         binpath : path to model binary files
         pltfm : Platf object
         
         '''
+        
+        
+    
+        # Energies in meV, temperatures in K
+        self.numpar = {"efield0":0,
+                  "defield":0.001,
+                  "Nefield":1,
+                  "omega0":0.001,
+                  "domega":0.001,
+                  "Nomega":1,
+                  "efac0": 0,
+                  "defac": 0.010,
+                  "Nefac": 1,
+                  "Tlattice": 77,
+                  "Te": 125,
+                  "Nstates":5,
+                  "Nper":1,
+                  "maxits":50,
+                  "NE":1000,
+                  "Emax":1.0,
+                  "Nk":800,
+                  "Ekmax":1.0,
+                  "Nz":400,
+                  "Nq":400,
+                  "use-ifr":True,
+                  "use-alloy":True,
+                  "use-acc": True,
+                  "use-LO": True,
+                  "use-TO": True,
+                  "use-imp": True,
+                  "use-e-e": False,
+                  "use-poisson": True,
+                  "use-poisson": True
+                  }
+        
+        
         self.binpath = binpath
         self.pltfm = pltfm
-        self.merit = Interface.merits.get("max gain")
+        self.merit = self.merits.get("max gain")
 
     def runStructures(self,structures,path,runprog=True):
         '''Run simulations for all structures in the given structure list with
