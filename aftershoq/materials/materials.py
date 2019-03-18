@@ -329,7 +329,8 @@ class AlGaAs(Material):
     '''Al_xGa_1-xAs. Bowing parameters from [Vurgaftman2001]. 
     CBO from Yi et al, PRB 81, 235325 (2010)'''
 
-    def __init__(self, name = None, x=0.):
+    def __init__(self, name = None, x=0., CBO_Yi = True):
+        self.CBO_Yi = CBO_Yi
         if name is None:
             name = "Al_" + str(x) + "GaAs"
         mat1 = AlAs()
@@ -338,17 +339,20 @@ class AlGaAs(Material):
         C["Eg"] = -0.127 + 1.310*x
         C["EX"] = 0.055
         C["Ec"] = -0.127 + 1.310*x
-        super(AlGaAs,self).__init__(name, Material.params_dict.copy(), mat1, mat2, C, x)
+        super(AlGaAs,self).__init__(name, Material.params_dict.copy(), 
+                                    mat1, mat2, C, x, GaAs())
             
-    def updateAlloy(self,x):
+    def updateAlloy(self,x,reset_strain = False):
         self.C["Eg"] = -0.127 + 1.310*x
         self.C["Ec"] = -0.127 + 1.310*x
-        super(AlGaAs,self).updateAlloy(x)
-        if x < 0.42:
-            self.params["Ec"] = 0.831*x
-        else:
-            #self.params["Ec"] = 0.332 + 0.054*x #indirect gap
-            self.params["Ec"] = -0.115 + 1.105*x  #direct gap
+        self.C["EX"] = 0.055
+        super(AlGaAs,self).updateAlloy(x,reset_strain = reset_strain)
+        if self.CBO_Yi:
+            if x < 0.42:
+                self.params["Ec"] = 0.831*x
+            else:
+                #self.params["Ec"] = 0.332 + 0.054*x #indirect gap
+                self.params["Ec"] = -0.115 + 1.105*x  #direct gap
             
     def copy(self):
         return AlGaAs(self.name,self.x)
@@ -495,12 +499,12 @@ class AlGaSb(Material):
             
         super(AlGaSb,self).__init__(name,Material.params_dict.copy(),
                                     mat1, mat2, A, x, GaSb())
-    def updateAlloy(self,x):
+    def updateAlloy(self,x,reset_strain = False):
         
         self.C["Eg"] = -0.044 + 1.22*x 
         self.C["Ec"] = -0.044 + 1.22*x  
         
-        super(AlGaSb,self).updateAlloy(x)
+        super(AlGaSb,self).updateAlloy(x,reset_strain = reset_strain)
                
      
     def copy(self):
@@ -622,8 +626,8 @@ class AlInGaAs(Material):
         def copy(self):
             return AlInGaAs(self.x, self.name)
         
-        def updateAlloy(self, x):
-            Material.updateAlloy(self, x)
+        def updateAlloy(self, x, reset_strain = False):
+            Material.updateAlloy(self, x, reset_strain = reset_strain)
             self.params["Valloy"] = self.mat1.params["Valloy"]*x + \
                 self.mat2.params["Valloy"]*(1-x)
             self.params["Ec"] = 0.73*(0.712*x - 0.22*x*(1-x)) + self.mat2.params["Ec"]

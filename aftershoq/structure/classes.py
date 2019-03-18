@@ -8,7 +8,7 @@ Module containing core classes for materials, layers, and structures.
 
 import copy
 import numpy as np
-from path import Path
+import os.path as Path
 from lxml import etree
 import datetime
 
@@ -289,7 +289,7 @@ class Structure:
             etree.SubElement(region, "dens").text = str( d[2] )
 
         filename = name + self.postfix
-        file = Path.joinpath(path, filename)
+        file = Path.join(path, filename)
         etree.ElementTree(root).write(file, xml_declaration=True, encoding="utf-8", pretty_print=True)
 
         return filename
@@ -402,14 +402,24 @@ class Material(object):
                 exit(1)
             self.updateAlloy(x)
 
-    def updateAlloy(self,x):
+    def updateAlloy(self, x, reset_strain = False):
         '''Updates the alloy composition of this alloy material with x
         as the new composition.
+        Optional argument reset_strain can be set to True to undo any 
+        previous strain calculations.
         '''
+        
+        if reset_strain:
+            self.strained = False
 
         if(self.x is not None):
+            self.hc = None
             self.x = x
             self.params = self.alloy(self.mat1,self.mat2,self.C,self.x)
+            
+            if self.strained == True:
+                self.strained = False
+                self.calcStrain()
 
 
     def calcStrain(self):
@@ -441,7 +451,8 @@ class Material(object):
         # Valence band shift:
         DEv = self.params["av"]*DOm
         # Conduction band shift (naive):
-        self.params["Ec"] += self.params["ac"]*DOm
+        if self.strained == False:
+            self.params["Ec"] += self.params["ac"]*DOm
         self.strained = True
         
     def hcrit(self, Nself = 10):
@@ -452,7 +463,7 @@ class Material(object):
         Nself = 10: number of self-consistent iterations. The default is 10, but
         5 also normally gives sufficient precision for evaluation of structures.
         """
-        if self.substrate is self:
+        if self.substrate is self or self.substrate is None:
             return 10000000.0
 
         if self.hc is None:
@@ -541,7 +552,7 @@ class Material(object):
 
         # Print to file
         filename = name + self.postfix
-        file = Path.joinpath(path, filename)
+        file = Path.join(path, filename)
         etree.ElementTree(root).write(file, xml_declaration=True, encoding="utf-8", pretty_print=True)
 
         return filename
