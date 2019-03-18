@@ -797,7 +797,7 @@ class Inegf(Interface):
 
         return om_all, g_all
 
-    def plotResolve(self, path, structure = None, einspath = None):
+    def plotResolve(self, path, structure = None, einspath = None, plotak = True, plotbands = False):
 
         if structure is not None:
             path = path + "/" + structure.dirname
@@ -826,11 +826,11 @@ class Inegf(Interface):
         for dir in dirlist:
             pathdir = path + "/" + dir
             bandplot = np.transpose( np.loadtxt(pathdir + "/bandplot.dat") )
-            plotak = True
-            try:
-                ak0 =  np.loadtxt( pathdir + "/resolve_ak.dat")
-            except FileNotFoundError:
-                plotak = False
+            if plotak:
+                try:
+                    ak0 =  np.loadtxt( pathdir + "/resolve_ak.dat")
+                except FileNotFoundError:
+                    plotak = False
             dens = np.loadtxt( pathdir + "/resolve_dens.dat")
             curr = np.loadtxt( pathdir + "/resolve_curr.dat")
 
@@ -856,7 +856,7 @@ class Inegf(Interface):
             pl.plot(bandplot[0],bandplot[1],'b')
             if plotak:
                 pl.contour(z,E,ak0,cmap='cool')
-            else:
+            if plotbands:
                 for i in range(2,len(bandplot)):
                     pl.plot(bandplot[0],bandplot[i],'b')
 
@@ -876,7 +876,7 @@ class Inegf(Interface):
             pl.plot(bandplot[0],bandplot[1],'b')
             if plotak:
                 pl.contour(z,E,ak0,cmap='cool')
-            else:
+            if plotbands:
                 for i in range(2,len(bandplot)):
                     pl.plot(bandplot[0],bandplot[i],'b')
             f=pl.contourf(z,E,dens,N, cmap = 'hot')
