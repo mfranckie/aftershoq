@@ -35,7 +35,6 @@ class Interface(object):
               "estimated gain":6,
               "Chi2":7,
               "photocurrent":8,
-              "custom figure of merit":9
               "gain integral": 9,
               "gain FWHM" : 10,
               "custom figure of merit":11

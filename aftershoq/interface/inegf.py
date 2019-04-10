@@ -99,32 +99,35 @@ class Inegf(Interface):
         self.writeMaterial(self.wellmat, "# "+str(self.wellmat.name),path)
         self.writeNegftInp(su.abspath(path), self.einspath ,pathNegf)
 
-    def runStructures(self,structures,path):
+    def runStructures(self, structures, path, runwannier = True):
         '''Run simulations for all structures in the given structure list with
         the base path "path". This method dispatches all processes and returns
         the user has to wait for processes to finish before accessing results.
 
         Stores started processes in self.processes
         '''
-
-        local = Local()
+        
+        local = Local()   
         for ss in structures:
             spath = path+"/"+str(ss.dirname)
             su.mkdir(spath)
             self.initdir(ss, spath)
-            #proc = su.dispatch(self.progwann, "",spath)
-            proc = self.pltfm.submitjob(self.progwann,[],spath,1,"00:10")
-            self.processes.append(proc)
-        dbg.debug("Starting Wannier program.....\n",dbg.verb_modes["verbose"],self)
-        dbg.flush()
-        # TODO do not wait for all processes-start each strucrure when ready!
-        self.waitforproc(1)
+            if runwannier: 
+                proc = self.pltfm.submitjob(self.progwann,[],spath,1,"00:10")
+                self.processes.append(proc)
+        if runwannier: 
+            dbg.debug("Starting Wannier program.....\n",dbg.verb_modes["verbose"],self)
+            dbg.flush()
+            # TODO do not wait for all processes-start each strucrure when ready!
+            self.waitforproc(1)
         dbg.debug("Starting negf....\n",dbg.verb_modes["verbose"],self)
         dbg.flush()
         #del processes
         #processes = []
         for ss in structures:
             spath = path+"/"+str(ss.dirname)
+            if not runwannier:
+                self.writeNegftInp(su.abspath(spath), self.einspath ,spath+"/"+self.datpath)
             # replacing default value of Nper in scatt3.inp
             proc = local.submitandwait("sed",['-i',"--in-place=''",'2s/1/'+str(self.numpar["Nper"])+'/', "scatt3.inp"],spath)
             # to make sure file is closed:
@@ -540,7 +543,7 @@ class Inegf(Interface):
             f.write(str(material.params["eps0"])+" # eps0\n")
             f.write(str(material.params["epsinf"])+" # epsinf\n")
             f.write(str(material.params["ELO"])+" # ELO\n")
-            f.write(str(material.params["ac"])+" # deformation potential\n")
+            f.write(str(np.abs(material.params["ac"]))+" # deformation potential\n")
             f.write(str(material.params["vlong"])+" # vlong\n")
             f.write(str(material.params["massdens"])+" # mass density\n")
             f.write(str(material.params["molV"])+ " # mol volume")
@@ -797,7 +800,7 @@ class Inegf(Interface):
 
         return om_all, g_all
 
-    def plotResolve(self, path, structure = None, einspath = None, plotak = True, plotbands = False):
+    def plotResolve(self, path, structure = None, einspath = None, plotak = True, plotbands = False, vmax_dens = None, vmin_dens = None, vmin_curr = None, vmax_curr = None):
 
         if structure is not None:
             path = path + "/" + structure.dirname
@@ -859,14 +862,16 @@ class Inegf(Interface):
             if plotbands:
                 for i in range(2,len(bandplot)):
                     pl.plot(bandplot[0],bandplot[i],'b')
-
-            f=pl.contourf(z,E,curr,N, cmap = 'hot')
+            
+            #f=pl.contourf(z,E,curr,N, cmap = 'hot', vmin = vmin, vmax = vmax)
+            pl.pcolormesh(z, E, curr, cmap = 'hot', vmin = vmin_curr, vmax = vmax_curr)
             pl.colorbar()
             pl.xlim(zmin,zmax)
             pl.xlabel("z (nm)")
             pl.ylabel("E (meV)")
             Emin2 = pl.ylim()[0]
-            pl.contourf([zmin,zmax],[Emin2,Emin*1000],zeros,cmap='hot',levels=f.levels)
+            #pl.contourf([zmin,zmax],[Emin2,Emin*1000],zeros,cmap='hot',levels=f.levels)
+            pl.pcolormesh([zmin,zmax],[Emin2,Emin*1000],zeros,cmap='hot', vmin = vmin_curr, vmax = vmax_curr)
 
             pl.figure(fig2.number)
             if Nplots > 1:
@@ -879,13 +884,15 @@ class Inegf(Interface):
             if plotbands:
                 for i in range(2,len(bandplot)):
                     pl.plot(bandplot[0],bandplot[i],'b')
-            f=pl.contourf(z,E,dens,N, cmap = 'hot')
+            #f=pl.contourf(z,E,dens,N, cmap = 'hot')
+            pl.pcolormesh(z,E,dens, cmap = 'hot', vmin=vmin_dens, vmax=vmax_dens)
             pl.colorbar()
             pl.xlim(zmin,zmax)
             pl.xlabel("z (nm)")
             pl.ylabel("E (meV)")
             Emin2 = pl.ylim()[0]
-            pl.contourf([zmin,zmax],[Emin2,Emin*1000],zeros,cmap='hot',levels=f.levels)
+            #pl.contourf([zmin,zmax],[Emin2,Emin*1000],zeros,cmap='hot',levels=f.levels)
+            pl.pcolormesh([zmin,zmax],[Emin2,Emin*1000],zeros,cmap='hot',vmin=vmin_dens, vmax=vmax_dens)
 
         return fig1, fig2
 
