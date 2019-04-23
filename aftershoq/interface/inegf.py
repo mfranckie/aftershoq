@@ -150,7 +150,7 @@ class Inegf(Interface):
         return pactive
 
 
-    def gatherResults(self, structures, pathwd, pathresults = None, runprog = True):
+    def gatherResults(self, structures, pathwd, pathresults = None, runhdiag = True, runbandplot = True):
         '''Write results to pathresults/results.log and run hdiag and bandplot
         in pathwd/s.dirname/self.datpath/eins/x/ for each i and x. Stores WS
         resutls as a new attribute levels[directory][WS level][data field] in
@@ -670,20 +670,56 @@ class Inegf(Interface):
         dirs = su.listdirs(path)
         for folder in dirs:
             s = Structure(origs)
-            with open(path+"/"+folder+"/wannier8.inp", 'r') as wannier:
-                s.sid = int( folder )
-                s.dirname = str( s.sid )
-                Nl = int( wannier.readline() )
-                Ncomm = 5
-                for _ in range(Ncomm):
-                    wannier.readline()
-                for i in range(Nl):
-                    lw = float( wannier.readline().split()[0] )
-                    s.layers[i].width = lw
-            structures.append(s)
+            try:
+                with open(path+"/"+folder+"/wannier8.inp", 'r') as wannier:
+                    s.sid = int( folder )
+                    s.dirname = str( s.sid )
+                    Nl = int( wannier.readline() )
+                    Ncomm = 5
+                    for _ in range(Ncomm):
+                        wannier.readline()
+                    for i in range(Nl):
+                        lw = float( wannier.readline().split()[0] )
+                        s.layers[i].width = lw
+                structures.append(s)
+            except FileNotFoundError:
+                print(f"Warning in Inegf.loadStructures: structure not found in {folder}")
         return structures
 
 
+    def plotresults(self, structure, path):
+        
+        if path[-4:-1] == '.dat':
+            pass
+        elif structure is None:
+            path = path + "/negft.dat"
+        else:
+            path = path + "/" + structure.dirname + "/" + self.datpath + "/negft.dat"
+        
+        negft = []
+        with open(path, "r") as file:
+            for l in file:
+                row = []
+                try:
+                    row = [ float( l.split()[i] ) for i in range(5) ]
+                except (ValueError, IndexError):
+                    # These are commented lines
+                    continue
+                negft.append(row)
+        negft = np.array(negft)
+        negft = negft[negft[:,0].argsort()]
+        
+        pl.figure('IV')
+        pl.plot(negft[:,0]*1000, negft[:,3], '-')
+        pl.xlabel('Bias (mV/period)')
+        pl.ylabel('Current density (A/cm^2)')
+        pl.figure('Gain')
+        pl.plot(negft[:,1]*1000, negft[:,4], '-+')
+        pl.xlabel('Energy (meV)')
+        pl.ylabel('Gain (1/cm)')
+        
+        return negft
+    
 
     def plotbands(self, structure, path, einspath = None):
         '''
@@ -744,22 +780,52 @@ class Inegf(Interface):
                     iplot += 1
                 pl.plot(z, Ec)
                 for nu in range(0, nnu):
-                    pl.plot(z, wavef[nu] , hold = True)
+                    pl.plot(z, wavef[nu] )
 
 
 
         return z_all, Ec_all, wavef_all
 
-    def plotGainFGR(self, structure, path, einspath = None):
+    def plotGainFGR(self, structure, path, einspath = None, multiplot = True, plot1D = True, plot2D = True,
+                   cmap='jet',vmin=None, vmax=None, yrange=None, xrange=None, ydata = 'eFd'):
         '''
         Plot the gain calculated from Fermi's golden rule for a structure.
         Must first have run gatherResults() for structure.
 
         Parameters
 
-        structure: Structure for which to plot the bands.
-        path: The path to the base of the tree
-        einspath (optional): specifies which parameters to plot for
+        structure: Structure
+            Structure for which to plot the bands.
+        path: string
+            The path to the base of the tree
+        einspath: string
+            specifies which parameters to plot for
+        multiplot:Boolean
+            Make one subplot per eins path
+        plot1D: Boolean
+            Make a 1D plot with overlain gain curves
+        plot2D: Boolean
+            Make a 2D color map
+        cmap: string
+            Which cmap to use in 2D plot
+        vmin: float
+            Minimun limit on color axis
+        vmax: float
+            Maximum limit on color axis
+        yrange: Tuple 
+            Range of values on y-axis (eFd or current)
+        xrange: Tuple
+            Range of values on x-axis (frequency)
+        ydata: string
+            ydata = 'eFd' gives bias on y-axis, and ydata = 'Current' gives current density.
+        
+        Returns:
+        
+        om_all: array[array[float]]
+            All frequency value arrays for all eins directories.
+          
+        g_all: array[array[float]]
+            All gain value arrays for all eins directories.
         '''
 
         path = path + "/" + structure.dirname + "/" + self.datpath + "/eins/"
@@ -777,30 +843,96 @@ class Inegf(Interface):
         g_all = []
 
         iplot = 1
+                
+        efd_all = []
+        
+        
+        if ydata == 'Current':
+            negft = []
+            with open(path + "/../negft.dat", "r") as file:
+                for l in file:
+                    row = []
+                    try:
+                        row = [ float( l.split()[i] ) for i in range(5) ]
+                    except (ValueError, IndexError):
+                        # These are commented lines
+                        continue
+                    negft.append(row)
+            negft = np.array(negft)
+            negft = negft[negft[:,0].argsort()]
 
         for dir in dirlist:
-            with open(path + "/" + dir + "/gainFGR.dat", 'r') as gain:
+            try:
+                with open(path + "/" + dir + "/gainFGR.dat", 'r') as gain:
+                    efd_all.append(float(dir.split(".")[0]))
 
-                gain.readline()   # one comment line
+                    gain.readline()   # one comment line
 
-                om = []
-                g = []
-                for l in gain:
-                    data = l.split()
-                    om.append( float( data[0] ) )
-                    g.append( float( data[1] ) )
+                    om = []
+                    g = []
+                    for l in gain:
+                        data = l.split()
+                        om.append( float( data[0] ) )
+                        g.append( float( data[1] ) )
 
-                om_all.append(om)
-                g_all.append(g)
+                    om_all.append(om)
+                    g_all.append(g)
+            except FileNotFoundError:
+                pass
 
-                if Nplots > 1:
+        # sort data according to bias
+        index_sort = np.argsort(efd_all)
+        efd_all = np.array(efd_all)[index_sort]
+        g_all = np.array(g_all)[index_sort]
+        om_all = np.array(om_all)[index_sort]
+        
+        if ydata == 'Current':
+            j_all = []
+            for i in range(len(efd_all)):
+                for j in range(len(negft)):
+                    if efd_all[i] == negft[j][0]*1000:
+                        j_all.append(negft[j][3])
+                        break
+                                     
+        
+        if plot1D:
+            
+            pl.figure('FGR_1D')
+            for i in range(len(efd_all)):
+                # make 1D plots
+                pl.figure('FGR_1D')
+                if Nplots > 1 and multiplot:
                     pl.subplot(Nrows, Ncols, iplot)
                     iplot += 1
-                pl.plot(om, g)
+                pl.plot(om_all[i], g_all[i], label = str(efd[i]))
+                pl.xlabel('Energy (meV)')
+                pl.ylabel('Gain (1/cm)')
+            
+        if plot2D:
+            pl.figure('FGR_2D')
+            # make 2D plot bias vs. frequency (assumes all freq. arrays are same length
+            pl.figure('FGR_2D')
+            if ydata == 'Current':
+                ploty = j_all
+            elif ydata == 'eFd':
+                ploty = efd_all
+            pl.pcolormesh(om_all[0]*1000, ploty, g_all, vmin = vmin, vmax = vmax, cmap = cmap)
+            pl.xlabel('Energy (meV)')
+            if ydata == 'eFd':
+                pl.ylabel('Bias (mV/period)')
+            elif ydata == 'Current':
+                pl.ylabel('Current density (A/cm^2)')
+            if(xrange is not None):
+                pl.xrange(xrange)
+            if(yrange is not None):
+                pl.yrange(yrange)
+            cbar = pl.colorbar()
+            cbar.set_label('Gain (1/cm)')
+       
+        
+        return om_all, g_all, efd_all
 
-        return om_all, g_all
-
-    def plotResolve(self, path, structure = None, einspath = None, plotak = True, plotbands = False, vmax_dens = None, vmin_dens = None, vmin_curr = None, vmax_curr = None):
+    def plotResolve(self, path, structure = None, einspath = None, plotak = True, plotbands = False, vmax_dens = None, vmin_dens = None, vmin_curr = None, vmax_curr = None, cmap_dens = 'hot', cmap_ak = 'cool', WScolor = 'b'):
 
         if structure is not None:
             path = path + "/" + structure.dirname
@@ -856,43 +988,43 @@ class Inegf(Interface):
                 pl.subplot(Nrows, Ncols, iplot)
                 #iplot += 1
             pl.title(dir)
-            pl.plot(bandplot[0],bandplot[1],'b')
+            pl.plot(bandplot[0],bandplot[1],WScolor)
             if plotak:
-                pl.contour(z,E,ak0,cmap='cool')
+                pl.contour(z,E,ak0,cmap=cmap_ak)
             if plotbands:
                 for i in range(2,len(bandplot)):
-                    pl.plot(bandplot[0],bandplot[i],'b')
+                    pl.plot(bandplot[0],bandplot[i],WScolor)
             
             #f=pl.contourf(z,E,curr,N, cmap = 'hot', vmin = vmin, vmax = vmax)
-            pl.pcolormesh(z, E, curr, cmap = 'hot', vmin = vmin_curr, vmax = vmax_curr)
+            pl.pcolormesh(z, E, curr, cmap = cmap_dens, vmin = vmin_curr, vmax = vmax_curr)
             pl.colorbar()
             pl.xlim(zmin,zmax)
             pl.xlabel("z (nm)")
             pl.ylabel("E (meV)")
             Emin2 = pl.ylim()[0]
             #pl.contourf([zmin,zmax],[Emin2,Emin*1000],zeros,cmap='hot',levels=f.levels)
-            pl.pcolormesh([zmin,zmax],[Emin2,Emin*1000],zeros,cmap='hot', vmin = vmin_curr, vmax = vmax_curr)
+            pl.pcolormesh([zmin,zmax],[Emin2,Emin*1000],zeros,cmap=cmap_dens, vmin = vmin_curr, vmax = vmax_curr)
 
             pl.figure(fig2.number)
             if Nplots > 1:
                 pl.subplot(Nrows, Ncols, iplot)
                 iplot += 1
             pl.title(dir)
-            pl.plot(bandplot[0],bandplot[1],'b')
+            pl.plot(bandplot[0],bandplot[1],WScolor)
             if plotak:
-                pl.contour(z,E,ak0,cmap='cool')
+                pl.contour(z,E,ak0,cmap=cmap_ak)
             if plotbands:
                 for i in range(2,len(bandplot)):
-                    pl.plot(bandplot[0],bandplot[i],'b')
+                    pl.plot(bandplot[0],bandplot[i],WScolor)
             #f=pl.contourf(z,E,dens,N, cmap = 'hot')
-            pl.pcolormesh(z,E,dens, cmap = 'hot', vmin=vmin_dens, vmax=vmax_dens)
+            pl.pcolormesh(z,E,dens, cmap = cmap_dens, vmin=vmin_dens, vmax=vmax_dens)
             pl.colorbar()
             pl.xlim(zmin,zmax)
             pl.xlabel("z (nm)")
             pl.ylabel("E (meV)")
             Emin2 = pl.ylim()[0]
             #pl.contourf([zmin,zmax],[Emin2,Emin*1000],zeros,cmap='hot',levels=f.levels)
-            pl.pcolormesh([zmin,zmax],[Emin2,Emin*1000],zeros,cmap='hot',vmin=vmin_dens, vmax=vmax_dens)
+            pl.pcolormesh([zmin,zmax],[Emin2,Emin*1000],zeros,cmap=cmap_dens,vmin=vmin_dens, vmax=vmax_dens)
 
         return fig1, fig2
 
