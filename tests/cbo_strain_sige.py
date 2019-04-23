@@ -3,15 +3,18 @@
 Created on Fri Apr 19 16:12:49 2019
 
 @author: David
+
+Computes the conduction band-minima of SiGe heterostructures.
+
+Reference: 
+    K. Driscoll and R. Paiella, J. Appl. Phys. 102, 093103 (2007);
+    https://doi.org/10.1063/1.2803896
 """
 
 import numpy as np
 import matplotlib.pyplot as plt
 
 #%% Parameters from:
-# "Design of n-type silicon-based quantum cascade lasers" APL 102 (2007)
-# https://aip.scitation.org/doi/10.1063/1.2803896
-
 # Table 
 a_si = 5.431
 a_ge = 5.657

@@ -25,7 +25,102 @@ References:
 
 from aftershoq.structure import Material
 
+class Si(Material):
+    '''
+    Ref: K. Driscoll and R. Paiella, J. Appl. Phys. 102, 093103 (2007)
+    '''
+    
+    def __init__(self,name = None):
+        if name is None:
+            name = "Si"
+        paramsSi = Material.params_dict.copy()
+        paramsSi["meff"] = 0 # check
+        paramsSi["Ec"] = 0.0 # check
+        paramsSi["Eg"] = 0 # check
+        paramsSi["EX"] = 0 # check
+        paramsSi["ELO"] = 0 # check
+        paramsSi["Ep"] =0 # check
+        paramsSi["eps0"] = 0 # check
+        paramsSi["epsinf"] = 0 # check
+        paramsSi["ac"] = 0 # Only know difference
+        paramsSi["av"] = 0 #  Only know difference
+        paramsSi["c11"] = 16.75 # (10^6 N cm^{-2})
+        paramsSi["c12"] = 6.5
+        paramsSi["c44"] = 0 # check
+        paramsSi["vlong"] = 0 # check
+        paramsSi["massdens"] = 0 # check
+        paramsSi["molV"] = 0 # check
+        paramsSi["lattconst"] = 5.431
+        super(Si,self).__init__(name,paramsSi)
+        
+    def copy(self):
+        return Si(self.name)
+    
+class Ge(Material):
+    '''
+    Ref: K. Driscoll and R. Paiella, J. Appl. Phys. 102, 093103 (2007)
+    '''
+    
+    def __init__(self,name = None):
+        if name is None:
+            name = "Ge"
+        paramsGe = Material.params_dict.copy()
+        paramsGe["meff"] = 0.12
+        paramsGe["Ec"] = 0.0 # check
+        paramsGe["Eg"] = 1.519 # check
+        paramsGe["EX"] = 1.981 # check
+        paramsGe["ELO"] = 0 # Check
+        paramsGe["Ep"] = 0 # check
+        paramsGe["eps0"] = 0 # check
+        paramsGe["epsinf"] = 0 # check
+        paramsGe["ac"] = -7.17 # only know difference
+        paramsGe["av"] = 1.16 # check
+        paramsGe["c11"] = 13.15
+        paramsGe["c12"] = 4.94
+        paramsGe["c44"] = 0 # check
+        paramsGe["vlong"] = 0 # check
+        paramsGe["massdens"] = 0 # check
+        paramsGe["molV"] = 0 # check
+        paramsGe["lattconst"] = 5.657
+        super(Ge,self).__init__(name,paramsGe)
+        
+    def copy(self):
+        return Ge(self.name)
+
 # Binaries:
+        
+class SiGe(Material):
+    '''
+    Ref: K. Driscoll and R. Paiella, J. Appl. Phys. 102, 093103 (2007)
+    '''
+
+    def __init__(self, name = None, x=0., CBO_Yi = True):
+        self.CBO_Yi = CBO_Yi
+        if name is None:
+            name = "Al_" + str(x) + "GaAs"
+        mat1 = AlAs()
+        mat2 = GaAs()
+        C = Material.params_dict.copy()
+        C["Eg"] = -0.127 + 1.310*x
+        C["EX"] = 0.055
+        C["Ec"] = -0.127 + 1.310*x
+        super(SiGe,self).__init__(name, Material.params_dict.copy(), 
+                                    mat1, mat2, C, x, Ge())
+            
+    def updateAlloy(self,x,reset_strain = False):
+        self.C["Eg"] = -0.127 + 1.310*x
+        self.C["Ec"] = -0.127 + 1.310*x
+        self.C["EX"] = 0.055
+        super(SiGe,self).updateAlloy(x,reset_strain = reset_strain)
+        if self.CBO_Yi:
+            if x < 0.42:
+                self.params["Ec"] = 0.831*x
+            else:
+                #self.params["Ec"] = 0.332 + 0.054*x #indirect gap
+                self.params["Ec"] = -0.115 + 1.105*x  #direct gap
+            
+    def copy(self):
+        return SiGe(self.name,self.x)
 
 class GaAs(Material):
     '''GaAs, band parameters from [Vurgaftman2001]. Other parameters from
