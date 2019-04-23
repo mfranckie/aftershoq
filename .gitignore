@@ -4,3 +4,8 @@ example/example_sewlab_EV2238.py
 example/notebooks/demo/
 demo/
 data/
+*egg-info*
+build/
+*/.ipynb_checkpoints/
+*.eps
+*.log

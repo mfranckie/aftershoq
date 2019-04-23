@@ -503,8 +503,14 @@ class Gaussopt(Optimizer1D):
         for d in range(n):
             D1 = np.transpose( [data1[:,d]]) * np.ones((d1,d2), dtype=np.double )
             D2 = [data2[:,d]] * np.ones((d1,d2), dtype = np.double)
-            sumxy += (D1-D2)
-    
+            try:
+                sumxy += (D1-D2)
+            except(TypeError):
+                print("TypeError")
+                print("D1 =",D1)
+                print("D2 =",D2)
+                exit
+
         k = theta[0]**2. * np.exp(-sumxy**2./(2.0*theta[1]**2.))
     
         if wantderiv:
