@@ -354,7 +354,7 @@ class Material(object):
         "Eg" : 0,     # Gamma valley band gap (eV)
         "EX" : 0,     # X valley band gap (eV)
         "EL" : 0,     # L valley band gap (eV)
-        "Edel" : 0,   # Delta valley band gap (eV)
+        "EDel" : 0,   # Delta valley band gap (eV)
         "Ep" : 0,     # Kane energy (eV)
         "Valloy" : 0, # Alloy scattering potential (eV)
         "ELO" : 0,    # Longitudinal optical phonon energy (eV)
