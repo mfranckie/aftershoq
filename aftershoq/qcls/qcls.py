@@ -293,9 +293,11 @@ class EV2017(Structure):
         
         alinas_s = AlInAs(x = 0.64)
         # to account for strain (see thesis Tobias Gresch ETH Zürich 2009)
-        alinas_s.params[mp.Ec] = 0.72
+        #alinas_s.params[mp.Ec] = 0.72
         gainas_s = InGaAs(x = 0.58)
-        gainas_s.params[mp.Ec] = 0.0
+        #gainas_s.params[mp.Ec] = 0.0
+        alinas_s.calcStrain()
+        gainas_s.calcStrain()
         
         
         self.addLayerWM(3.1, alinas_s)
