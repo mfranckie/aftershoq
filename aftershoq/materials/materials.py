@@ -402,7 +402,7 @@ class InGaAs(Material):
         A["meff"] = 0.0091
         A["Ep"] = -1.48
         A["ac"] = 2.61
-        A["eps0"] = -0.67 # Ioffe
+        A["eps0"] = 0.67 # Ioffe
         A["ELO"] = 0.002 # fit to Ioffe 34 meV lattice matched
         A["Ec"] = 0.097 # (= Cvbo + Cgap, Vurgaftman)
         super(InGaAs,self).__init__(name,Material.params_dict.copy(),
