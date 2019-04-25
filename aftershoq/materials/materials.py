@@ -36,9 +36,10 @@ class Si(Material):
         paramsSi = Material.params_dict.copy()
         paramsSi["meff"] = 0 # check
         paramsSi["Ec"] = 0.0 # check
-        #paramsSi["Eg"] = 0 # check
-       # paramsSi["EX"] = 0 # check
-        #paramsSi["ELO"] = 0 # check
+        paramsSi["Eg"] = 3.37 # <--- Probably assumes high Ge content
+        paramsSi["EDel"] = 1.155 # <--- Probably assumes high Ge content
+        paramsSi["EL"] = 2.01 # <--- Probably assumes high Ge content
+        paramsSi["ELO"] = 0 # check
         paramsSi["Ep"] =0 # check
         paramsSi["eps0"] = 0 # check
         paramsSi["epsinf"] = 0 # check
@@ -67,7 +68,9 @@ class Ge(Material):
         paramsGe = Material.params_dict.copy()
         paramsGe["meff"] = 0.12
         paramsGe["Ec"] = 0.0 # check
-        #paramsGe["EX"] = 1.981 # check
+        paramsGe["Eg"] = 0.89 # <--- Probably assumes high Ge content
+        paramsGe["EDel"] = 0.931 # <--- Probably assumes high Ge content
+        paramsGe["EL"] = 0.74 # <--- Probably assumes high Ge content
         paramsGe["ELO"] = 0 # Check
         paramsGe["Ep"] = 0 # check
         paramsGe["eps0"] = 0 # check
@@ -92,27 +95,31 @@ class SiGe(Material):
     '''
     Ref: K. Driscoll and R. Paiella, J. Appl. Phys. 102, 093103 (2007)
     Ref for Gamma: Phys. Rev. B 82, 205317 (2010)
+    
+    Exception with definition!!
+    Si_(1-x)Ge_x
     '''
 
-    def __init__(self, name = None, x=0., CBO_Yi = True):
-        self.CBO_Yi = CBO_Yi
+    def __init__(self, name = None, x=0.):
         if name is None:
-            name = "Si_" + str(x) + "Ge"
+            name = "Si_" + str(1-x) + "Ge_" + str(x)
         mat1 = Si()
         mat2 = Ge()
         C = Material.params_dict.copy()
+        # Lattice constant from DJ Paul
+        C["lattconst"] = 5.431 + 0.1992*x + 0.02733*x**2
         # Unstrained bandgaps
         C["Eg"] = 3.37 - 2.48*x
         C["EL"] = 2.01 - 1.27*x
         C["EDel"] = 1.155-0.43*x+0.206*x**2
         super(SiGe,self).__init__(name, Material.params_dict.copy(), 
-                                    mat1, mat2, C, x, Si())
+                                    mat1, mat2, x)
             
-    def updateAlloy(self,x,reset_strain = False):
-        self.C["Eg"] = 3.37 - 2.48*x
-        self.C["EL"] = 2.01 - 1.27*x
-        self.C["EDel"] = 1.155-0.43*x+0.206*x**2
-        super(SiGe,self).updateAlloy(x,reset_strain = reset_strain)
+#    def updateAlloy(self,x,reset_strain = False):
+#        self.C["Eg"] = 3.37 - 2.48*x
+#        self.C["EL"] = 2.01 - 1.27*x
+#        self.C["EDel"] = 1.155-0.43*x+0.206*x**2
+#        super(SiGe,self).updateAlloy(x,reset_strain = reset_strain)
 #        if self.CBO_Yi:
 #            if x < 0.42:
 #                self.params["Ec"] = 0.831*x

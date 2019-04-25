@@ -340,6 +340,38 @@ class Structure:
                 s.name = el.text
 
         return s
+    
+    def get_conduction_band(self, npoints=100, nperiods=1):
+        """
+        Get the z and the conduction band for n periods
+        
+        Parameters:
+        npoints : int
+            Discretization points per period
+        nperiods : int
+            Number of repetitions of the period
+            
+
+        Returns: Numpy array (z, conduction band)
+        """
+        zspan = np.linspace(0,self.length,num=npoints,endpoint=False)
+        cbo = []
+        for z in zspan:
+                ind = self.layerIndex(z)
+                cbo.append(self.layers[ind].material.params["Ec"])
+                
+        if nperiods > 1:
+            ncbo = []
+            for i in range(nperiods):
+                ncbo = ncbo + cbo
+                
+        else:
+            ncbo = cbo
+        
+        zspan = np.linspace(0,self.length*nperiods,npoints*nperiods,endpoint=False)
+                
+        return np.asarray([zspan,ncbo])
+        
 
 
 class Material(object):
