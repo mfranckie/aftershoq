@@ -19,3 +19,6 @@ ge = Ge()
 
 sige = SiGe(x=0.2)
 
+print(si.params["lattconst"])
+print(ge.params["lattconst"])
+print(sige.params["lattconst"])

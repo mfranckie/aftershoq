@@ -35,7 +35,7 @@ class Si(Material):
             name = "Si"
         paramsSi = Material.params_dict.copy()
         paramsSi["meff"] = 0 # check
-       # paramsSi["Ec"] = 0.0 # check
+        paramsSi["Ec"] = 0.0 # check
         #paramsSi["Eg"] = 0 # check
        # paramsSi["EX"] = 0 # check
         #paramsSi["ELO"] = 0 # check
@@ -66,8 +66,7 @@ class Ge(Material):
             name = "Ge"
         paramsGe = Material.params_dict.copy()
         paramsGe["meff"] = 0.12
-        #paramsGe["Ec"] = 0.0 # check
-        #paramsGe["Eg"] = 1.519 # check
+        paramsGe["Ec"] = 0.0 # check
         #paramsGe["EX"] = 1.981 # check
         paramsGe["ELO"] = 0 # Check
         paramsGe["Ep"] = 0 # check
