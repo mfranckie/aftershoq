@@ -341,6 +341,38 @@ class Structure:
 
         return s
     
+    def get_param(self, param, npoints=1000, nperiods=1):
+        """
+        Get z and parameter for n periods
+        
+        Parameters:
+        param : string
+            Key to extract parameter
+        npoints : int
+            Discretization points per period
+        nperiods : int
+            Number of repetitions of the period
+            
+        Returns: Array (z, param)
+        """
+        zspan = np.linspace(0,self.length,num=npoints,endpoint=False)
+        p = []
+        for z in zspan:
+                ind = self.layerIndex(z)
+                p.append(self.layers[ind].material.params[param])
+                
+        if nperiods > 1:
+            pper = []
+            for i in range(nperiods):
+                pper = pper + p
+                
+        else:
+            pper = p
+        
+        zspan = np.linspace(0,self.length*nperiods,npoints*nperiods,endpoint=False)
+                
+        return np.asarray([zspan,pper])
+    
     def get_conduction_band(self, npoints=100, nperiods=1):
         """
         Get the z and the conduction band for n periods
@@ -351,8 +383,7 @@ class Structure:
         nperiods : int
             Number of repetitions of the period
             
-
-        Returns: Numpy array (z, conduction band)
+        Returns: Array (z, conduction band)
         """
         zspan = np.linspace(0,self.length,num=npoints,endpoint=False)
         cbo = []
@@ -388,13 +419,16 @@ class Material(object):
         "EL" : 0,     # L valley band gap (eV)
         "EDel" : 0,   # Delta valley band gap (eV)
         "Ep" : 0,     # Kane energy (eV)
+        "del0" : 0,   # Spin-orbit splitting (eV)
         "Valloy" : 0, # Alloy scattering potential (eV)
         "ELO" : 0,    # Longitudinal optical phonon energy (eV)
         "ETO" : 0,    # Transversal optical phonon energy (eV)
         "eps0" : 0,   # Static dielectric constant
         "epsinf" : 0, # High-frequency dielectric function
-        "ac" : 0,   # Conduction band deformation potential (eV)
-        "av":0,   # Valence band deformation potential (eV)
+        "ac" : 0,     # Conduction band deformation potential (eV)
+        "acDel" : 0,  # Indirect Delta cond. band def. pot. (eV)
+        "acL" : 0,    # Indirect L cond. band def. pot. (eV)
+        "av" : 0,   # Valence band deformation potential (eV)
         "c11"  : 0,   # Elastic constant
         "c12"  : 0,   # Elastic constant
         "c44"  : 0,   # Elastic constant
@@ -488,6 +522,7 @@ class Material(object):
         if self.strained == False:
             self.params["Ec"] += self.params["ac"]*DOm
         self.strained = True
+        
         
     def hcrit(self, Nself = 10):
         """

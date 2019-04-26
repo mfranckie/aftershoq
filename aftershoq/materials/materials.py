@@ -41,13 +41,18 @@ class Si(Material):
         paramsSi["EL"] = 2.01 # <--- Probably assumes high Ge content
         paramsSi["ELO"] = 0 # check
         paramsSi["Ep"] =0 # check
+        paramsSi["del0"] = 0.044 
         paramsSi["eps0"] = 0 # check
         paramsSi["epsinf"] = 0 # check
-        paramsSi["ac"] = 0 # Only know difference
-        paramsSi["av"] = 0 #  Only know difference
-        paramsSi["c11"] = 16.75 # (10^6 N cm^{-2})
-        paramsSi["c12"] = 6.5
-        paramsSi["c44"] = 0 # check
+        # Van der Walle (1989)
+        paramsSi["ac"] = 1.98
+        paramsSi["acDel"] = 4.18 
+        paramsSi["acL"] = -0.66 # Calculated (K.Driscoll and Paiella)
+        paramsSi["av"] = 2.46
+        # Mbar in Van der Walle; here 10^6 N cm^{-2}
+        paramsSi["c11"] = 16.75 
+        paramsSi["c12"] = 6.5   # (different unit in Van der Walle)
+        paramsSi["c44"] = 8.01 # 
         paramsSi["vlong"] = 0 # check
         paramsSi["massdens"] = 0 # check
         paramsSi["molV"] = 0 # check
@@ -73,13 +78,18 @@ class Ge(Material):
         paramsGe["EL"] = 0.74 # <--- Probably assumes high Ge content
         paramsGe["ELO"] = 0 # Check
         paramsGe["Ep"] = 0 # check
+        paramsGe["del0"] = 0.296 
         paramsGe["eps0"] = 0 # check
         paramsGe["epsinf"] = 0 # check
-        paramsGe["ac"] = -7.17 # only know difference
-        paramsGe["av"] = 1.16 # check
+        # Van der Walle (1989)
+        paramsGe["ac"] = -8.24
+        paramsGe["acDel"] = 2.55 # Calculated (K.Driscoll and Paiella)
+        paramsGe["acL"] = -1.54 
+        paramsGe["av"] = 1.24
+        # Mbar in Van der Walle; here 10^6 N cm^{-2}
         paramsGe["c11"] = 13.15
         paramsGe["c12"] = 4.94
-        paramsGe["c44"] = 0 # check
+        paramsGe["c44"] = 6.84
         paramsGe["vlong"] = 0 # check
         paramsGe["massdens"] = 0 # check
         paramsGe["molV"] = 0 # check
@@ -95,25 +105,22 @@ class SiGe(Material):
     '''
     Ref: K. Driscoll and R. Paiella, J. Appl. Phys. 102, 093103 (2007)
     Ref for Gamma: Phys. Rev. B 82, 205317 (2010)
-    
-    Exception with definition!!
-    Si_(1-x)Ge_x
     '''
 
     def __init__(self, name = None, x=0.):
         if name is None:
-            name = "Si_" + str(1-x) + "Ge_" + str(x)
+            name = "Si_" + str(x) + "Ge"
         mat1 = Si()
         mat2 = Ge()
         C = Material.params_dict.copy()
         # Lattice constant from DJ Paul
-        C["lattconst"] = 5.431 + 0.1992*x + 0.02733*x**2
+        #C["lattconst"] = 5.431 + 0.1992*x + 0.02733*x**2
         # Unstrained bandgaps
-        C["Eg"] = 3.37 - 2.48*x
-        C["EL"] = 2.01 - 1.27*x
-        C["EDel"] = 1.155-0.43*x+0.206*x**2
+        #C["Eg"] = 3.37 - 2.48*x
+        #C["EL"] = 2.01 - 1.27*x
+        #C["EDel"] = 1.155-0.43*x+0.206*x**2
         super(SiGe,self).__init__(name, Material.params_dict.copy(), 
-                                    mat1, mat2, x)
+                                    mat1, mat2, C, x)
             
 #    def updateAlloy(self,x,reset_strain = False):
 #        self.C["Eg"] = 3.37 - 2.48*x
