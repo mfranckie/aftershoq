@@ -345,6 +345,8 @@ class Structure:
         """
         Get z and parameter for n periods
         
+        TODO: Catch doping case
+        
         Parameters:
         param : string
             Key to extract parameter
@@ -372,36 +374,6 @@ class Structure:
         zspan = np.linspace(0,self.length*nperiods,npoints*nperiods,endpoint=False)
                 
         return np.asarray([zspan,pper])
-    
-    def get_conduction_band(self, npoints=100, nperiods=1):
-        """
-        Get the z and the conduction band for n periods
-        
-        Parameters:
-        npoints : int
-            Discretization points per period
-        nperiods : int
-            Number of repetitions of the period
-            
-        Returns: Array (z, conduction band)
-        """
-        zspan = np.linspace(0,self.length,num=npoints,endpoint=False)
-        cbo = []
-        for z in zspan:
-                ind = self.layerIndex(z)
-                cbo.append(self.layers[ind].material.params["Ec"])
-                
-        if nperiods > 1:
-            ncbo = []
-            for i in range(nperiods):
-                ncbo = ncbo + cbo
-                
-        else:
-            ncbo = cbo
-        
-        zspan = np.linspace(0,self.length*nperiods,npoints*nperiods,endpoint=False)
-                
-        return np.asarray([zspan,ncbo])
         
 
 
@@ -413,29 +385,45 @@ class Material(object):
     # parameter dictionary:
     params_dict = {
         "meff": 0,   # effective mass
-        "Ec" : 0,     # Conduction band offset (eV)
-        "Eg" : 0,     # Gamma valley band gap (eV)
-        "EX" : 0,     # X valley band gap (eV)
-        "EL" : 0,     # L valley band gap (eV)
-        "EDel" : 0,   # Delta valley band gap (eV)
-        "Ep" : 0,     # Kane energy (eV)
-        "del0" : 0,   # Spin-orbit splitting (eV)
-        "Valloy" : 0, # Alloy scattering potential (eV)
-        "ELO" : 0,    # Longitudinal optical phonon energy (eV)
-        "ETO" : 0,    # Transversal optical phonon energy (eV)
-        "eps0" : 0,   # Static dielectric constant
-        "epsinf" : 0, # High-frequency dielectric function
-        "ac" : 0,     # Conduction band deformation potential (eV)
-        "acDel" : 0,  # Indirect Delta cond. band def. pot. (eV)
-        "acL" : 0,    # Indirect L cond. band def. pot. (eV)
-        "av" : 0,   # Valence band deformation potential (eV)
-        "c11"  : 0,   # Elastic constant
-        "c12"  : 0,   # Elastic constant
-        "c44"  : 0,   # Elastic constant
-        "vlong" : 0,  # Longitudinal sound velocity (m/s)
+        "Ev" : 0,    # Valence band offset (eV)
+        # Conduction band offsets (eV)
+        "Ec" : 0,     # Gamma valley
+        "EcX" : 0,    # X valley
+        "EcDel" : 0,  # Delta valley
+        "EcDel2" : 0, # Delta2 valley
+        "EcDel4" : 0, # Delta4 valley
+        "EcL" : 0,    # L valley
+        # Band gaps (eV)
+        "Eg" : 0,      # Gamma valley
+        "EgX" : 0,     # X valley
+        "EgL" : 0,     # L valley
+        "EgDel" : 0,   # Delta valley
+        "Ep" : 0,      # Kane energy (eV)
+        "del0" : 0,    # Spin-orbit splitting (eV)
+        "Valloy" : 0,  # Alloy scattering potential (eV)
+        "ELO" : 0,     # Longitudinal optical phonon energy (eV)
+        "ETO" : 0,     # Transversal optical phonon energy (eV)
+        "eps0" : 0,    # Static dielectric constant
+        "epsinf" : 0,  # High-frequency dielectric function
+        "ac" : 0,      # Conduction band deformation potential (eV)
+        "acDel" : 0,   # Indirect Delta cond. band def. pot. (eV)
+        "acL" : 0,     # Indirect L cond. band def. pot. (eV)
+        "av" : 0,      # Valence band deformation potential (eV)
+        "c11"  : 0,    # Elastic constant
+        "c12"  : 0,    # Elastic constant
+        "c44"  : 0,    # Elastic constant
+        "uXiDel" : 0, # uniaxial deformation potential, delta valley (eV)
+        "vlong" : 0,   # Longitudinal sound velocity (m/s)
         "massdens" : 0,   # Mass density (kg/m^3)
         "molV" : 0,  # Mol volume (nm^3/mol) = alc**3/4 for Zinc Blende
-        "lattconst" : 0  # Lattice constant (A)
+        "lattconst" : 0,  # Lattice constant (A)
+        # Temporary
+#        "DgL_h" : 0,
+#        "DgDel_h" : 0,
+#        "DgDel2_u" : 0,
+#        "DgDel4_u" : 0,
+#        "epsL" : 0,
+#        "epsII" : 0
     }
 
     def __init__(self,name,params_in=None,mat1=None,mat2=None,C=None,x=None, subs=None):
@@ -521,6 +509,46 @@ class Material(object):
         # Conduction band shift (naive):
         if self.strained == False:
             self.params["Ec"] += self.params["ac"]*DOm
+        self.strained = True
+        
+    def calcStrain_IV(self):
+        '''
+        TODO: Merge III-V and group IV calculation
+        '''
+
+        if self.substrate is None:
+            # If no substrate is given, then material is assumed relaxed
+            return
+        #Formulas are for Ge contents
+        # Reverse contents for 
+        y = (1-self.substrate.x)
+        x = (1-self.x)
+        # Interpolated average valence-band edge in eV
+        self.params["Ev"] = (0.47 - 0.06*y)*(x-y)
+        # Unstrained bandgaps
+        # TODO: Check whether could extract bowing
+        self.params["EgDel"] = 1.155 - 0.43*x + 0.206*x**2
+        # Substrate lattice constant
+        aII = self.substrate.params["lattconst"]
+        # Adlayer lattice constant
+        ar = self.params["lattconst"]
+        # Parallel strain component
+        epsII = aII/ar - 1
+        # Perpendicular strain component (dimensionless)
+        epsL = -2*self.params["c12"]*epsII/self.params["c11"]
+        # Bandgapshifts due to hydrostatic strain
+        DgL_h = (self.params["acL"] - self.params["av"])*(2*epsII+epsL)
+        DgDel_h = (self.params["acDel"] - self.params["av"])*(2*epsII+epsL)
+        # Uniaxial strain in the L valley is 0 due to symmetry
+        # Bandgapshifts due to uniaxial strain 
+        DgDel2_u = 2*self.params["uXiDel"]*(epsL-epsII)/3
+        DgDel4_u = -self.params["uXiDel"]*(epsL-epsII)/3
+        # Conduction band minimas
+        temp = self.params["Ev"] + self.params["del0"]/3
+        self.params["EcL"] = temp+self.params["EgL"] + DgL_h
+        self.params["EcDel2"] = temp+self.params["EgDel"] + DgDel_h + DgDel2_u
+        self.params["EcDel4"] = temp+self.params["EgDel"] + DgDel_h + DgDel4_u
+        
         self.strained = True
         
         

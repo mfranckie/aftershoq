@@ -408,8 +408,9 @@ class Grange_SiGe(Structure):
         Structure.__init__(self)
         
         self.setIFR(0.1, 7)
-        well = Ge()
-        barr = SiGe(x = 0.23)
+        vs = SiGe(x=0.055)
+        well = Ge(subs=vs)
+        barr = SiGe(x = 0.23,subs=vs)
         
         self.addLayerWM(4.8, barr)
         self.addLayerWM(7.2, well)
