@@ -24,12 +24,16 @@ width_modes = {"CONTINUOUS": 0,
                "MONOLAYER" : 1,
                "DISCRETE"  : 2}
 
+strain_modes = {"NO STRAIN" : 0,
+                "COMPENSATE X" : 1}
+
 class Sgenerator():
 
     def __init__(self,origstruct,dw=None,dx=None,ddop=None,
                  doping_mode = doping_modes.get("FOLLOW LAYER SHEET"),
                  comp_mode = comp_modes.get("UNLINKED"),
                  width_mode = width_modes.get("CONTINUOUS"),
+                 strain_mode = strain_modes.get("NO STRAIN"),
                  p = 3 ):
         '''
         Constructor which takes:
@@ -63,6 +67,10 @@ class Sgenerator():
             Can be the following (width_modes):
             CONTINUOUS*: Width can vary continuous
             MONOLAYER: Width can vary in monolayers only.
+        strain_mode: (optional) Tells generator which strain mode to use:
+            NO STRAIN*: No strain compensation is done
+            COMPENSATE X: The strain is compensated by changing the alloy
+            composition of the layers. Attempts to keep band offset the same.
         p: (optional) Parameter for Hilbert Curve density. Needed if
             HilbertCurve will be used to generate structures.
         '''
@@ -70,6 +78,7 @@ class Sgenerator():
         self.doping_mode = doping_mode
         self.comp_mode = comp_mode
         self.width_mode = width_mode
+        self.strain_mode = strain_mode
 
         if dx is None:
             dx = []
@@ -231,6 +240,9 @@ class Sgenerator():
 
                 news.addDoping(zi, zf, dopdens, layerindex)
 
+            if self.strain_mode == strain_modes.get(["COMPENSATE X"]):
+                news.compensate_strain()
+
             self.structures.append(news)
             del news
 
@@ -386,6 +398,8 @@ class Sgenerator():
 
             if self.width_mode == width_modes.get("MONOLAYER"):
                 news.convert_to_ML()
+            if self.strain_mode == strain_modes.get(["COMPENSATE X"]):
+                news.compensate_strain()
 
             self.structures.append(news)
 
