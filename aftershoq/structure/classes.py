@@ -349,10 +349,12 @@ class Material(object):
 
     # parameter dictionary:
     params_dict = {
-        "meff": 0,   # effective mass
+        "meff": 0,    # effective mass
         "Ec" : 0,     # Conduction band offset (eV)
         "Eg" : 0,     # Gamma valley band gap (eV)
         "EX" : 0,     # X valley band gap (eV)
+        "EL" : 0,     # L valley band gap (eV)
+        "Eso": 0,     # Split-off hole band gap (eV)
         "Ep" : 0,     # Kane energy (eV)
         "Valloy" : 0, # Alloy scattering potential (eV)
         "ELO" : 0,    # Longitudinal optical phonon energy (eV)
@@ -405,10 +407,10 @@ class Material(object):
     def updateAlloy(self, x, reset_strain = False):
         '''Updates the alloy composition of this alloy material with x
         as the new composition.
-        Optional argument reset_strain can be set to True to undo any 
+        Optional argument reset_strain can be set to True to undo any
         previous strain calculations.
         '''
-        
+
         if reset_strain:
             self.strained = False
 
@@ -416,7 +418,7 @@ class Material(object):
             self.hc = None
             self.x = x
             self.params = self.alloy(self.mat1,self.mat2,self.C,self.x)
-            
+
             if self.strained == True:
                 self.strained = False
                 self.calcStrain()
@@ -454,7 +456,7 @@ class Material(object):
         if self.strained == False:
             self.params["Ec"] += self.params["ac"]*DOm
         self.strained = True
-        
+
     def hcrit(self, Nself = 10):
         """
         Returns the critical thickness in Å (calculates it the first time).
