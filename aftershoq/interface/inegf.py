@@ -106,16 +106,16 @@ class Inegf(Interface):
 
         Stores started processes in self.processes
         '''
-        
-        local = Local()   
+
+        local = Local()
         for ss in structures:
             spath = path+"/"+str(ss.dirname)
             su.mkdir(spath)
             self.initdir(ss, spath)
-            if runwannier: 
+            if runwannier:
                 proc = self.pltfm.submitjob(self.progwann,[],spath,1,"00:10")
                 self.processes.append(proc)
-        if runwannier: 
+        if runwannier:
             dbg.debug("Starting Wannier program.....\n",dbg.verb_modes["verbose"],self)
             dbg.flush()
             # TODO do not wait for all processes-start each strucrure when ready!
@@ -688,14 +688,14 @@ class Inegf(Interface):
 
 
     def plotresults(self, structure, path):
-        
+
         if path[-4:-1] == '.dat':
             pass
         elif structure is None:
             path = path + "/negft.dat"
         else:
             path = path + "/" + structure.dirname + "/" + self.datpath + "/negft.dat"
-        
+
         negft = []
         with open(path, "r") as file:
             for l in file:
@@ -708,7 +708,7 @@ class Inegf(Interface):
                 negft.append(row)
         negft = np.array(negft)
         negft = negft[negft[:,0].argsort()]
-        
+
         pl.figure('IV')
         pl.plot(negft[:,0]*1000, negft[:,3], '-')
         pl.xlabel('Bias (mV/period)')
@@ -717,9 +717,9 @@ class Inegf(Interface):
         pl.plot(negft[:,1]*1000, negft[:,4], '-+')
         pl.xlabel('Energy (meV)')
         pl.ylabel('Gain (1/cm)')
-        
+
         return negft
-    
+
 
     def plotbands(self, structure, path, einspath = None):
         '''
@@ -812,18 +812,18 @@ class Inegf(Interface):
             Minimun limit on color axis
         vmax: float
             Maximum limit on color axis
-        yrange: Tuple 
+        yrange: Tuple
             Range of values on y-axis (eFd or current)
         xrange: Tuple
             Range of values on x-axis (frequency)
         ydata: string
             ydata = 'eFd' gives bias on y-axis, and ydata = 'Current' gives current density.
-        
+
         Returns:
-        
+
         om_all: array[array[float]]
             All frequency value arrays for all eins directories.
-          
+
         g_all: array[array[float]]
             All gain value arrays for all eins directories.
         '''
@@ -843,10 +843,10 @@ class Inegf(Interface):
         g_all = []
 
         iplot = 1
-                
+
         efd_all = []
-        
-        
+
+
         if ydata == 'Current':
             negft = []
             with open(path + "/../negft.dat", "r") as file:
@@ -885,7 +885,7 @@ class Inegf(Interface):
         efd_all = np.array(efd_all)[index_sort]
         g_all = np.array(g_all)[index_sort]
         om_all = np.array(om_all)[index_sort]
-        
+
         if ydata == 'Current':
             j_all = []
             for i in range(len(efd_all)):
@@ -893,10 +893,10 @@ class Inegf(Interface):
                     if efd_all[i] == negft[j][0]*1000:
                         j_all.append(negft[j][3])
                         break
-                                     
-        
+
+
         if plot1D:
-            
+
             pl.figure('FGR_1D')
             for i in range(len(efd_all)):
                 # make 1D plots
@@ -907,7 +907,7 @@ class Inegf(Interface):
                 pl.plot(om_all[i], g_all[i], label = str(efd[i]))
                 pl.xlabel('Energy (meV)')
                 pl.ylabel('Gain (1/cm)')
-            
+
         if plot2D:
             pl.figure('FGR_2D')
             # make 2D plot bias vs. frequency (assumes all freq. arrays are same length
@@ -928,11 +928,10 @@ class Inegf(Interface):
                 pl.yrange(yrange)
             cbar = pl.colorbar()
             cbar.set_label('Gain (1/cm)')
-       
-        
+
+
         return om_all, g_all, efd_all
 
-    def plotResolve(self, path, structure = None, einspath = None, plotak = True, plotbands = False, vmax_dens = None, vmin_dens = None, vmin_curr = None, vmax_curr = None, cmap_dens = 'hot', cmap_ak = 'cool', WScolor = 'b'):
     def plotResolve(self, path, structure = None, einspath = None,
                     plotak = True, plotbands = False, vmax_dens = None,
                     vmin_dens = None, vmin_curr = None, vmax_curr = None,
@@ -999,7 +998,7 @@ class Inegf(Interface):
             if plotbands:
                 for i in range(2,len(bandplot)):
                     pl.plot(bandplot[0],bandplot[i],WScolor)
-            
+
             #f=pl.contourf(z,E,curr,N, cmap = 'hot', vmin = vmin, vmax = vmax)
             pl.pcolormesh(z, E, curr, cmap = cmap_dens, vmin = vmin_curr, vmax = vmax_curr)
             pl.colorbar()
