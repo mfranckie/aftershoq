@@ -933,6 +933,11 @@ class Inegf(Interface):
         return om_all, g_all, efd_all
 
     def plotResolve(self, path, structure = None, einspath = None, plotak = True, plotbands = False, vmax_dens = None, vmin_dens = None, vmin_curr = None, vmax_curr = None, cmap_dens = 'hot', cmap_ak = 'cool', WScolor = 'b'):
+    def plotResolve(self, path, structure = None, einspath = None,
+                    plotak = True, plotbands = False, vmax_dens = None,
+                    vmin_dens = None, vmin_curr = None, vmax_curr = None,
+                    cmap_dens = 'hot', cmap_ak = 'cool', WScolor = 'b',
+                    colorbar = True):
 
         if structure is not None:
             path = path + "/" + structure.dirname
@@ -998,6 +1003,7 @@ class Inegf(Interface):
             #f=pl.contourf(z,E,curr,N, cmap = 'hot', vmin = vmin, vmax = vmax)
             pl.pcolormesh(z, E, curr, cmap = cmap_dens, vmin = vmin_curr, vmax = vmax_curr)
             pl.colorbar()
+            if colorbar: pl.colorbar()
             pl.xlim(zmin,zmax)
             pl.xlabel("z (nm)")
             pl.ylabel("E (meV)")
@@ -1019,6 +1025,7 @@ class Inegf(Interface):
             #f=pl.contourf(z,E,dens,N, cmap = 'hot')
             pl.pcolormesh(z,E,dens, cmap = cmap_dens, vmin=vmin_dens, vmax=vmax_dens)
             pl.colorbar()
+            if colorbar: pl.colorbar()
             pl.xlim(zmin,zmax)
             pl.xlabel("z (nm)")
             pl.ylabel("E (meV)")
