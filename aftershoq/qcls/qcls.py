@@ -86,6 +86,96 @@ class Fathololoumi2012(Structure):
 
         self.addDoping(0, self.layers[idop].width, vdop, idop)
 
+class DupontJAP2012(Structure):
+    '''Phonon-photon-phonon 4-well THz QCL published in
+    Journal of Applied Physics 111 (2012)
+
+    Layer sequence: 44/62.5/10.9/66.5/22.8/84.8/9.1/61 (Angstrom)
+    The injection barrier is delta-doped with Si to 3.25e10 cm-􏰵2 at the center.
+    '''
+    def __init__(self):
+        Structure.__init__(self)
+
+        self.setIFR(0.1, 10)
+        well = GaAs()
+        barrier = AlGaAs(x = 0.25)
+
+        self.addLayerWM(2.08, barrier)
+        self.addLayerWM(0.24, barrier) # <------ 3.25e10 cm-2 => 13.542e17 cm-3
+        self.addLayerWM(2.08, barrier)
+        self.addLayerWM(6.25, well)
+        self.addLayerWM(1.09, barrier)
+        self.addLayerWM(6.65, well)
+        self.addLayerWM(2.28, barrier)
+        self.addLayerWM(8.48, well)
+        self.addLayerWM(0.91, barrier)
+        self.addLayerWM(6.1, well)
+
+        idop= 1
+        vdop = 1.35417e18 # cm^-3
+
+        self.addDoping(0, self.layers[idop].width, vdop, idop)
+
+class WaltherAPL2006(Structure):
+    """Bound-to-continuum THz QCL based on 6 wells.
+    Published in: Walther et al, Appl. Phys. Lett. 89 (2006)
+    Layer sequence:
+    5.9/15.3/1.0/17.7/1.3/16.6/1.7/13.9/3.9/__26.8__/3.5/21.4 nm
+    Underlined layer doped to 1.0􏱮e16 cm−3
+    """
+
+    def __init__(self):
+        Structure.__init__(self)
+
+        self.setIFR(0.1, 10)
+        well = GaAs()
+        barrier = AlGaAs(x = 0.25)
+
+        self.addLayerWM(5.9, barrier)
+        self.addLayerWM(15.3, well)
+        self.addLayerWM(1.0, barrier)
+        self.addLayerWM(17.7, well)
+        self.addLayerWM(1.3, barrier)
+        self.addLayerWM(16.6, well)
+        self.addLayerWM(1.7, barrier)
+        self.addLayerWM(13.9, well)
+        self.addLayerWM(3.9, barrier)
+        self.addLayerWM(26.8, well) # 9 <------ 1e16 cm-3
+        self.addLayerWM(3.5, barrier)
+        self.addLayerWM(21.4, well)
+
+        idop= 9
+        vdop = 1.0e16 # cm^-3
+
+        self.addDoping(0, self.layers[idop].width, vdop, idop)
+
+class ScalariOE2010(Structure):
+    """2-well THz design published in:
+    Optics Express 18 (2010)
+
+    Layer sequence: 4.5/8.3/3.8/17.9
+    The central part of the 17.9 nm GaAs well is doped in order to obtain a
+    sheet carrier density of 1.5 × 10^10 cm-2
+    """
+
+    def __init__(self):
+        Structure.__init__(self)
+
+        self.setIFR(0.1, 10)
+        well = GaAs()
+        barrier = AlGaAs(x = 0.15)
+
+        self.addLayerWM(4.5, barrier)
+        self.addLayerWM(8.3, well)
+        self.addLayerWM(3.8, barrier)
+        self.addLayerWM(8.2, well)
+        self.addLayerWM(3.1, well) # 4 <--- doped to 1.5e10 cm-2 => 4.84e16 cm-3
+        self.addLayerWM(6.6, well)
+
+        idop= 4
+        vdop = 4.84e16 # cm^-3
+
+        self.addDoping(0, self.layers[idop].width, vdop, idop)
 
 class N471(Structure):
     '''THz QCL emitting at 3.74 THz "single quantum well active region".
