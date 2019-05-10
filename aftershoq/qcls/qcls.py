@@ -149,6 +149,39 @@ class WaltherAPL2006(Structure):
 
         self.addDoping(0, self.layers[idop].width, vdop, idop)
 
+class ScalariAPL2005(Structure):
+    """Bound-to-continuum THz QCL emitting at 15 meV.
+    Layer sequence:
+    4.2/10.0/0.7/18.3/1.0/15.2/1.3/12.7/1.7/10.5/2.7/_21.1_/2.4/16.5
+    under- lined layer is Si doped at 3.8e16 cm−3
+    """
+    def __init__(self):
+        Structure.__init__(self)
+
+        self.setIFR(0.1, 10)
+        well = GaAs()
+        barrier = AlGaAs(x = 0.15)
+
+        self.addLayerWM(4.2, barrier)
+        self.addLayerWM(10.0, well)
+        self.addLayerWM(0.7, barrier)
+        self.addLayerWM(18.3, well)
+        self.addLayerWM(1.0, barrier)
+        self.addLayerWM(15.2, well)
+        self.addLayerWM(1.3, barrier)
+        self.addLayerWM(12.7, well)
+        self.addLayerWM(1.7, barrier)
+        self.addLayerWM(10.5, well)
+        self.addLayerWM(2.7, barrier)
+        self.addLayerWM(21.1, well) # 11 <--- doped to 3.8e16 cm-3
+        self.addLayerWM(2.4, barrier)
+        self.addLayerWM(16.5, well)
+
+        idop= 11
+        vdop = 3.8e16 # cm^-3
+
+        self.addDoping(0, self.layers[idop].width, vdop, idop)
+
 class ScalariOE2010(Structure):
     """2-well THz design published in:
     Optics Express 18 (2010)
