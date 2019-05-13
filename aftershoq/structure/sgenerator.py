@@ -240,7 +240,7 @@ class Sgenerator():
 
                 news.addDoping(zi, zf, dopdens, layerindex)
 
-            if self.strain_mode == strain_modes.get(["COMPENSATE X"]):
+            if self.strain_mode == strain_modes.get("COMPENSATE X"):
                 news.compensate_strain()
 
             self.structures.append(news)
