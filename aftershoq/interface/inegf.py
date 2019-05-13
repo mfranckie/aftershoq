@@ -179,7 +179,7 @@ class Inegf(Interface):
                     omegaf = self.numpar["fgr_omegaf"]
                     Nomega = self.numpar["fgr_Nomega"]
                     gamma  = self.numpar["fgr_gamma"]
-                    if runprog:
+                    if runhdiag:
                         self.runHdiag(einspath,omega0=omega0,omegaf=omegaf, Nomega = Nomega, gamma=gamma)
 
                         # Check if daigolalization failed, try zshift_trial times with zshift:
@@ -191,7 +191,8 @@ class Inegf(Interface):
                                           Nomega = Nomega, gamma=gamma)
                             else:
                                 break
-                        self.runBandplot(einspath, ss)
+                        if runbandplot:
+                            self.runBandplot(einspath, ss)
 
                     (levels, dipoles) = self.getWSdata(einspath)
                     ss.wslevels.append(levels)
@@ -1001,7 +1002,6 @@ class Inegf(Interface):
 
             #f=pl.contourf(z,E,curr,N, cmap = 'hot', vmin = vmin, vmax = vmax)
             pl.pcolormesh(z, E, curr, cmap = cmap_dens, vmin = vmin_curr, vmax = vmax_curr)
-            pl.colorbar()
             if colorbar: pl.colorbar()
             pl.xlim(zmin,zmax)
             pl.xlabel("z (nm)")
@@ -1023,7 +1023,6 @@ class Inegf(Interface):
                     pl.plot(bandplot[0],bandplot[i],WScolor)
             #f=pl.contourf(z,E,dens,N, cmap = 'hot')
             pl.pcolormesh(z,E,dens, cmap = cmap_dens, vmin=vmin_dens, vmax=vmax_dens)
-            pl.colorbar()
             if colorbar: pl.colorbar()
             pl.xlim(zmin,zmax)
             pl.xlabel("z (nm)")
