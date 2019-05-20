@@ -94,21 +94,22 @@ class Euler(Platform):
         progargs = []
         jobname = str(dirpath)
         
-        if Nproc>1 and self.paral == self.paral_modes.get("OMP"):
-            progargs.append("-R")
-            progargs.append('"span[ptile='+str(Nproc)+']"')
-        
         progargs.append("-n")
         progargs.append(str(Nproc))
         progargs.append("-W")
         progargs.append(str(wtime))
         progargs.append("-J")
         progargs.append(jobname)
+        if Nproc>1 and self.paral == self.paral_modes.get("OMP"):
+            progargs.append("-R")
+            progargs.append("span[ptile="+str(Nproc)+"]")
         if Nproc>1 and self.paral == self.paral_modes.get("MPI"):
             progargs.append("mpirun")
         progargs.append(prog)
         [progargs.append(a) for a in args]
-        proc = su.dispatch(self.subcommand, progargs, dirpath)
+        with open(dirpath+"/err.log", 'w') as errfile:
+            with open(dirpath+"/out.log", 'w') as outfile:
+                proc = su.dispatch(self.subcommand, progargs, dirpath, errfile=errfile, outfile=outfile)
         self.procinfo.append([proc.pid,jobname])
         return proc
     

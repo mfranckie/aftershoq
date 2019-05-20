@@ -398,7 +398,7 @@ class Sgenerator():
 
             if self.width_mode == width_modes.get("MONOLAYER"):
                 news.convert_to_ML()
-            if self.strain_mode == strain_modes.get(["COMPENSATE X"]):
+            if self.strain_mode == strain_modes.get("COMPENSATE X"):
                 news.compensate_strain()
 
             self.structures.append(news)

@@ -110,7 +110,7 @@ class Paraopt(Optimizer1D):
         self.converged = 0
     
     
-    def minimize(self, model, sgenerator, pathwd, pathresults = None):
+    def minimize(self, model, sgenerator, pathwd, pathresults = None, seq=None):
         
         if pathresults is None:
             pathresults = pathwd
@@ -124,8 +124,12 @@ class Paraopt(Optimizer1D):
             
             newx = self.nextstep()
             sgenerator.gen_struct_from_hilbert_curve(newx)
-            model.runStructures(sgenerator.structures[-len(newx):], pathwd)
-            model.waitforproc(0.1)
+            if seq is not None:
+                t = model.runStructSeq(sgenerator.structures[-len(newx):], pathwd,seq)
+                for tt in t: tt.join()
+            else:
+                model.runStructures(sgenerator.structures[-len(newx):], pathwd)
+                model.waitforproc(0.1)
             newy = []
             xi = 0
             model.gatherResults(sgenerator.structures[-len(newx):], pathwd, pathresults = pathresults)
