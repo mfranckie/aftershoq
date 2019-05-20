@@ -129,7 +129,7 @@ class WaltherAPL2006(Structure):
 
         self.setIFR(0.1, 10)
         well = GaAs()
-        barrier = AlGaAs(x = 0.25)
+        barrier = AlGaAs(x = 0.10)
 
         self.addLayerWM(5.9, barrier)
         self.addLayerWM(15.3, well)
