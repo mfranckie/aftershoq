@@ -395,6 +395,32 @@ class EV2104(Structure):
 
         [self.addDoping(0, self.layers[i].width, dop, i) for i in idop]
 
+class Grange_SiGe(Structure):
+    """
+    Test SiGe structure
+    Grange et al. Appl. Phys. Lett. 114, 111102 (2019)
+    """
+
+    def __init__(self):
+        Structure.__init__(self)
+
+        self.setIFR(0.1, 7)
+        well = Ge()
+        barr = SiGe(x = 0.23)
+
+        self.addLayerWM(4.8, barr)
+        self.addLayerWM(7.2, well)
+        self.addLayerWM(1.6, barr)
+        self.addLayerWM(8.2, well)
+        self.addLayerWM(2.8, barr)
+        self.addLayerWM(6.5, well)
+        self.addLayerWM(3.8, barr)
+        self.addLayerWM(12.5, well)
+
+        idop= 7
+        vdop =3.6e16 # cm^-3
+        self.addDoping(0, self.layers[idop].width, vdop, idop)
+
 # DFG structures:
 
 class Dupont_DFG_ASQW(Structure):
