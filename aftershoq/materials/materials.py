@@ -30,7 +30,7 @@ class Si(Material):
     '''
     Ref: K. Driscoll and R. Paiella, J. Appl. Phys. 102, 093103 (2007)
     '''
-    
+
     def __init__(self,name = None):
         if name is None:
             name = "Si"
@@ -42,32 +42,32 @@ class Si(Material):
         paramsSi["EL"] = 2.01 # <--- Probably assumes high Ge content
         paramsSi["ELO"] = 0 # check
         paramsSi["Ep"] =0 # check
-        paramsSi["del0"] = 0.044 
+        paramsSi["del0"] = 0.044
         paramsSi["eps0"] = 0 # check
         paramsSi["epsinf"] = 0 # check
         # Van der Walle (1989)
         paramsSi["ac"] = 1.98
-        paramsSi["acDel"] = 4.18 
+        paramsSi["acDel"] = 4.18
         paramsSi["acL"] = -0.66 # Calculated (K.Driscoll and Paiella)
         paramsSi["av"] = 2.46
         # Mbar in Van der Walle; here 10^6 N cm^{-2}
-        paramsSi["c11"] = 16.75 
+        paramsSi["c11"] = 16.75
         paramsSi["c12"] = 6.5   # (different unit in Van der Walle)
-        paramsSi["c44"] = 8.01 # 
+        paramsSi["c44"] = 8.01 #
         paramsSi["vlong"] = 0 # check
         paramsSi["massdens"] = 0 # check
         paramsSi["molV"] = 0 # check
         paramsSi["lattconst"] = 5.431
         super(Si,self).__init__(name,paramsSi)
-        
+
     def copy(self):
         return Si(self.name)
-    
+
 class Ge(Material):
     '''
     Ref: K. Driscoll and R. Paiella, J. Appl. Phys. 102, 093103 (2007)
     '''
-    
+
     def __init__(self,name = None):
         if name is None:
             name = "Ge"
@@ -79,13 +79,13 @@ class Ge(Material):
         paramsGe["EL"] = 0.74 # <--- Probably assumes high Ge content
         paramsGe["ELO"] = 0 # Check
         paramsGe["Ep"] = 0 # check
-        paramsGe["del0"] = 0.296 
+        paramsGe["del0"] = 0.296
         paramsGe["eps0"] = 0 # check
         paramsGe["epsinf"] = 0 # check
         # Van der Walle (1989)
         paramsGe["ac"] = -8.24
         paramsGe["acDel"] = 2.55 # Calculated (K.Driscoll and Paiella)
-        paramsGe["acL"] = -1.54 
+        paramsGe["acL"] = -1.54
         paramsGe["av"] = 1.24
         # Mbar in Van der Walle; here 10^6 N cm^{-2}
         paramsGe["c11"] = 13.15
@@ -96,12 +96,12 @@ class Ge(Material):
         paramsGe["molV"] = 0 # check
         paramsGe["lattconst"] = 5.657
         super(Ge,self).__init__(name,paramsGe)
-        
+
     def copy(self):
         return Ge(self.name)
 
 # Binaries:
-        
+
 class SiGe(Material):
     '''
     Ref: K. Driscoll and R. Paiella, J. Appl. Phys. 102, 093103 (2007)
@@ -120,9 +120,9 @@ class SiGe(Material):
         #C["Eg"] = 3.37 - 2.48*x
         #C["EL"] = 2.01 - 1.27*x
         #C["EDel"] = 1.155-0.43*x+0.206*x**2
-        super(SiGe,self).__init__(name, Material.params_dict.copy(), 
+        super(SiGe,self).__init__(name, Material.params_dict.copy(),
                                     mat1, mat2, C, x)
-            
+
 #    def updateAlloy(self,x,reset_strain = False):
 #        self.C["Eg"] = 3.37 - 2.48*x
 #        self.C["EL"] = 2.01 - 1.27*x
@@ -134,7 +134,7 @@ class SiGe(Material):
 #            else:
 #                #self.params["Ec"] = 0.332 + 0.054*x #indirect gap
 #                self.params["Ec"] = -0.115 + 1.105*x  #direct gap
-            
+
     def copy(self):
         return SiGe(self.name,self.x)
 

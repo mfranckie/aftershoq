@@ -146,9 +146,9 @@ class Inegf(Interface):
     def runStructSeq(self, structures, path, seq = None, runwannier = True):
         """Run NEGF sequentially, two times with (possibly) different parameters.
         Generates one Thread for each structure.
-        
+
         Parameters:
-        
+
         structures: list[Structure]
             Structures to evaluate. The same evaluation will be carried out for
             each Structure object in the list.
@@ -159,12 +159,12 @@ class Inegf(Interface):
             be used in order.
         runwannier : boolean
             Specifies whether the wannier program will be run. Defaults to True.
-            
+
         Returns: list[Thread]
             A list with the started threads. The calling function may implement
-            
+
                 for tt in threads: tt.join()
-                
+
             in order to wait for all threads to complete.
         """
 
@@ -179,9 +179,9 @@ class Inegf(Interface):
 
     def runSequence(self, structure, path, seq = None, runwannier = True):
         """Run NEGF sequentially for a single structure on a single Thread.
-        
+
         Parameters:
-        
+
         structures: list[Structure]
             Structures to evaluate. The same evaluation will be carried out for
             each Structure object in the list.
@@ -192,11 +192,11 @@ class Inegf(Interface):
             be used in order.
         runwannier : boolean
             Specifies whether the wannier program will be run. Defaults to True.
-            
+
         Returns: numpy.Array, numpy.Array
             negft_iv, negft_gain contains the results for the IV and gain simulations
             on matrix form.
-        
+
         """
         if seq is None:
             numpar = self.numpar.copy
@@ -213,9 +213,9 @@ class Inegf(Interface):
                 time.sleep(1)
 
         self.runNEGF(spath, numpar=seq[0], datpath= "IV")
-        
+
         negft_iv = self.getresults(structure, path, datpath="IV")
-        
+
         # interpolate to find maximum IV point
         x = np.linspace(negft_iv[0,0],negft_iv[-1,0])
         f = interp1d(negft_iv[:,0], negft_iv[:,3], kind='cubic')
@@ -239,7 +239,7 @@ class Inegf(Interface):
 
     def runNEGF(self, spath, einspath=None, datpath=None, numpar=None):
         """Start the NEGF program in a specified directory.
-        
+
         Parameters:
         spath: String
             Path to structure directory where execution should start.
@@ -250,7 +250,7 @@ class Inegf(Interface):
         numpar: dictionary
             (Optional) Dictionary with numerical parameters. Defaults to self.numpar.
         """
-        
+
         if einspath is None: einspath = self.einspath
         if datpath is None: datpath = self.datpath
         if numpar is None: numpar = self.numpar
@@ -326,8 +326,8 @@ class Inegf(Interface):
                                           Nomega = Nomega, gamma=gamma)
                             else:
                                 break
-                    if runbandplot:
-                        self.runBandplot(einspath, ss)
+                        if runbandplot:
+                            self.runBandplot(einspath, ss)
 
                     (levels, dipoles) = self.getWSdata(einspath)
                     ss.wslevels.append(levels)
@@ -698,7 +698,7 @@ class Inegf(Interface):
             f.write(str(material.params["vlong"])+" # vlong\n")
             f.write(str(material.params["massdens"])+" # mass density\n")
             f.write(str(material.params["molV"])+ " # mol volume\n")
-        
+
 
     def writeWannier(self,struct,dirpath=None):
         '''Writes the wannier8.inp input file.'''
@@ -843,18 +843,18 @@ class Inegf(Interface):
 
     def getresults(self, structure, path, datpath = None):
         """Returns results from the NEGF program.
-        
+
         Paramters:
-        
+
         structure: Structure
             The structure for which to return results.
         path: String
             The base path where the structure directory resides.
         datpath: String
             (Optional) The execution path of the NEGF program. Defaults to self.datpath.
-        
+
         Returns:
-        
+
         negft: numpy.Array
                 Matrix with NEGF results.
         """
@@ -1116,7 +1116,11 @@ class Inegf(Interface):
 
         return om_all, g_all, efd_all
 
-    def plotResolve(self, path, structure = None, einspath = None, plotak = True, plotbands = False, vmax_dens = None, vmin_dens = None, vmin_curr = None, vmax_curr = None, cmap_dens = 'hot', cmap_ak = 'cool', WScolor = 'b'):
+    def plotResolve(self, path, structure = None, einspath = None,
+                    plotak = True, plotbands = False, vmax_dens = None,
+                    vmin_dens = None, vmin_curr = None, vmax_curr = None,
+                    cmap_dens = 'hot', cmap_ak = 'cool', WScolor = 'b',
+                    colorbar = True):
 
         if structure is not None:
             path = path + "/" + structure.dirname
@@ -1181,7 +1185,7 @@ class Inegf(Interface):
 
             #f=pl.contourf(z,E,curr,N, cmap = 'hot', vmin = vmin, vmax = vmax)
             pl.pcolormesh(z, E, curr, cmap = cmap_dens, vmin = vmin_curr, vmax = vmax_curr)
-            pl.colorbar()
+            if colorbar: pl.colorbar()
             pl.xlim(zmin,zmax)
             pl.xlabel("z (nm)")
             pl.ylabel("E (meV)")
@@ -1202,7 +1206,7 @@ class Inegf(Interface):
                     pl.plot(bandplot[0],bandplot[i],WScolor)
             #f=pl.contourf(z,E,dens,N, cmap = 'hot')
             pl.pcolormesh(z,E,dens, cmap = cmap_dens, vmin=vmin_dens, vmax=vmax_dens)
-            pl.colorbar()
+            if colorbar: pl.colorbar()
             pl.xlim(zmin,zmax)
             pl.xlabel("z (nm)")
             pl.ylabel("E (meV)")
