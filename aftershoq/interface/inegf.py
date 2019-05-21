@@ -17,6 +17,8 @@ import numpy as np
 from aftershoq.utils import const
 from aftershoq.materials import GaAs
 from scipy.interpolate import interp1d
+import threading
+import os.path
 
 class Inegf(Interface):
     '''
@@ -85,7 +87,7 @@ class Inegf(Interface):
         self.wellmat = wellmaterial
         self.processes= []
         self.einspath = einspath
-        self.datpath = "/IV/"
+        self.datpath = "Run"
         self.target = None
 
     def __str__(self):
@@ -93,7 +95,7 @@ class Inegf(Interface):
 
     def initdir(self,ss,path):
         '''Initialize the dierctory for Structure s, with base path "path".'''
-        pathNegf=path+self.datpath
+        pathNegf=os.path.join(path,self.datpath)
         su.mkdir(pathNegf)
         self.writeWannier(ss,path)
         self.writeMaterial(self.wellmat, "# "+str(self.wellmat.name),path)
@@ -141,6 +143,139 @@ class Inegf(Interface):
         return self.processes
 
 
+    def runStructSeq(self, structures, path, seq = None, runwannier = True):
+        """Run NEGF sequentially, two times with (possibly) different parameters.
+        Generates one Thread for each structure.
+
+        Parameters:
+
+        structures: list[Structure]
+            Structures to evaluate. The same evaluation will be carried out for
+            each Structure object in the list.
+        path: String
+            Base path to directory with structure sub-directories.
+        seq: list[dictionary]
+            List with two dictionaries of the form of Inegf.numpar, that will
+            be used in order.
+        runwannier : boolean
+            Specifies whether the wannier program will be run. Defaults to True.
+
+        Returns: list[Thread]
+            A list with the started threads. The calling function may implement
+
+                for tt in threads: tt.join()
+
+            in order to wait for all threads to complete.
+        """
+
+        threads = []
+        for ss in structures:
+            t = threading.Thread(target=self.runSequence
+                                 , args = (ss, path, seq, runwannier) )
+            t.start()
+            threads.append(t)
+
+        return threads
+
+    def runSequence(self, structure, path, seq = None, runwannier = True):
+        """Run NEGF sequentially for a single structure on a single Thread.
+
+        Parameters:
+
+        structures: list[Structure]
+            Structures to evaluate. The same evaluation will be carried out for
+            each Structure object in the list.
+        path: String
+            Base path to directory with structure sub-directories.
+        seq: list[dictionary]
+            List with two dictionaries of the form of Inegf.numpar, that will
+            be used in order.
+        runwannier : boolean
+            Specifies whether the wannier program will be run. Defaults to True.
+
+        Returns: numpy.Array, numpy.Array
+            negft_iv, negft_gain contains the results for the IV and gain simulations
+            on matrix form.
+
+        """
+        if seq is None:
+            numpar = self.numpar.copy
+            seq = [numpar,numpar]
+
+        spath = os.path.join(path,str(structure.dirname))
+        su.mkdir(spath)
+        self.initdir(structure, spath)
+        if runwannier:
+            # Wannier program
+            proc = self.pltfm.submitjob(self.progwann, [], spath, 1, "00:10")
+            print(f"sid={structure.sid} running Wannier...")
+            while self.pltfm.jobstatus(proc):
+                time.sleep(1)
+
+        self.runNEGF(spath, numpar=seq[0], datpath= "IV")
+
+        negft_iv = self.getresults(structure, path, datpath="IV")
+
+        # interpolate to find maximum IV point
+        x = np.linspace(negft_iv[0,0],negft_iv[-1,0])
+        f = interp1d(negft_iv[:,0], negft_iv[:,3], kind='cubic')
+        imax = np.argmax(f(x))
+        # closest point for which we have ein files
+        i = np.argmax(negft_iv[:,3])
+        print(f"sid={structure.sid}: jmax = {negft_iv[i,3]}, vmax = {negft_iv[i,0]}")
+
+        numpar = seq[1]
+
+        numpar["efield0"] = x[imax]
+
+        einspath = f"{negft_iv[i,0]*1000:.1f}_{negft_iv[i,1]*1000:.1f}_{negft_iv[i,2]*1000:.1f}/"
+        einspath=os.path.join("..","IV","eins",einspath)
+
+        self.runNEGF(spath, numpar=numpar, einspath=einspath)
+
+        negft_gain = self.getresults(structure, path)
+
+        return negft_iv, negft_gain
+
+    def runNEGF(self, spath, einspath=None, datpath=None, numpar=None):
+        """Start the NEGF program in a specified directory.
+
+        Parameters:
+        spath: String
+            Path to structure directory where execution should start.
+        einspath: String
+            (Optional) Relative path to eins files.
+        datpath: String
+            (Optional) Name of the execution directory. Defaults to self.datpath
+        numpar: dictionary
+            (Optional) Dictionary with numerical parameters. Defaults to self.numpar.
+        """
+
+        if einspath is None: einspath = self.einspath
+        if datpath is None: datpath = self.datpath
+        if numpar is None: numpar = self.numpar
+
+        local = Local()
+        su.mkdir(os.path.join(spath,datpath))
+
+        self.writeNegftInp(su.abspath(spath), einspath ,
+                           os.path.join(spath,datpath), numpar=numpar)
+        # replacing default value of Nper in scatt3.inp
+        proc = local.submitandwait("sed",['-i',"--in-place=''",
+                                          '2s/1/'+str(numpar["Nper"])+'/',
+                                          "scatt3.inp"],spath)
+        # to make sure file is closed:
+        out, err = proc.communicate()
+        proc = local.submitandwait("cp",["scatt3.inp","gw.inp",
+                                         os.path.join(".",datpath)], spath)
+        out, err = proc.communicate()
+
+        proc = self.pltfm.submitjob(self.prognegft,[],os.path.join(spath,datpath))
+
+        print(f"Running NEGF in {spath}/{datpath}...")
+        while self.pltfm.jobstatus(proc):
+            time.sleep(1)
+        print(f"Finished NEGF in {spath}/{datpath}!")
 
     def checkactive(self):
         pactive = False
@@ -168,13 +303,13 @@ class Inegf(Interface):
                 ss.dipoles = []
                 spath = pathwd + "/" + str(ss.dirname)
                 try:
-                    dirlist = su.listdirs(spath+self.datpath+"eins/")
+                    dirlist = su.listdirs(os.path.join(spath,self.datpath,"eins"))
                 except (OSError, IOError):
-                    print("WARNING: could not find directory: " + spath+self.datpath+"eins/")
+                    print("WARNING: could not find directory: " + os.path.join(spath,self.datpath,"eins"))
                     continue
                 dirs = dirlist
                 for folder in dirs:
-                    einspath = spath + self.datpath + "eins/"+folder
+                    einspath = os.path.join(spath,self.datpath,"eins",folder)
                     omega0 = self.numpar["fgr_omega0"]
                     omegaf = self.numpar["fgr_omegaf"]
                     Nomega = self.numpar["fgr_Nomega"]
@@ -349,7 +484,7 @@ class Inegf(Interface):
         proc.communicate(commands)
         return proc
 
-    def getMerit(self,structure,path):
+    def getMerit(self,structure,path, only_conv = True):
         '''Returns the merit function evaluated for the Structure structure,
         with base path "path".
         '''
@@ -366,7 +501,7 @@ class Inegf(Interface):
                     if line[0] == str(structure.sid):
                         return line[1]
 
-        path = path + "/" + structure.dirname + self.datpath
+        path = os.path.join( path , structure.dirname , self.datpath )
 
         results = []
 
@@ -374,8 +509,8 @@ class Inegf(Interface):
             with open(path+"/negft.dat",'r') as f:
                 for line in f:
                     try:
-                        if '#' in line or line.split()[Inegf.idat.get("ierror")].endswith('1')\
-                                or line.split()[Inegf.idat.get("konv")] == 'NaN':
+                        if '#' in line or only_conv and (line.split()[Inegf.idat.get("ierror")].endswith('1')\
+                                or line.split()[Inegf.idat.get("konv")] == 'NaN'):
                             continue
                     except(IndexError): # missing # in negft.dat, with intel compiler
                         continue
@@ -398,9 +533,23 @@ class Inegf(Interface):
                 datval.append(float(row[i]))
             values.append(datval)
 
-        if self.merit==Interface.merits.get("max gain") :
-
-            out = max(values[Inegf.idat.get("gain")])
+        if self.merit == Interface.merits.get("max gain") :
+            # interpolate results:
+            iom = Inegf.idat["omega"]
+            igain=Inegf.idat["gain"]
+            try:
+                if len(values[1]) > 2:
+                    if len(values[1]) > 3:
+                        kind = "cubic"
+                    elif len(values[1]) == 3:
+                        kind = "quadratic"
+                    x = np.linspace(values[iom][0],values[iom][-1])
+                    f = interp1d(values[iom], values[igain], kind=kind)
+                    out = np.max(f(x))
+                else:
+                    out = np.max(values[igain])
+            except ValueError:
+                return "ERROR"
 
         elif self.merit == Interface.merits.get("(max gain)/(current density)"):
 
@@ -412,15 +561,15 @@ class Inegf(Interface):
 
         elif self.merit == self.merits.get("estimated gain") :
             try:
-                dirlist = su.listdirs(path+"/eins/")
+                dirlist = su.listdirs(os.path.join(path,"eins"))
             except (OSError, IOError):
-                print("WARNING: could not find directory: " + path+self.datpath+"eins/")
+                print("WARNING: could not find directory: " + os.path.join(path,"eins"))
                 return "ERROR"
             maxgain = []
             for folder in dirlist:
-                einspath = path+"/eins/"+folder
+                einspath = os.path.join(path,"eins",folder)
                 if( self.checkWSdens(einspath) ):
-                    with open(einspath+"/gainFGR.dat") as f:
+                    with open( os.path.join(einspath,"/gainFGR.dat") ) as f:
                         for line in f:
                             linestr = line.split()
                             try:
@@ -537,18 +686,19 @@ class Inegf(Interface):
         if dirpath is None:
             path="material.inp"
         else:
-            path = dirpath + "/material.inp"
+            path = os.path.join( dirpath , "material.inp" )
         with open(path, 'w') as f:
             f.write(nametag + "\n")
             f.write(str(material.params["meff"])+" # meff\n")
             f.write(str(material.params["eps0"])+" # eps0\n")
             f.write(str(material.params["epsinf"])+" # epsinf\n")
             f.write(str(material.params["ELO"])+" # ELO\n")
-            f.write(str(np.abs(material.params["ac"]))+" # deformation potential\n")
+            #f.write(str(np.abs(material.params["ac"]))+" # ac\n")
+            f.write(str(material.params["ac"])+" # deformation potential\n")
             f.write(str(material.params["vlong"])+" # vlong\n")
             f.write(str(material.params["massdens"])+" # mass density\n")
-            f.write(str(material.params["molV"])+ " # mol volume")
-        f.closed
+            f.write(str(material.params["molV"])+ " # mol volume\n")
+
 
     def writeWannier(self,struct,dirpath=None):
         '''Writes the wannier8.inp input file.'''
@@ -556,7 +706,7 @@ class Inegf(Interface):
         if dirpath is None:
             path="wannier8.inp"
         else:
-            path = dirpath + "/wannier8.inp"
+            path = os.path.join(dirpath,"wannier8.inp")
 
         # re-scaling of the CBO to lowest energy:
         Ec = []
@@ -603,10 +753,13 @@ class Inegf(Interface):
         except IOError:
             print("WARNING: Directory "+dirpath+" not found!")
 
-    def writeNegftInp(self,pathwann,patheins,dirpath=None):
+    def writeNegftInp(self,pathwann,patheins,dirpath=None, numpar=None):
         '''Writes the negft8.inp input file.'''
 
-        if self.numpar["boolEins"]:
+        if numpar is None:
+            numpar = self.numpar
+
+        if numpar["boolEins"]:
             readeins = ".TRUE."
         else:
             readeins = ".FALSE."
@@ -616,36 +769,36 @@ class Inegf(Interface):
             path = dirpath+"/negft7.inp"
         try:
             with open(path,"w") as f:
-                f.write(str(self.numpar["Nper"])+" "+str(self.numpar["Nstates"])+" "+str(self.numpar["NE"]) + " " + str(self.numpar["Nk"]))
+                f.write(str(numpar["Nper"])+" "+str(numpar["Nstates"])+" "+str(numpar["NE"]) + " " + str(numpar["Nk"]))
                 f.write(" # Nper, Nnu, NE, Nk\n")
-                f.write(str(self.numpar["Nh"])+" "+str(self.numpar["Igauge"]))
+                f.write(str(numpar["Nh"])+" "+str(numpar["Igauge"]))
                 f.write(" #\n")
-                f.write(str(self.numpar["Tlattice"]))
+                f.write(str(numpar["Tlattice"]))
                 f.write(" #\n")
-                f.write(str(self.numpar["efield0"])+" "+str(self.numpar["defield"])+" "+str(self.numpar["Nefield"])+" ")
+                f.write(str(numpar["efield0"])+" "+str(numpar["defield"])+" "+str(numpar["Nefield"])+" ")
                 f.write(" #\n")
-                f.write(str(self.numpar["efac0"])+" "+str(self.numpar["defac"])+" "+str(self.numpar["Nefac"])+" ")
+                f.write(str(numpar["efac0"])+" "+str(numpar["defac"])+" "+str(numpar["Nefac"])+" ")
                 f.write(" #\n")
-                f.write(str(self.numpar["omega0"])+" "+str(self.numpar["domega"])+" "+str(self.numpar["Nomega"])+" ")
+                f.write(str(numpar["omega0"])+" "+str(numpar["domega"])+" "+str(numpar["Nomega"])+" ")
                 f.write(" #\n")
-                f.write(str(self.numpar["Emaxadd"])+ " " + str(self.numpar["Eminsub"])+" #\n")
-                f.write(str(self.numpar["gen"])+ " #\n")
-                f.write(str(self.numpar["maxits"])+" "+str(self.numpar["Iconv"])+" "+str(self.numpar["Bei"])+" " \
-                        + str(self.numpar["Nhist"]) + " #\n")
+                f.write(str(numpar["Emaxadd"])+ " " + str(numpar["Eminsub"])+" #\n")
+                f.write(str(numpar["gen"])+ " #\n")
+                f.write(str(numpar["maxits"])+" "+str(numpar["Iconv"])+" "+str(numpar["Bei"])+" " \
+                        + str(numpar["Nhist"]) + " #\n")
                 f.write(pathwann + "/\n")
                 f.write(readeins+"\n")
                 f.write(patheins+"\n")
-                if(self.numpar["use-poisson"]):
+                if(numpar["use-poisson"]):
                     f.write(".TRUE.")
                 else:
                     f.write(".FALSE.")
                 f.write(" #\n")
-                if(self.numpar["boolPrinc"]):
+                if(numpar["boolPrinc"]):
                     f.write(".TRUE.")
                 else:
                     f.write(".FALSE.")
                 f.write(" #\n")
-                if(self.numpar["use-e-e"]):
+                if(numpar["use-e-e"]):
                     f.write(".TRUE.")
                 else:
                     f.write(".FALSE.")
@@ -688,14 +841,33 @@ class Inegf(Interface):
         return structures
 
 
-    def plotresults(self, structure, path):
+    def getresults(self, structure, path, datpath = None):
+        """Returns results from the NEGF program.
+
+        Paramters:
+
+        structure: Structure
+            The structure for which to return results.
+        path: String
+            The base path where the structure directory resides.
+        datpath: String
+            (Optional) The execution path of the NEGF program. Defaults to self.datpath.
+
+        Returns:
+
+        negft: numpy.Array
+                Matrix with NEGF results.
+        """
+
+        if datpath is None:
+            datpath = self.datpath
 
         if path[-4:-1] == '.dat':
             pass
         elif structure is None:
             path = path + "/negft.dat"
         else:
-            path = path + "/" + structure.dirname + "/" + self.datpath + "/negft.dat"
+            path = path + "/" + structure.dirname + "/" + datpath + "/negft.dat"
 
         negft = []
         with open(path, "r") as file:
@@ -710,14 +882,25 @@ class Inegf(Interface):
         negft = np.array(negft)
         negft = negft[negft[:,0].argsort()]
 
+        return negft
+
+
+
+    def plotresults(self, structure, path, label = None):
+
+        negft = self.getresults(structure,path)
+
         pl.figure('IV')
-        pl.plot(negft[:,0]*1000, negft[:,3], '-')
+        pl.plot(negft[:,0]*1000, negft[:,3], '-', label=label)
         pl.xlabel('Bias (mV/period)')
         pl.ylabel('Current density (A/cm^2)')
+        pl.legend()
         pl.figure('Gain')
-        pl.plot(negft[:,1]*1000, negft[:,4], '-+')
+        pl.plot(negft[:,1]*1000, negft[:,4], '-+', label=label)
         pl.xlabel('Energy (meV)')
         pl.ylabel('Gain (1/cm)')
+        if label is not None:
+            pl.legend()
 
         return negft
 

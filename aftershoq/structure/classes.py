@@ -11,6 +11,7 @@ import numpy as np
 import os.path as Path
 from lxml import etree
 import datetime
+import scipy.optimize as opt
 
 class Layer:
     ''' Defines a layer in the heterostructure. Each layer has a material
@@ -50,12 +51,23 @@ class Structure:
 
     sid = 0
 
-    def __init__(self, orig=None, name = None):
-        ''' Constructur. Optionally copies from Structure object orig.
+    def __init__(self, orig=None, name = None, T = 0):
+        """Constructor. Optionally copies from Structure object orig.
         Each structure receives an id (sid) and a dirname, which defaults to
         sid.
-        '''
 
+        Parameters
+        ----------
+        orig : Structure
+            (Optional) Structure to copy from.
+        name : String
+            (Optional) Name of the structure.
+        T : float
+            (Optional) Lattice temperature that should be used for every
+            material used in this structure.
+        """
+
+        self.TL = T
         self.sid = Structure.sid
         Structure.sid +=1
 
@@ -209,6 +221,107 @@ class Structure:
             if(dops[i]>0):
                 self.addDoping(0, layer.width, dops[i], i)
 
+    def compensate_strain(self, x=None, y=None, Ec = None):
+        """Compensate the stain within one period by adjusting the alloy
+        compositions. Attempts to keep the band offset the same.
+
+        Parameters
+        ----------
+        x : float
+            (Optional) Initial alloy composition of layers[0].material.
+        y : float
+            (Optional) Initial alloy composition of layers[1].material.
+        Ec : float
+            (Optional) Target conduction band offset.
+
+        Returns
+        -------
+        OptmizeResult
+            if optimization was succesfull
+        float
+            -1 is returned if number of layres > 2 (no compensation is performed)
+        """
+        materials = []
+        names = []
+        strains = []
+        Lmat = {}
+        for l in self.layers:
+            if l.material.name not in names:
+                materials.append(l.material)
+                names.append(l.material.name)
+                strains.append(l.material.h)
+                Lmat[l.material.name] = 0.
+
+            for m in materials:
+                if l.material.name == m.name:
+                    Lmat[m.name] += l.width
+
+        if len(materials) == 2:
+
+            mat1 = materials[0]
+            mat2 = materials[1]
+
+            if x is not None: mat1.updateAlloy(x)
+            if y is not None: mat2.updateAlloy(y)
+
+            if Ec is not None:
+                DEc = Ec
+            else:
+                DEc = mat2.params['Ec'] - mat1.params['Ec']
+            D1 = Lmat[mat1.name]
+            D2 = Lmat[mat2.name]
+
+            minfunc = lambda x : np.sum(np.abs(np.array([DEc,-D2/D1]) - \
+                np.array(self.__strainf(x[0],x[1],mat1,mat2))) )
+
+            res = opt.minimize(minfunc, x0=[mat1.x,mat2.x],
+                               bounds=[(0,1),(0,1)],
+                               method="SLSQP")
+
+            for l in self.layers:
+                for im in range(2):
+                    if l.material.name == names[im]:
+                        l.material.updateAlloy(res.x[im])
+            return res
+
+        else:
+            print(f"WARNING: Number of materials is {len(materials)}>2!")
+            print(f"\tNot implemented: Skipping compensation of strain.")
+            return -1
+
+    @staticmethod
+    def __strainf(x,y,well,barr):
+        """Function for minimizing strain
+
+        Parameters
+        ----------
+        x : float
+            Alloy composition of well material.
+        y : float
+            Alloy composition of barrier material.
+        well : Material
+            Well material.
+        barr : Material
+            Barrier material
+
+        Returns
+        -------
+        DEc : float
+            Conduction band offset for given x and y.
+        hwbyhb: float
+            h_well/h_barr, where h_i is the substrate lattice mismatch of
+            material i.
+        """
+
+        x0 = well.x
+        y0 = barr.x
+        well.updateAlloy(x)
+        barr.updateAlloy(y)
+        DEc = barr.params['Ec'] - well.params['Ec']
+        hwbyhb = well.h/barr.h
+        well.updateAlloy(x0)
+        barr.updateAlloy(y0)
+        return DEc, hwbyhb
 
     def __str__(self):
         s = "[width, Material, eta, lambda] (id="+str(self.sid) + ")\n"
@@ -341,6 +454,69 @@ class Structure:
 
         return s
 
+    def get_param(self, param, npoints=1000, nperiods=1):
+        """
+        Get z and parameter for n periods
+
+        Parameters:
+        param : string
+            Key to extract parameter
+        npoints : int
+            Discretization points per period
+        nperiods : int
+            Number of repetitions of the period
+
+        Returns: Array (z, param)
+        """
+        zspan = np.linspace(0,self.length,num=npoints,endpoint=False)
+        p = []
+        for z in zspan:
+                ind = self.layerIndex(z)
+                p.append(self.layers[ind].material.params[param])
+
+        if nperiods > 1:
+            pper = []
+            for i in range(nperiods):
+                pper = pper + p
+
+        else:
+            pper = p
+
+        zspan = np.linspace(0,self.length*nperiods,npoints*nperiods,endpoint=False)
+
+        return np.asarray([zspan,pper])
+
+    def get_conduction_band(self, npoints=100, nperiods=1):
+        """
+        Get the z and the conduction band for n periods
+
+        Parameters:
+        npoints : int
+            Discretization points per period
+        nperiods : int
+            Number of repetitions of the period
+
+        Returns: Array (z, conduction band)
+        """
+        zspan = np.linspace(0,self.length,num=npoints,endpoint=False)
+        cbo = []
+        for z in zspan:
+                ind = self.layerIndex(z)
+                cbo.append(self.layers[ind].material.params["Ec"])
+
+        if nperiods > 1:
+            ncbo = []
+            for i in range(nperiods):
+                ncbo = ncbo + cbo
+
+        else:
+            ncbo = cbo
+
+        zspan = np.linspace(0,self.length*nperiods,npoints*nperiods,endpoint=False)
+
+        return np.asarray([zspan,ncbo])
+
+
 
 class Material(object):
     '''Defines a material or alloy between two materials.'''
@@ -349,18 +525,24 @@ class Material(object):
 
     # parameter dictionary:
     params_dict = {
-        "meff": 0,   # effective mass
+        "meff": 0,    # effective mass
         "Ec" : 0,     # Conduction band offset (eV)
         "Eg" : 0,     # Gamma valley band gap (eV)
         "EX" : 0,     # X valley band gap (eV)
+        "EL" : 0,     # L valley band gap (eV)
+        "Eso": 0,     # Split-off hole band gap (eV)
+        "EDel" : 0,   # Delta valley band gap (eV)
         "Ep" : 0,     # Kane energy (eV)
+        "del0" : 0,   # Spin-orbit splitting (eV)
         "Valloy" : 0, # Alloy scattering potential (eV)
         "ELO" : 0,    # Longitudinal optical phonon energy (eV)
         "ETO" : 0,    # Transversal optical phonon energy (eV)
         "eps0" : 0,   # Static dielectric constant
         "epsinf" : 0, # High-frequency dielectric function
-        "ac" : 0,   # Conduction band deformation potential (eV)
-        "av":0,   # Valence band deformation potential (eV)
+        "ac" : 0,     # Conduction band deformation potential (eV)
+        "acDel" : 0,  # Indirect Delta cond. band def. pot. (eV)
+        "acL" : 0,    # Indirect L cond. band def. pot. (eV)
+        "av" : 0,   # Valence band deformation potential (eV)
         "c11"  : 0,   # Elastic constant
         "c12"  : 0,   # Elastic constant
         "c44"  : 0,   # Elastic constant
@@ -405,10 +587,10 @@ class Material(object):
     def updateAlloy(self, x, reset_strain = False):
         '''Updates the alloy composition of this alloy material with x
         as the new composition.
-        Optional argument reset_strain can be set to True to undo any 
+        Optional argument reset_strain can be set to True to undo any
         previous strain calculations.
         '''
-        
+
         if reset_strain:
             self.strained = False
 
@@ -416,7 +598,7 @@ class Material(object):
             self.hc = None
             self.x = x
             self.params = self.alloy(self.mat1,self.mat2,self.C,self.x)
-            
+
             if self.strained == True:
                 self.strained = False
                 self.calcStrain()
@@ -436,6 +618,8 @@ class Material(object):
         ar = self.params["lattconst"]
         # a-parallel. Here, we assume that the material is fully strained
         aII = self.substrate.params["lattconst"]
+        # lattice mis-match:
+        self.h = (ar-aII)/aII
         # Poisson ratio (assuming substrate is in 001 direction
         D001 = 2*self.params["c12"]/self.params["c11"]
         # epsilon-parallel
@@ -454,7 +638,7 @@ class Material(object):
         if self.strained == False:
             self.params["Ec"] += self.params["ac"]*DOm
         self.strained = True
-        
+
     def hcrit(self, Nself = 10):
         """
         Returns the critical thickness in Å (calculates it the first time).
