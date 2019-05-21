@@ -17,12 +17,12 @@ class EV2416(Structure):
     Franckie et al. Appl. Phys. Lett. 112, 021104 (2018)
     '''
 
-    def __init__(self):
-        Structure.__init__(self)
+    def __init__(self, T = 200):
+        Structure.__init__(self, T = T)
 
         self.setIFR(0.1, 10)
-        well = GaAs()
-        barrier = AlGaAs(x = 0.25)
+        well = GaAs(T = self.TL)
+        barrier = AlGaAs(x = 0.25, T = self.TL)
 
         self.addLayerWM(3.1, barrier)
         self.addLayerWM(8.5, well)
@@ -41,12 +41,12 @@ class EV1157(Structure):
     Amanti et al., New J. Phys. 11, 125022 (2009)
     '''
 
-    def __init__(self):
-        Structure.__init__(self, name="EV1157")
+    def __init__(self, T = 150):
+        Structure.__init__(self, name="EV1157", T = T)
 
         self.setIFR(0.1, 10)
-        well = GaAs()
-        barrier = AlGaAs(x = 0.15)
+        well = GaAs(T = self.TL)
+        barrier = AlGaAs(x = 0.15, T = self.TL)
 
         self.addLayerWM(5.5, barrier)
         self.addLayerWM(11.0, well)
@@ -65,12 +65,12 @@ class EV1157(Structure):
 class Fathololoumi2012(Structure):
     '''Record THz QCL from Fathololoumi et al., Optics Express 20, 3866 (2012)
     '''
-    def __init__(self):
-        Structure.__init__(self)
+    def __init__(self, T = 200):
+        Structure.__init__(self, T = T)
 
         self.setIFR(0.1, 10)
-        well = GaAs()
-        barrier = AlGaAs(x = 0.15)
+        well = GaAs(T = self.TL)
+        barrier = AlGaAs(x = 0.15, T = self.TL)
 
         self.addLayerWM(4.3, barrier)
         self.addLayerWM(8.9, well)
@@ -93,12 +93,12 @@ class DupontJAP2012(Structure):
     Layer sequence: 44/62.5/10.9/66.5/22.8/84.8/9.1/61 (Angstrom)
     The injection barrier is delta-doped with Si to 3.25e10 cm-􏰵2 at the center.
     '''
-    def __init__(self):
-        Structure.__init__(self)
+    def __init__(self, T = 150):
+        Structure.__init__(self, T = T)
 
         self.setIFR(0.1, 10)
-        well = GaAs()
-        barrier = AlGaAs(x = 0.25)
+        well = GaAs(T = self.TL)
+        barrier = AlGaAs(x = 0.25, T = self.TL)
 
         self.addLayerWM(2.08, barrier)
         self.addLayerWM(0.24, barrier) # <------ 3.25e10 cm-2 => 13.542e17 cm-3
@@ -124,12 +124,12 @@ class WaltherAPL2006(Structure):
     Underlined layer doped to 1.0􏱮e16 cm−3
     """
 
-    def __init__(self):
-        Structure.__init__(self)
+    def __init__(self, T = 150):
+        Structure.__init__(self, T = T)
 
         self.setIFR(0.1, 10)
-        well = GaAs()
-        barrier = AlGaAs(x = 0.10)
+        well = GaAs(T = self.TL)
+        barrier = AlGaAs(x = 0.10, T = self.TL)
 
         self.addLayerWM(5.9, barrier)
         self.addLayerWM(15.3, well)
@@ -155,12 +155,12 @@ class ScalariAPL2005(Structure):
     4.2/10.0/0.7/18.3/1.0/15.2/1.3/12.7/1.7/10.5/2.7/_21.1_/2.4/16.5
     under- lined layer is Si doped at 3.8e16 cm−3
     """
-    def __init__(self):
-        Structure.__init__(self)
+    def __init__(self, T = 150):
+        Structure.__init__(self, T = T)
 
         self.setIFR(0.1, 10)
-        well = GaAs()
-        barrier = AlGaAs(x = 0.15)
+        well = GaAs(T = self.TL)
+        barrier = AlGaAs(x = 0.15, T = self.TL)
 
         self.addLayerWM(4.2, barrier)
         self.addLayerWM(10.0, well)
@@ -191,12 +191,12 @@ class ScalariOE2010(Structure):
     sheet carrier density of 1.5 × 10^10 cm-2
     """
 
-    def __init__(self):
-        Structure.__init__(self)
+    def __init__(self, T = 150):
+        Structure.__init__(self, T = T)
 
         self.setIFR(0.1, 10)
-        well = GaAs()
-        barrier = AlGaAs(x = 0.15)
+        well = GaAs(T = self.TL)
+        barrier = AlGaAs(x = 0.15, T = self.TL)
 
         self.addLayerWM(4.5, barrier)
         self.addLayerWM(8.3, well)
@@ -214,12 +214,12 @@ class N471(Structure):
     '''THz QCL emitting at 3.74 THz "single quantum well active region".
     Published in: Scalari et al., Appl. Phys. Lett. 91, 032103 (2007)
     '''
-    def __init__(self):
-        Structure.__init__(self)
+    def __init__(self, T = 150):
+        Structure.__init__(self, T = T)
 
         self.setIFR(0.1, 10)
-        well = GaAs()
-        barrier = AlGaAs(x = 0.15)
+        well = GaAs(T = self.TL)
+        barrier = AlGaAs(x = 0.15, T = self.TL)
 
         self.addLayerWM(4.7, barrier)
         self.addLayerWM(28, well)
@@ -242,13 +242,13 @@ class EV1429(Structure):
     Strained 4.3 micron design. Published in thesis of J. Wolf (ETH Zuerich, 2017)
     '''
 
-    def __init__(self):
-        Structure.__init__(self)
+    def __init__(self, T = 300):
+        Structure.__init__(self, T = T)
 
         self.setIFR(0.1, 10)
 
-        alinas_s = AlInAs(x = 0.665, T = 300)
-        gainas_s = InGaAs(x = 0.635, T = 300)
+        alinas_s = AlInAs(x = 0.665, T = self.TL)
+        gainas_s = InGaAs(x = 0.635, T = self.TL)
 
 
         self.addLayerWM(3.5, alinas_s)
@@ -285,13 +285,13 @@ class EV2138a(Structure):
     Published in thesis of J. Wolf (ETH Zuerich, 2017)
     '''
 
-    def __init__(self):
-        Structure.__init__(self)
+    def __init__(self, T = 300):
+        Structure.__init__(self, T = T)
 
         self.setIFR(0.1, 10)
 
-        alinas_s = AlInAs(x = 0.665, T = 300)
-        gainas_s = InGaAs(x = 0.635, T = 300)
+        alinas_s = AlInAs(x = 0.665, T = self.TL)
+        gainas_s = InGaAs(x = 0.635, T = self.TL)
 
 
         self.addLayerWM(3.5, alinas_s)
@@ -327,13 +327,13 @@ class EV1907(Structure):
     Strained 8.5 micron design. Published in thesis of J. Wolf (ETH Zuerich, 2017)
     '''
 
-    def __init__(self):
-        Structure.__init__(self)
+    def __init__(self, T = 300):
+        Structure.__init__(self, T = T)
 
         self.setIFR(0.1, 10)
 
-        alinas_s = AlInAs(x = 0.64, T = 300)
-        gainas_s = InGaAs(x = 0.58, T = 300)
+        alinas_s = AlInAs(x = 0.64, T = self.TL)
+        gainas_s = InGaAs(x = 0.58, T = self.TL)
 
 
         self.addLayerWM(3.1, alinas_s)
@@ -368,17 +368,13 @@ class EV2016(Structure):
     Optics Express vol. 20(22) p.24272 (2012)
     '''
 
-    def __init__(self):
-        Structure.__init__(self)
+    def __init__(self, T = 300):
+        Structure.__init__(self, T = T)
 
         self.setIFR(0.1, 10)
 
-        alinas_s = AlInAs(x = 0.64, T = 300)
-        # to account for strain (see thesis Tobias Gresch ETH Zürich 2009)
-        alinas_s.params[mp.Ec] = 0.72
-        gainas_s = InGaAs(x = 0.58, T = 300)
-        gainas_s.params[mp.Ec] = 0.0
-
+        alinas_s = AlInAs(x = 0.64, T = self.TL)
+        gainas_s = InGaAs(x = 0.58, T = self.TL)
 
         self.addLayerWM(3.1, alinas_s)
         self.addLayerWM(2.5, gainas_s)
@@ -409,13 +405,13 @@ class EV2017(Structure):
     Published in thesis of J. Wolf (ETH Zuerich, 2017)
     '''
 
-    def __init__(self):
-        Structure.__init__(self)
+    def __init__(self, T = 300):
+        Structure.__init__(self, T = T)
 
         self.setIFR(0.1, 10)
 
-        alinas_s = AlInAs(x = 0.64, T = 300)
-        gainas_s = InGaAs(x = 0.58, T = 300)
+        alinas_s = AlInAs(x = 0.64, T = self.TL)
+        gainas_s = InGaAs(x = 0.58, T = self.TL)
         alinas_s.calcStrain()
         gainas_s.calcStrain()
 
@@ -449,13 +445,13 @@ class EV2103(Structure):
     Published in Bismuto Appl. Phys. Lett. 96, 141105 (2010)
     '''
 
-    def __init__(self):
-        Structure.__init__(self)
+    def __init__(self, T = 300):
+        Structure.__init__(self, T = T)
 
         self.setIFR(0.1, 10)
 
-        alinas = AlInAs(T = 300)
-        gainas = InGaAs(T = 300)
+        alinas = AlInAs(T = self.TL)
+        gainas = InGaAs(T = self.TL)
 
         self.addLayerWM(4.0,alinas)
         self.addLayerWM(1.8, gainas)
@@ -487,13 +483,13 @@ class EV2104(Structure):
     Published in thesis of J. Wolf (ETH Zuerich, 2017)
     '''
 
-    def __init__(self):
-        Structure.__init__(self)
+    def __init__(self, T = 300):
+        Structure.__init__(self, T = T)
 
         self.setIFR(0.1, 10)
 
-        alinas = AlInAs(T = 300)
-        gainas = InGaAs(T = 300)
+        alinas = AlInAs(T = self.TL)
+        gainas = InGaAs(T = self.TL)
 
         self.addLayerWM(4.0,alinas)
         self.addLayerWM(1.67, gainas)
@@ -518,32 +514,6 @@ class EV2104(Structure):
 
         [self.addDoping(0, self.layers[i].width, dop, i) for i in idop]
 
-class Grange_SiGe(Structure):
-    """
-    Test SiGe structure
-    Grange et al. Appl. Phys. Lett. 114, 111102 (2019)
-    """
-
-    def __init__(self):
-        Structure.__init__(self)
-
-        self.setIFR(0.1, 7)
-        well = Ge()
-        barr = SiGe(x = 0.23)
-
-        self.addLayerWM(4.8, barr)
-        self.addLayerWM(7.2, well)
-        self.addLayerWM(1.6, barr)
-        self.addLayerWM(8.2, well)
-        self.addLayerWM(2.8, barr)
-        self.addLayerWM(6.5, well)
-        self.addLayerWM(3.8, barr)
-        self.addLayerWM(12.5, well)
-
-        idop= 7
-        vdop =3.6e16 # cm^-3
-        self.addDoping(0, self.layers[idop].width, vdop, idop)
-
 # DFG structures:
 
 class Dupont_DFG_ASQW(Structure):
@@ -553,12 +523,12 @@ class Dupont_DFG_ASQW(Structure):
     IEEE Journal of Quantum Electronics 42, pp. 1157-1174 (2006)
     """
 
-    def __init__(self):
-        Structure.__init__(self)
+    def __init__(self, T = 100):
+        Structure.__init__(self, T = T)
         self.setIFR(0.1, 10)
-        well = GaAs()
-        barrier43 = AlGaAs(name="AlGaAs43", x = 0.43)
-        barrier16 = AlGaAs(name = "AlGaAs16", x = 0.16)
+        well = GaAs(T = self.TL)
+        barrier43 = AlGaAs(name="AlGaAs43", x = 0.43, T=self.TL)
+        barrier16 = AlGaAs(name = "AlGaAs16", x = 0.16, T=self.TL)
 
         self.addLayerWM(7.4, barrier43)
         self.addLayerWM(3.3, well)
@@ -579,11 +549,11 @@ class Tymchenko_DFG_DQW(Structure):
     J. Opt. 19, 104001 (2017)
     """
 
-    def __init__(self):
-        Structure.__init__(self)
+    def __init__(self, T = 100):
+        Structure.__init__(self, T = T)
         self.setIFR(0.1, 10)
-        well = InGaAs()
-        barrier = AlInAs()
+        well = InGaAs(T = self.TL)
+        barrier = AlInAs(T=self.TL)
 
         self.addLayerWM(4, barrier)
         self.addLayerWM(3.4, well)
@@ -607,11 +577,11 @@ class N1022(Structure):
     International Society for Optics and Photonics, 2010. https://doi.org/10.1117/12.853351.
     """
 
-    def __init__(self):
-        Structure.__init__(self)
+    def __init__(self, T = 200):
+        Structure.__init__(self, T = T)
         self.setIFR(0.1, 10)
-        well = InGaAs()
-        barrier = AlInAs()
+        well = InGaAs(T = self.TL)
+        barrier = AlInAs(T = self.TL)
 
         self.addLayerWM(5.1, well) # <----- # 0 uniformly doped to 4*10^17 cm^-3
         self.addLayerWM(7.5, barrier)

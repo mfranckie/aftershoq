@@ -51,12 +51,23 @@ class Structure:
 
     sid = 0
 
-    def __init__(self, orig=None, name = None):
-        ''' Constructur. Optionally copies from Structure object orig.
+    def __init__(self, orig=None, name = None, T = 0):
+        """Constructor. Optionally copies from Structure object orig.
         Each structure receives an id (sid) and a dirname, which defaults to
         sid.
-        '''
 
+        Parameters
+        ----------
+        orig : Structure
+            (Optional) Structure to copy from.
+        name : String
+            (Optional) Name of the structure.
+        T : float
+            (Optional) Lattice temperature that should be used for every
+            material used in this structure.
+        """
+
+        self.TL = T
         self.sid = Structure.sid
         Structure.sid +=1
 
