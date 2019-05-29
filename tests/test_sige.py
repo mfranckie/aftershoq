@@ -72,8 +72,27 @@ plt.show()
 #%% Test laser structure
 s = Grange_SiGe()
 
+
 fb, ab = plt.subplots()
 ab.plot(s.get_param("EgL")[0], s.get_param("EgL")[1],color='black',label='Eg$_L$')
 ab.plot(s.get_param("EgDel")[0], s.get_param("EgDel")[1],color='red',label='Eg$_\Delta$')
 ab.plot(s.get_param("Eg")[0], s.get_param("Eg")[1],color='green',label='Eg$_\Gamma$')
 ab.legend()
+
+
+
+#%%
+s.calcStrain_IV()
+fc, ac = plt.subplots()
+ac.plot(s.get_param("EcL")[0], s.get_param("EcL")[1])
+
+
+# %%
+fb, ab = plt.subplots()
+ab.plot(s.get_param("EcL")[0], s.get_param("EgL")[1],color='black',label='Eg$_L$')
+ab.plot(s.get_param("EgDel")[0], s.get_param("EgDel")[1],color='red',label='Eg$_\Delta$')
+ab.plot(s.get_param("Eg")[0], s.get_param("Eg")[1],color='green',label='Eg$_\Gamma$')
+ab.legend()
+
+
+

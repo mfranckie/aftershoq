@@ -187,6 +187,30 @@ class Structure:
         # averaged critical strain per period (absolute value)
         Sc /= len(self.layers)*2
         return h, Sc
+    
+    def calcStrain_IV(self):
+        """
+        Calculates return the total strain in one period h, and the averaged
+        critical strain per period Sc. The structure is estimated to relax when
+        abs(h) > abs(Sc) (or after N periods where N * abs(h) > abs(Sc) ).
+
+        Returns: h, Sc
+        """
+
+        # All layers must have the same substrate
+        asub = self.layers[0].material.substrate.params["lattconst"]
+
+        h = 0. # total strain per period, to be summed
+        Sc = 0. # critical strain averaged over two periods
+        for l in self.layers*2:
+            l.material.calcStrain_IV()
+            h += (l.material.params["lattconst"] - asub)/asub*l.width
+            Sc += (l.material.params["lattconst"] - asub)/asub*l.material.hcrit()
+
+        h /= 2.
+        # averaged critical strain per period (absolute value)
+        Sc /= len(self.layers)*2
+        return h, Sc
 
 
     def convert_to_ML(self):
@@ -417,13 +441,6 @@ class Material(object):
         "massdens" : 0,   # Mass density (kg/m^3)
         "molV" : 0,  # Mol volume (nm^3/mol) = alc**3/4 for Zinc Blende
         "lattconst" : 0,  # Lattice constant (A)
-        # Temporary
-#        "DgL_h" : 0,
-#        "DgDel_h" : 0,
-#        "DgDel2_u" : 0,
-#        "DgDel4_u" : 0,
-#        "epsL" : 0,
-#        "epsII" : 0
     }
 
     def __init__(self,name,params_in=None,mat1=None,mat2=None,C=None,x=None, subs=None):
