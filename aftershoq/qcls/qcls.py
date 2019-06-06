@@ -220,6 +220,46 @@ class WienoldEL2009(Structure):
 
         self.addDoping(0, self.layers[idop].width, vdop, idop)
 
+class WienoldOE2014(Structure):
+    """Bound-to-continuum THz QCL emitting at 3 THz.
+    Based on WienoldEL2009
+    Layer sequence:
+    3.8/11.8/0.5/11.8/1.0/12.4/1.9/11.3/2.9/9.1/2.9/8.2/2.9/6.8/2.9/_16.3_/2.9/13.9
+    under- lined layer is Si doped at 3e16 cm−3
+    Published in Optics Express Vol. 22, Issue 3, pp. 3334-3348 (2014)
+    """
+    def __init__(self, T = 150):
+        Structure.__init__(self, T = T)
+
+        self.setIFR(0.1, 10)
+        well = GaAs(T = self.TL)
+        barrier = AlGaAs(x = 0.15, T = self.TL)
+
+        self.addLayerWM(3.8, barrier)
+        self.addLayerWM(11.8, well)
+        self.addLayerWM(0.5, barrier)
+        self.addLayerWM(11.8, well)
+        self.addLayerWM(1.0, barrier)
+        self.addLayerWM(12.4, well)
+        self.addLayerWM(1.9, barrier)
+        self.addLayerWM(11.3, well)
+        self.addLayerWM(2.9, barrier)
+        self.addLayerWM(9.1, well)
+        self.addLayerWM(2.9, barrier)
+        self.addLayerWM(8.2, well)
+        self.addLayerWM(2.9, barrier)
+        self.addLayerWM(6.8, well)
+        self.addLayerWM(2.9, barrier)
+        self.addLayerWM(16.3, well) # 15 <--- doped to 4.1e16 cm-3
+        self.addLayerWM(2.9, barrier)
+        self.addLayerWM(13.9, well)
+
+        idop= 15
+        vdop = 3e16 # cm^-3
+
+        self.addDoping(0, self.layers[idop].width, vdop, idop)
+        
+        
 class ScalariOE2010(Structure):
     """2-well THz design published in:
     Optics Express 18 (2010)
