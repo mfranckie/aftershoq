@@ -181,6 +181,44 @@ class ScalariAPL2005(Structure):
         vdop = 3.8e16 # cm^-3
 
         self.addDoping(0, self.layers[idop].width, vdop, idop)
+        
+class WienoldEL2009(Structure):
+    """Bound-to-continuum THz QCL emitting at 3 THz.
+    Layer sequence:
+    10.1/0.5/16.2/1/12.9/2/11.8/3/9.5/3/8.6/3/7.1/3/_17_/3/14.5/4
+    under- lined layer is Si doped at 4.1e16 cm−3
+    Published in Electronics Letters 45 (2009)
+    """
+    def __init__(self, T = 150):
+        Structure.__init__(self, T = T)
+
+        self.setIFR(0.1, 10)
+        well = GaAs(T = self.TL)
+        barrier = AlGaAs(x = 0.15, T = self.TL)
+
+        self.addLayerWM(4.0, barrier)
+        self.addLayerWM(10.0, well)
+        self.addLayerWM(0.5, barrier)
+        self.addLayerWM(16.2, well)
+        self.addLayerWM(1.0, barrier)
+        self.addLayerWM(12.9, well)
+        self.addLayerWM(2, barrier)
+        self.addLayerWM(11.8, well)
+        self.addLayerWM(3, barrier)
+        self.addLayerWM(9.5, well)
+        self.addLayerWM(3, barrier)
+        self.addLayerWM(8.6, well)
+        self.addLayerWM(3, barrier)
+        self.addLayerWM(7.1, well)
+        self.addLayerWM(3, barrier)
+        self.addLayerWM(17.0, well) # 15 <--- doped to 4.1e16 cm-3
+        self.addLayerWM(3, barrier)
+        self.addLayerWM(14.5, well)
+
+        idop= 15
+        vdop = 4.1e16 # cm^-3
+
+        self.addDoping(0, self.layers[idop].width, vdop, idop)
 
 class ScalariOE2010(Structure):
     """2-well THz design published in:
