@@ -90,6 +90,8 @@ class Euler(Platform):
             
         if self.paral == self.paral_modes.get("OMP"):
             os.environ["OMP_NUM_THREADS"] = str(Nproc)
+        else:
+            os.environ["OMP_NUM_THREADS"] = str(1)
         
         progargs = []
         jobname = str(dirpath)

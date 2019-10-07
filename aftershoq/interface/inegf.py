@@ -134,10 +134,10 @@ class Inegf(Interface):
             proc = local.submitandwait("sed",['-i',"--in-place=''",'2s/1/'+str(self.numpar["Nper"])+'/', "scatt3.inp"],spath)
             # to make sure file is closed:
             out, err = proc.communicate()
-            proc = local.submitandwait("cp",["scatt3.inp","gw.inp","." + self.datpath], spath)
+            proc = local.submitandwait("cp",["scatt3.inp","gw.inp",os.path.join(".",self.datpath)], spath)
             out, err = proc.communicate()
 
-            proc = self.pltfm.submitjob(self.prognegft,[],spath+self.datpath)
+            proc = self.pltfm.submitjob(self.prognegft,[],os.path.join(spath, self.datpath))
 
             self.processes.append(proc)
         return self.processes
@@ -213,8 +213,13 @@ class Inegf(Interface):
                 time.sleep(1)
 
         self.runNEGF(spath, numpar=seq[0], datpath= "IV")
-
-        negft_iv = self.getresults(structure, path, datpath="IV")
+        
+        try:
+            negft_iv = self.getresults(structure, path, datpath="IV")
+        except FileNotFoundError as e:
+            print("Simulation failed: ")
+            print(e)
+            return False
 
         # interpolate to find maximum IV point
         x = np.linspace(negft_iv[0,0],negft_iv[-1,0])
