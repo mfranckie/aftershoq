@@ -111,7 +111,7 @@ class Inegf(Interface):
 
         local = Local()
         for ss in structures:
-            spath = path+"/"+str(ss.dirname)
+            spath = os.path.join(path,str(ss.dirname))
             su.mkdir(spath)
             self.initdir(ss, spath)
             if runwannier:
@@ -127,17 +127,18 @@ class Inegf(Interface):
         #del processes
         #processes = []
         for ss in structures:
-            spath = path+"/"+str(ss.dirname)
+            spath = os.path.join( path, str(ss.dirname) )
             if not runwannier:
-                self.writeNegftInp(su.abspath(spath), self.einspath ,spath+"/"+self.datpath)
+                self.writeNegftInp(su.abspath(spath), self.einspath ,
+                                   os.path.join(spath,self.datpath))
             # replacing default value of Nper in scatt3.inp
             proc = local.submitandwait("sed",['-i',"--in-place=''",'2s/1/'+str(self.numpar["Nper"])+'/', "scatt3.inp"],spath)
             # to make sure file is closed:
             out, err = proc.communicate()
-            proc = local.submitandwait("cp",["scatt3.inp","gw.inp","." + self.datpath], spath)
+            proc = local.submitandwait("cp",["scatt3.inp","gw.inp",os.path.join(".",self.datpath)], spath)
             out, err = proc.communicate()
 
-            proc = self.pltfm.submitjob(self.prognegft,[],spath+self.datpath)
+            proc = self.pltfm.submitjob(self.prognegft,[],os.path.join(spath,self.datpath) )
 
             self.processes.append(proc)
         return self.processes
@@ -405,19 +406,21 @@ class Inegf(Interface):
         '''Check if doping density in diagonalized basis matches
         the intended doping. Default tolerance is 10%.
         '''
-
-        with open(einspath + "/wslevelsRediag.dat", 'r') as f:
-            for line in f:
-                dopdiag = -1
-                doping = -1
-                for i in range( len(line.split()) ):
-                    word = line.split()[i]
-                    if word == 'indices=':
-                        dopdiag = float( line.split()[i+1] )
-                        doping = float( line.split()[i+3] )
+        try:
+            with open(einspath + "/wslevelsRediag.dat", 'r') as f:
+                for line in f:
+                    dopdiag = -1
+                    doping = -1
+                    for i in range( len(line.split()) ):
+                        word = line.split()[i]
+                        if word == 'indices=':
+                            dopdiag = float( line.split()[i+1] )
+                            doping = float( line.split()[i+3] )
+                            break
+                    if dopdiag != -1:
                         break
-                if dopdiag != -1:
-                    break
+        except FileNotFoundError:
+            return False
 
         if dopdiag == -1:
             return False
@@ -440,8 +443,8 @@ class Inegf(Interface):
             for _ in range(0,self.numpar["Nstates"]):
                 line = ff.readline().split()
                 data = []
-                data.append(path)
-                data.append(float(efd))
+                #data.append(path)
+                #data.append(float(efd))
                 for element in line:
                     data.append(float(element))
                 levels.append(data)
@@ -453,13 +456,20 @@ class Inegf(Interface):
             for _ in range(3+nlevels*2):
                 next(ff)
             for _ in range(nlevels):
-                row = []
                 line = ff.readline().split()
-                for i in range(nlevels):
-                    row.append( float(line[i] ) )
+                row = [float(ll) for ll in line]
                 dipoles.append(row)
+            z2 = []
+            next(ff)
+            for _ in range(nlevels):
+                line = ff.readline().split()
+                row = [float(ll) for ll in line]
+                z2.append(row)
+        dipoles = np.array(dipoles)
+        z2 = np.array(z2)
+        dipoles = np.block([[dipoles,z2], [np.transpose(z2),dipoles]])
 
-        return levels, dipoles
+        return np.array(levels), dipoles
 
     def runBandplot(self, path, structure, valence = 0, localdata = 1, eFd = 0, plotWS = 1,
                     whichWS = 1, square = 1, renorm = 0.3, pmin = -1, pmax = 1, zmin = None, zmax = None):
