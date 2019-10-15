@@ -44,6 +44,12 @@ then run with
 
 jupyter notebook
 
+[Materials_guide.ipynb](https://github.com/mfranckie/aftershoq/blob/master/examples/notebooks/Materials_guide.ipynb) Shows how to create materials and alloys with varying composition and strain.
+
+[QCL_guide.ipynb](https://github.com/mfranckie/aftershoq/blob/master/examples/notebooks/QCL_guide.ipynb) Shows how to generate structures from scratch, how to load them from the [library](https://github.com/mfranckie/aftershoq/blob/master/aftershoq/qcls/qcls.py) and how to generate them automatically.
+
+[Opt_guide.ipynb](https://github.com/mfranckie/aftershoq/blob/master/examples/notebooks/Opt_guide.ipynb) Shows how to setup and run an optimization with Gaussian Processs (GP) regression for a test function and for a real QCL (requires ownership of a separate QCL simulation model).
+
 
 If you don't want to/can't use jupyter, the following examples have a similar content:
 

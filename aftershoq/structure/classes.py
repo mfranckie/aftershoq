@@ -8,6 +8,7 @@ Module containing core classes for materials, layers, and structures.
 
 import copy
 import numpy as np
+from scipy.special import erf
 import os.path as Path
 from lxml import etree
 import datetime
@@ -220,6 +221,126 @@ class Structure:
             layer.width = NML*layer.material.params["lattconst"]/10./2.
             if(dops[i]>0):
                 self.addDoping(0, layer.width, dops[i], i)
+
+
+    def generate_digital_IFD(self, L, dz, Nneigh = 1):
+        """Generates new layers for digital approximation of interface diffusion
+        (IFD). Diffuses the x-composition with diffusion length L.
+        Uses error function according to Li et al., IEEE J.Quant.Electron. 32 (1996)
+
+        Parameters
+        ----------
+        L: float
+            Diffusion length
+        dz: float
+            Spatial width of digital barriers
+        """
+
+        if( self.layers[0].material.params["Ec"] > self.layers[1].material.params["Ec"]):
+            barrier = self.layers[0].material
+            well = self.layers[1].material
+        else:
+            barrier = self.layers[1].material
+            well = self.layers[0].material
+
+        if well.x is None:
+            x = 0
+            subs = well.copy()
+            if barrier.x is None:
+                mat1 = well.material.copy()
+                mat2 = barrier.material.copy()
+                # Bowing parameters unknown, assume linear mixing
+                A = Material.params_dict.copy()
+            else:
+                if barrier.substrate is not None:
+                    subs = barrier.substrate
+                A = barrier.C.copy()
+                if str(barrier.mat1) == str(well):
+                    mat1 = barrier.mat2.copy()
+                    mat2 = barrier.mat1.copy()
+                elif str(barrier.mat2) == str(well):
+                    mat1 = barrier.mat1.copy()
+                    mat2 = barrier.mat2.copy()
+                else:
+                    # Barrier does not contain well material, make new quaternary
+                    mat1 = barrier.copy()
+                    mat2 = well.copy()
+                    A = Material.params_dict.copy()
+            name = str(mat1)+"_"+str(x)+str(mat2)+"_"+str(1-x)
+            well = Material(name,Material.params_dict.copy(),
+                                        mat1, mat2, A, x, subs)
+
+        inverted = False
+        print(well, barrier)
+        if (str(well.mat1) != str(barrier.mat1) ):
+            if( str(well.mat1) == str(barrier.mat2) ):
+                inverted = True
+            elif(well.mat1 == None or barrier.mat1 == None):
+                inverted = False
+            else:
+                print("Error with materials")
+                return -1
+
+        z = np.arange(0,self.length,dz)
+        w = []
+
+        for zz in z:
+            a = 0
+            tmp = 0
+
+            for l in self.layers:
+                if(str(l.material)==str(well) or inverted == False):
+                    x = l.material.x
+                else:
+                    x = 1-l.material.x
+                b = a + l.width
+                if x is None:
+                    x = 0
+                tmp = tmp + x*(erf((zz-a)/L) - erf((zz-b)/L))
+                tmp = tmp + x*(erf((zz-a-self.length)/L) - erf((zz-b-self.length)/L))
+                tmp = tmp + x*(erf((zz-a+self.length)/L) - erf((zz-b+self.length)/L))
+                a = b
+
+            w.append(tmp/2)
+
+        s = Structure()
+        s.setIFR(self.eta, self.lam)
+        width = dz
+        for i in range(len(z)):
+
+            if(i == len(z) -1 ):
+                change = 1
+                width = self.length - s.length
+            else:
+                change = w[i+1]-w[i]
+
+            if(abs(change)<0.001):
+                width += dz
+                continue
+
+            if(str(well.mat1)==str(barrier.mat1) and str(well.mat2)==str(barrier.mat2)):
+                mat = well.copy()
+                mat.updateAlloy(w[i])
+            else:
+                l = self.layers[self.layerIndex(z[i])]
+                mat = l.material.copy()
+                if(str(mat) == str(well) or inverted==False):
+                    mat = well.copy()
+                    x = w[i]
+                else:
+                    x = 1-w[i]
+
+                mat.updateAlloy(x)
+
+
+            s.addLayerWM(width,mat)
+            width = dz
+
+        s.dopings = self.dopings.copy()
+
+        return z,w,s
+
+
 
     def compensate_strain(self, x=None, y=None, Ec = None):
         """Compensate the stain within one period by adjusting the alloy
@@ -525,7 +646,7 @@ class Material(object):
 
     # parameter dictionary:
     params_dict = {
-        "meff": 0,    # effective mass
+        "meff": 0,    # effective conduction band mass
         "Ec" : 0,     # Conduction band offset (eV)
         "Eg" : 0,     # Gamma valley band gap (eV)
         "EX" : 0,     # X valley band gap (eV)
@@ -533,7 +654,7 @@ class Material(object):
         "Eso": 0,     # Split-off hole band gap (eV)
         "EDel" : 0,   # Delta valley band gap (eV)
         "Ep" : 0,     # Kane energy (eV)
-        "del0" : 0,   # Spin-orbit splitting (eV)
+        "F"  : 0,     # F-parameter for T-dependent meff (Vurgaftman2001)
         "Valloy" : 0, # Alloy scattering potential (eV)
         "ELO" : 0,    # Longitudinal optical phonon energy (eV)
         "ETO" : 0,    # Transversal optical phonon energy (eV)
@@ -543,6 +664,8 @@ class Material(object):
         "acDel" : 0,  # Indirect Delta cond. band def. pot. (eV)
         "acL" : 0,    # Indirect L cond. band def. pot. (eV)
         "av" : 0,   # Valence band deformation potential (eV)
+        "bs"  : 0,   # Shear deformation potential (eV)
+        "ds"  : 0,   # Uniaxial deformation potential (eV)
         "c11"  : 0,   # Elastic constant
         "c12"  : 0,   # Elastic constant
         "c44"  : 0,   # Elastic constant
@@ -584,6 +707,10 @@ class Material(object):
                 exit(1)
             self.updateAlloy(x)
 
+    def copy(self):
+        return Material(self.name,self.params,self.mat1,self.mat2,self.C,self.x,
+                        self.substrate)
+
     def updateAlloy(self, x, reset_strain = False):
         '''Updates the alloy composition of this alloy material with x
         as the new composition.
@@ -598,16 +725,24 @@ class Material(object):
             self.hc = None
             self.x = x
             self.params = self.alloy(self.mat1,self.mat2,self.C,self.x)
+            self.updateMeff()
 
             if self.strained == True:
                 self.strained = False
                 self.calcStrain()
 
+    def updateMeff(self):
+        Eg = self.params["Eg"]
+        Ep = self.params["Ep"]
+        Eso = self.params["Eso"]
+        F = self.params["F"]
+        self.params["meff"] = 1./(1+2*F + Ep*(Eg+2*Eso/3)/Eg/(Eg+Eso))
 
-    def calcStrain(self):
+    def calcStrain(self, D = 6, meff_bands = 8):
         '''Calculates the strain effects on band parameters. Corrects
-        Eg and Ec accorcing to model-solid theory by [van de Walle PRB 1989]
-        and [Gresch Thesis ETH Zuerich 2009].
+        Eg, Ec, and meff accorcing to [Sugawara PRB 48 1993]. (The energy shifts
+        are identical to those of the model-solid theory by [VanDeWallePRB1989].
+        The D'-parameter is chosen to match the results for InGaAs.
         '''
 
         if self.substrate is None:
@@ -620,24 +755,60 @@ class Material(object):
         aII = self.substrate.params["lattconst"]
         # lattice mis-match:
         self.h = (ar-aII)/aII
-        # Poisson ratio (assuming substrate is in 001 direction
-        D001 = 2*self.params["c12"]/self.params["c11"]
+
         # epsilon-parallel
         epsII = aII/ar - 1.
-        # a-perpendicular
-        aL = ar*(1. - D001*epsII)
-        # epsilon-perpendicular
-        epsL = aL/ar - 1.
 
-        # DeltaOmega/Omega
-        DOm = 2*epsII + epsL
 
-        # Valence band shift:
-        DEv = self.params["av"]*DOm
-        # Conduction band shift (naive):
+        del0 = self.params["Eso"]
+        Eg = self.params["Eg"]
+
+        Pe = 2*self.params["ac"]*(self.params["c11"]-
+                                  self.params["c12"])/self.params["c11"]*epsII
+        Qe = -self.params["bs"]*(self.params["c11"] +
+                                 2*self.params["c12"])/self.params["c11"]*epsII
+        Pv = 2*self.params["av"]*(self.params["c11"]-
+                                  self.params["c12"])/self.params["c11"]*epsII
+        A = del0 + Qe
+        B = np.sqrt(del0**2 + 2*Qe*del0+9*Qe**2)
+        C = np.sqrt(2*B*(B-A))
+
+        alpha = 2*np.sqrt(2)/C*np.abs(Qe)
+        beta = (A-B)*np.abs(Qe)/C/Qe
+        EHH = -Pe - Qe
+        ELH = -Pe + 0.5*( Qe - del0 + B )
+        ESO = -Pe + 0.5*( Qe - del0 - B )
+
+
+        DEc = Pe
+        DEv = Pv
+        DEg = Pe + Pv
+
+        P2 = 0.5*(1./self.params["meff"] - (1+D))*Eg*(Eg+del0)/(Eg + 2/3*del0)
+        inv = (np.sqrt(2)*alpha-beta)**2/(Eg+Pe-ELH) \
+                + (np.sqrt(2)*beta+alpha)**2/(Eg+Pe-ESO)
+        inv = (1+D) + 2*P2/3*inv
+
         if self.strained == False:
-            self.params["Ec"] += self.params["ac"]*DOm
+            if meff_bands == 2:
+                # Change mass according to band gap only [SirtoriPRB1994]
+                self.params["Ec"] += DEc
+                self.params["Eg"] += DEg
+                self.updateMeff()
+            elif meff_bands == 1:
+                # do not change the effecive mass
+                self.params["Ec"] += DEc
+                self.params["Eg"] += DEg
+            else:
+                # use Sugawara model
+                self.params["meff"] = 1./inv
+                self.params["Ec"] += DEc
+                self.params["Eg"] += DEg
+
+
         self.strained = True
+
+
 
     def hcrit(self, Nself = 10):
         """

@@ -46,14 +46,17 @@ class GaAs(Material):
         params["ELO"] = 0.0376
         Ep = 28.8
         params["Ep"] = Ep
+        params["F"] = -1.94
         Eso = 0.341
         params["Eso"] = Eso
         F = -1.94
+        params["F"] = F
         params["meff"] = 1./(1+2*F + Ep*(Eg+2*Eso/3)/Eg/(Eg+Eso))
         params["eps0"] = 12.9
         params["epsinf"] = 10.89
         params["ac"] = -7.17
         params["av"] = 1.16
+        params["bs"] = -1.7
         params["c11"] = 1.217 - 1.44e-4*T # Ioffe
         params["c12"] = 0.546 - 6.4e-6*T  # Ioffe
         params["c44"] = 0.616 - 7e-5*T    # Ioffe
@@ -90,6 +93,7 @@ class AlAs(Material):
         Ep = 21.1
         params["Ep"] = Ep
         F = -0.48
+        params["F"] = F
         params["meff"] = 1./(1+2*F + Ep*(Eg+2*Eso/3)/Eg/(Eg+Eso))
         params["eps0"] = 10.06
         params["epsinf"] = 8.05
@@ -131,11 +135,13 @@ class InAs(Material):
             Ep = 21.5
             params["Ep"] = Ep
             F = -2.90
+            params["F"] = F
             params["meff"] = 1./(1+2*F + Ep*(Eg+2*Eso/3)/Eg/(Eg+Eso))
             params["eps0"] = 15.1 # Ioffe
             params["epsinf"] = 12.3
             params["ac"] = -5.08
             params["av"] = 1.00
+            params["bs"] = -1.8
             params["c11"] = 0.833
             params["c12"] = 0.453
             params["c44"] = 0.396
@@ -173,6 +179,7 @@ class InP(Material):
             Ep = 20.7
             params["Ep"] = Ep
             F = -1.31
+            params["F"] = F
             params["meff"] = 1./(1+2*F + Ep*(Eg+2*Eso/3)/Eg/(Eg+Eso))
             params["eps0"] = 12.5 # Ioffe
             params["epsinf"] = 9.61 # Ioffe
@@ -213,6 +220,7 @@ class GaSb(Material):
             Ep = 27.0
             params["Ep"] = Ep
             F = -1.63
+            params["F"] = F
             params["meff"] = 1./(1+2*F + Ep*(Eg+2*Eso/3)/Eg/(Eg+Eso))
             params["ELO"] = 0.0297 # Ioffe
             params["eps0"] = 15.7 # Ioffe
@@ -255,6 +263,7 @@ class AlSb(Material):
             Ep = 18.7
             params["Ep"] = Ep
             F = -0.56
+            params["F"] = F
             params["meff"] = 1./(1+2*F + Ep*(Eg+2*Eso/3)/Eg/(Eg+Eso))
             params["ELO"] = 0.0298
             params["eps0"] = 12.04
@@ -296,6 +305,7 @@ class InSb(Material):
             Ep = 23.3
             params["Ep"] = Ep
             F = -0.23
+            params["F"] = F
             params["meff"] = 1./(1+2*F + Ep*(Eg+2*Eso/3)/Eg/(Eg+Eso))
             params["ELO"] = 0.025 # Ioffe
             params["eps0"] = 16.8 # Ioffe
@@ -325,7 +335,7 @@ class ZnO(Material):
             name = "ZnO"
         params = Material.params_dict.copy()
         params["meff"] = 0.28 # [Bajo]
-        params["Ec"] = -0.44 # ±0.23 [ZhangAPL2008]
+        params["Ec"] = -0.44 # +/-0.23 [ZhangAPL2008]
         params["Eg"] = 3.4 # [Janotti2007]
         params["ELO"] = 0.072
         params["Ep"] = 21.5
@@ -409,13 +419,13 @@ class AlGaAs(Material):
         C["Eg"] = -0.127 + 1.310*x
         C["EX"] = 0.055
         C["Ec"] = -0.127 + 1.310*x
+
         super(AlGaAs,self).__init__(name, Material.params_dict.copy(),
                                     mat1, mat2, C, x, GaAs())
 
     def updateAlloy(self,x,reset_strain = False):
         self.C["Eg"] = -0.127 + 1.310*x
         self.C["Ec"] = -0.127 + 1.310*x
-        self.C["EX"] = 0.055
         super(AlGaAs,self).updateAlloy(x,reset_strain = reset_strain)
         if self.CBO_Yi:
             if x < 0.42:
@@ -449,6 +459,8 @@ class InGaAs_on_GaAs(Material):
         A["eps0"] = 0.67 # same as InP
         A["ELO"] = 0.002 # same as InP
         A["Ec"] = 0.397
+        A["F"] = 1.77 # same as InP
+        A["Eso"] = 0.15 # same as InP
         super(InGaAs_on_GaAs,self).__init__(name,Material.params_dict.copy(),
                                             mat1, mat2, A, x, GaAs())
 
@@ -475,11 +487,28 @@ class InGaAs(Material):
         A["eps0"] = 0.67 # Ioffe
         A["ELO"] = 0.002 # fit to Ioffe 34 meV lattice matched
         A["Ec"] = 0.097 # (= Cvbo + Cgap, Vurgaftman)
+        A["F"] = 1.77
+        A["Eso"] = 0.15
         super(InGaAs,self).__init__(name,Material.params_dict.copy(),
                                     mat1, mat2, A, x, InP())
 
     def copy(self):
         return InGaAs(self.name,self.x)
+
+    def updateAlloy(self,x,reset_strain = False):
+
+        super(InGaAs,self).updateAlloy(x,reset_strain = reset_strain)
+
+        a1 = self.mat1.params["lattconst"]
+        a2 = self.mat2.params["lattconst"]
+        c1 = self.mat1.params["c11"]
+        c2 = self.mat2.params["c11"]
+        self.params["c11"] = ( x*a1*c1 + (1-x)*a2*c2 )/self.params["lattconst"]
+
+        c1 = self.mat1.params["c12"]
+        c2 = self.mat2.params["c12"]
+        self.params["c12"] = ( x*a1*c1 + (1-x)*a2*c2 )/self.params["lattconst"]
+
 
 
 
@@ -499,7 +528,8 @@ class AlInAs(Material):
         A["Ep"] = -4.81
         A["ac"] = -1.4
         A["Ec"] = -0.0383 # (= Cvbo + Cgap + mod, Vurgaftman, mod to match LM DeltaEc)
-
+        A["Eso"] = 0.15
+        A["F"] = -4.44
 
         super(AlInAs,self).__init__(name,Material.params_dict.copy(),
                                     mat1, mat2, A, x, InP())
@@ -523,6 +553,8 @@ class GaInSb(Material):
         A["EX"] = 0.33
         A["meff"] = 0.0092
         A["Ec"] = 0.415 # (= Cvbo + Cgap, Vurgaftman)
+        A["F"] = -6.84
+        A["Eso"] = 0.1
 
 
         super(GaInSb,self).__init__(name,Material.params_dict.copy(),
@@ -545,6 +577,7 @@ class AlInSb(Material):
         A = Material.params_dict.copy()
         A["Eg"] = 0.43
         A["Ec"] = 0.43 # (= Cvbo + Cgap, Vurgaftman)
+        A["Eso"] = 0.25
 
         super(AlInSb,self).__init__(name,Material.params_dict.copy(),
                                     mat1, mat2, A, x, GaSb())
@@ -566,6 +599,7 @@ class AlGaSb(Material):
         A = Material.params_dict.copy()
         A["Eg"] = -0.044 + 1.22*x
         A["Ec"] = -0.044 + 1.22*x # (= Cvbo + Cgap, Vurgaftman)
+        A["Eso"] = 0.3
 
         super(AlGaSb,self).__init__(name,Material.params_dict.copy(),
                                     mat1, mat2, A, x, GaSb())
@@ -594,6 +628,7 @@ class GaAsSb(Material):
         A = Material.params_dict.copy()
         A["Eg"] = 1.43
         A["Ec"] = 0.37 # (= Cvbo + Cgap, Vurgaftman)
+        A["Eso"] = 0.6
 
         super(GaAsSb,self).__init__(name,Material.params_dict.copy(),
                                     mat1, mat2, A, x, GaSb())
@@ -616,6 +651,7 @@ class InAsSb(Material):
         A["Eg"] = 0.67
         A["meff"] = 0.035
         A["Ec"] = 0.67 # (= Cvbo + Cgap, Vurgaftman)
+        A["Eso"] = 1.2
 
         super(InAsSb,self).__init__(name,Material.params_dict.copy(),
                                     mat1, mat2, A, x, GaSb())
@@ -637,6 +673,7 @@ class AlAsSb(Material):
         A = Material.params_dict.copy()
         A["Eg"] = 0.8
         A["Ec"] = -0.91 # (= Cvbo + Cgap, Vurgaftman)
+        A["Eso"] = 0.15
 
         super(AlAsSb,self).__init__(name,Material.params_dict.copy(),
                                     mat1, mat2, A, x, GaSb())
