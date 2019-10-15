@@ -122,7 +122,7 @@ class GAopt(OptimizerGA):
                     (lim_min, lim_max) = self.limits[i]
                 if ( rnd < self.mutrate ):
                     # mutation happens
-                    xmut = xij + self.mutsize*(random.random() - .5)
+                    xmut = xij + self.mutsize*(random.random() - .5)*(lim_max - lim_min)
                     while self.limits is not None and \
                         (xmut < lim_min or xmut > lim_max):
                         D = lim_max - lim_min
