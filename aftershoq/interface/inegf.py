@@ -560,6 +560,7 @@ class Inegf(Interface):
                         kind = "quadratic"
                     x = np.linspace(values[iom][0],values[iom][-1])
                     f = interp1d(values[iom], values[igain], kind=kind)
+                    np.savetxt(os.path.join(path,'gain_interp.dat'),list(zip(x,f(x))))
                     out = np.max(f(x))
                 else:
                     out = np.max(values[igain])

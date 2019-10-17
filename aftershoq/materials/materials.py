@@ -327,14 +327,15 @@ class InSb(Material):
         return copy.deepcopy(self)
 
 class ZnO(Material):
-    '''ZnO, parameters from [Janotti2007] and [Bateman1962].
+    '''ZnO, parameters from [BajoPRAppl2018, NeumannAPL2016, Janotti2007, Bateman1962, 
+    ZhangAPL2008, JemmyCinthiaPMS2014].
     Note that at this time, the state of knowledge about this
-    material is very limited.'''
+    material is limited.'''
     def __init__(self,name = None, T = 0.):
         if name is None:
             name = "ZnO"
         params = Material.params_dict.copy()
-        params["meff"] = 0.22
+        params["meff"] = 0.28 # [Bajo]
         params["Ec"] = -0.44 # +/-0.23 [ZhangAPL2008]
         params["Eg"] = 3.4 # [Janotti2007]
         params["ELO"] = 0.072
@@ -386,13 +387,15 @@ class MgO(Material):
         return copy.deepcopy(self)
 
 class MgOzoterac(Material):
-    '''MgO, parameters used in the Zoterac (ERC) project.'''
+    '''MgO, parameters used in the Zoterac (ERC) project.
+    References: [NeumannAPL2016, BajoPRAppl2018]'''
 
     def __init__(self,name = 'MgOzoterac', T = 0):
         params = Material.params_dict.copy()
-        params["meff"] = 0.22
-        params["Ec"] = 0.86 # 1.3-0.44 Deliverable D1.3 1/9/2017
-        params["Eg"] = 5.3 # Deliverable D1.3 1/9/2017
+        params["meff"] = 0.28 # [BajoPRAppl2018]
+        #params["Ec"] = 1.3825 # [BajoPRAppl2018]
+        params["Ec"] = 0.9883 # []
+        params["Eg"] = 6.1 # [NeumannAPL2018]
         params["ELO"] = 0.089
         params["Ep"] = 21.5
         params["eps0"] = 9.6
@@ -695,6 +698,22 @@ class ZnMgO(Material):
 
     def copy(self):
         return copy.deepcopy(self)
+
+    
+class ZnMgO_zoterac(Material):
+    '''Zn_xMg_1-xO. Only linear mixing. Using the MgO parameters decuded in Zoterac project.'''
+    def __init__(self,name = None,x = 0.):
+        if name is None:
+            name = "Zn_"+str(x)+"Mg_"+str(1-x)+"O_ZOTERAC"
+        mat1 = ZnO()
+        mat2 = MgOzoterac()
+        # Bowing paremeters:Unknown
+        A = Material.params_dict.copy()
+        super(ZnMgO_zoterac,self).__init__(name,Material.params_dict.copy(),mat1,mat2,A,x,ZnO())
+
+    def copy(self):
+        return ZnMgO_zoterac(self.name,self.x)
+
 
 
 # Quqternaries;
