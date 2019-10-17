@@ -25,6 +25,7 @@ References:
 
 from aftershoq.structure import Material
 import numpy as np
+import copy
 
 # Binaries:
 
@@ -68,7 +69,7 @@ class GaAs(Material):
         super(GaAs,self).__init__(name,params)
 
     def copy(self):
-        return GaAs(self.name)
+        return copy.deepcopy(self)
 
 class AlAs(Material):
     '''AlAs, band parameters from [Vurgaftman2001]. Other parameters from
@@ -110,7 +111,7 @@ class AlAs(Material):
         super(AlAs,self).__init__(name,params)
 
     def copy(self):
-        return AlAs(self.name)
+        return copy.deepcopy(self)
 
 class InAs(Material):
     '''InAs, band parameters from [Vurgaftman2001]. Other parameters from
@@ -154,7 +155,7 @@ class InAs(Material):
             super(InAs,self).__init__(name,params)
 
     def copy(self):
-        return InAs(self.name)
+        return copy.deepcopy(self)
 
 class InP(Material):
     '''InP, band parameters from [Vurgaftman2001]. Other parameters from
@@ -196,7 +197,7 @@ class InP(Material):
             super(InP,self).__init__(name,params)
 
     def copy(self):
-        return InP(self.name)
+        return copy.deepcopy(self)
 
 class GaSb(Material):
     '''GaSb, band parameters from [Vurgaftman2001]. Other parameters from
@@ -239,7 +240,7 @@ class GaSb(Material):
             super(GaSb,self).__init__(name,params)
 
     def copy(self):
-        return GaSb(self.name)
+        return copy.deepcopy(self)
 
 class AlSb(Material):
     '''GaSb, band parameters from [Vurgaftman2001]. Other parameters from
@@ -281,7 +282,7 @@ class AlSb(Material):
             super(AlSb,self).__init__(name,params)
 
     def copy(self):
-        return AlSb(self.name)
+        return copy.deepcopy(self)
 
 class InSb(Material):
     '''GaSb, band parameters from [Vurgaftman2001]. Other parameters from
@@ -323,13 +324,13 @@ class InSb(Material):
             super(InSb,self).__init__(name,params)
 
     def copy(self):
-        return InSb(self.name)
+        return copy.deepcopy(self)
 
 class ZnO(Material):
     '''ZnO, parameters from [Janotti2007] and [Bateman1962].
     Note that at this time, the state of knowledge about this
     material is very limited.'''
-    def __init__(self,name = None):
+    def __init__(self,name = None, T = 0.):
         if name is None:
             name = "ZnO"
         params = Material.params_dict.copy()
@@ -352,13 +353,13 @@ class ZnO(Material):
         super(ZnO,self).__init__(name,params)
 
     def copy(self):
-        return ZnO(self.name)
+        return copy.deepcopy(self)
 
 class MgO(Material):
     '''MgO, parameters from [Janotti2007].
     Note that at this time, the state of knowledge about this
     material is very limited.'''
-    def __init__(self,name = None):
+    def __init__(self,name = None, T = 0.):
 
         if name is None:
             name = "MgO"
@@ -376,15 +377,18 @@ class MgO(Material):
         params["c12"] = 0.0958 # Strauch, "Semiconductors" 2017
         params["c44"] = 0.1542 # Strauch, "Semiconductors" 2017
         params["lattconst"] = 4.21
+        params["molV"] = params["lattconst"]**3/4/1000
+        params["massdens"] = 3580
+        params["vlong"] = np.sqrt(params["c11"]/params["massdens"]*1e11)
         super(MgO,self).__init__(name,params)
 
     def copy(self):
-        return MgO(self.name)
+        return copy.deepcopy(self)
 
 class MgOzoterac(Material):
     '''MgO, parameters used in the Zoterac (ERC) project.'''
 
-    def __init__(self,name = 'MgOzoterac'):
+    def __init__(self,name = 'MgOzoterac', T = 0):
         params = Material.params_dict.copy()
         params["meff"] = 0.22
         params["Ec"] = 0.86 # 1.3-0.44 Deliverable D1.3 1/9/2017
@@ -398,7 +402,7 @@ class MgOzoterac(Material):
         super(MgOzoterac,self).__init__(name,params)
 
     def copy(self):
-        return MgOzoterac(self.name)
+        return copy.deepcopy(self)
 
 # Ternaries:
 
@@ -418,7 +422,7 @@ class AlGaAs(Material):
         C["Ec"] = -0.127 + 1.310*x
 
         super(AlGaAs,self).__init__(name, Material.params_dict.copy(),
-                                    mat1, mat2, C, x, GaAs())
+                                    mat1, mat2, C, x, GaAs(T = T))
 
     def updateAlloy(self,x,reset_strain = False):
         self.C["Eg"] = -0.127 + 1.310*x
@@ -432,7 +436,7 @@ class AlGaAs(Material):
                 self.params["Ec"] = -0.115 + 1.105*x  #direct gap
 
     def copy(self):
-        return AlGaAs(self.name,self.x)
+        return copy.deepcopy(self)
 
 
 class InGaAs_on_GaAs(Material):
@@ -459,10 +463,10 @@ class InGaAs_on_GaAs(Material):
         A["F"] = 1.77 # same as InP
         A["Eso"] = 0.15 # same as InP
         super(InGaAs_on_GaAs,self).__init__(name,Material.params_dict.copy(),
-                                            mat1, mat2, A, x, GaAs())
+                                            mat1, mat2, A, x, GaAs(T = T))
 
     def copy(self):
-        return InGaAs_on_GaAs(self.name,self.x)
+        return copy.deepcopy(self)
 
 
 
@@ -487,10 +491,10 @@ class InGaAs(Material):
         A["F"] = 1.77
         A["Eso"] = 0.15
         super(InGaAs,self).__init__(name,Material.params_dict.copy(),
-                                    mat1, mat2, A, x, InP())
+                                    mat1, mat2, A, x, InP(T = T))
 
     def copy(self):
-        return InGaAs(self.name,self.x)
+        return copy.deepcopy(self)
 
     def updateAlloy(self,x,reset_strain = False):
 
@@ -529,10 +533,10 @@ class AlInAs(Material):
         A["F"] = -4.44
 
         super(AlInAs,self).__init__(name,Material.params_dict.copy(),
-                                    mat1, mat2, A, x, InP())
+                                    mat1, mat2, A, x, InP(T = T))
 
     def copy(self):
-        return AlInAs(self.name,self.x)
+        return copy.deepcopy(self)
 
 class GaInSb(Material):
     '''Ga_xIn_(1-x)Sb/GaSb. Bowing parameters from [Vurgaftman2001].'''
@@ -555,10 +559,10 @@ class GaInSb(Material):
 
 
         super(GaInSb,self).__init__(name,Material.params_dict.copy(),
-                                    mat1, mat2, A, x, GaSb())
+                                    mat1, mat2, A, x, GaSb(T = T))
 
     def copy(self):
-        return GaInSb(self.name,self.x)
+        return copy.deepcopy(self)
 
 class AlInSb(Material):
     '''Al_xIn_(1-x)Sb/GaSb. Bowing parameters from [Vurgaftman2001].'''
@@ -577,10 +581,10 @@ class AlInSb(Material):
         A["Eso"] = 0.25
 
         super(AlInSb,self).__init__(name,Material.params_dict.copy(),
-                                    mat1, mat2, A, x, GaSb())
+                                    mat1, mat2, A, x, GaSb(T = T))
 
     def copy(self):
-        return AlInSb(self.name,self.x)
+        return copy.deepcopy(self)
 
 class AlGaSb(Material):
     '''Al_xGa_(1-x)Sb/GaSb. Bowing parameters from [Vurgaftman2001].'''
@@ -599,7 +603,7 @@ class AlGaSb(Material):
         A["Eso"] = 0.3
 
         super(AlGaSb,self).__init__(name,Material.params_dict.copy(),
-                                    mat1, mat2, A, x, GaSb())
+                                    mat1, mat2, A, x, GaSb(T = T))
     def updateAlloy(self,x,reset_strain = False):
 
         self.C["Eg"] = -0.044 + 1.22*x
@@ -609,7 +613,7 @@ class AlGaSb(Material):
 
 
     def copy(self):
-        return AlGaSb(self.name,self.x)
+        return copy.deepcopy(self)
 
 class GaAsSb(Material):
     '''Ga_xAs_(1-x)Sb/GaSb. Bowing parameters from [Vurgaftman2001].'''
@@ -628,10 +632,10 @@ class GaAsSb(Material):
         A["Eso"] = 0.6
 
         super(GaAsSb,self).__init__(name,Material.params_dict.copy(),
-                                    mat1, mat2, A, x, GaSb())
+                                    mat1, mat2, A, x, GaSb(T = T))
 
     def copy(self):
-        return GaAsSb(self.name,self.x)
+        return copy.deepcopy(self)
 
 class InAsSb(Material):
     '''In_xAs_(1-x)Sb/GaSb. Bowing parameters from [Vurgaftman2001].'''
@@ -651,10 +655,10 @@ class InAsSb(Material):
         A["Eso"] = 1.2
 
         super(InAsSb,self).__init__(name,Material.params_dict.copy(),
-                                    mat1, mat2, A, x, GaSb())
+                                    mat1, mat2, A, x, GaSb(T = T))
 
     def copy(self):
-        return InAsSb(self.name,self.x)
+        return copy.deepcopy(self)
 
 class AlAsSb(Material):
     '''AlAs_(1-x)Sb_x/GaSb. Bowing parameters from [Vurgaftman2001].'''
@@ -673,24 +677,24 @@ class AlAsSb(Material):
         A["Eso"] = 0.15
 
         super(AlAsSb,self).__init__(name,Material.params_dict.copy(),
-                                    mat1, mat2, A, x, GaSb())
+                                    mat1, mat2, A, x, GaSb(T = T))
 
     def copy(self):
-        return AlAsSb(self.name,self.x)
+        return copy.deepcopy(self)
 
 class ZnMgO(Material):
     '''Zn_xMg_1-xO. Only linear mixing.'''
-    def __init__(self,name = None,x = 0.):
+    def __init__(self,name = None,x = 0., T = 0.):
         if name is None:
             name = "Zn_"+str(x)+"Mg_"+str(1-x)+"O"
-        mat1 = ZnO()
-        mat2 = MgO()
+        mat1 = ZnO(T = T)
+        mat2 = MgO(T = T)
         # Bowing paremeters:Unknown
         A = Material.params_dict.copy()
-        super(ZnMgO,self).__init__(name,Material.params_dict.copy(),mat1,mat2,A,x,ZnO())
+        super(ZnMgO,self).__init__(name,Material.params_dict.copy(),mat1,mat2,A,x,ZnO(T = T))
 
     def copy(self):
-        return ZnMgO(self.name,self.x)
+        return copy.deepcopy(self)
 
 
 # Quqternaries;
@@ -726,10 +730,10 @@ class AlInGaAs(Material):
             A["Eg"] = 0.22
             A["meff"] = -0.016
             super(AlInGaAs,self).__init__(name,Material.params_dict.copy(),
-                                          mat1,mat2,A,x)
+                                          mat1,mat2,A,x,InP(T = T))
 
         def copy(self):
-            return AlInGaAs(self.x, self.name)
+            return copy.deepcopy(self)
 
         def updateAlloy(self, x, reset_strain = False):
             Material.updateAlloy(self, x, reset_strain = reset_strain)

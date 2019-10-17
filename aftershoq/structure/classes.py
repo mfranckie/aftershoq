@@ -271,7 +271,6 @@ class Structure:
                                         mat1, mat2, A, x, subs)
 
         inverted = False
-        print(well, barrier)
         if (str(well.mat1) != str(barrier.mat1) ):
             if( str(well.mat1) == str(barrier.mat2) ):
                 inverted = True
@@ -287,12 +286,16 @@ class Structure:
         for zz in z:
             a = 0
             tmp = 0
-
+            x = 1
             for l in self.layers:
-                if(str(l.material)==str(well) or inverted == False):
-                    x = l.material.x
+                if x == 1:
+                    x = 0
                 else:
-                    x = 1-l.material.x
+                    x = 1
+                #if(str(l.material)==str(well) or inverted == False):
+            #        x = l.material.x
+                #else:
+            #        x = 1-l.material.x
                 b = a + l.width
                 if x is None:
                     x = 0
@@ -306,6 +309,7 @@ class Structure:
         s = Structure()
         s.setIFR(self.eta, self.lam)
         width = dz
+        newalloy = Material(name="alloy",mat1=well, mat2=barrier, x=0,  subs=well.substrate) # no bowing...
         for i in range(len(z)):
 
             if(i == len(z) -1 ):
@@ -332,12 +336,13 @@ class Structure:
 
                 mat.updateAlloy(x)
 
-
+            mat = newalloy.copy()
+            mat.updateAlloy(w[i])
             s.addLayerWM(width,mat)
             width = dz
 
         s.dopings = self.dopings.copy()
-
+        s.calcStrain()
         return z,w,s
 
 
@@ -675,7 +680,7 @@ class Material(object):
         "lattconst" : 0  # Lattice constant (A)
     }
 
-    def __init__(self,name,params_in=None,mat1=None,mat2=None,C=None,x=None, subs=None):
+    def __init__(self,name,params_in=None,mat1=None,mat2=None,C=None,x=None, subs=None, T = 0):
         '''Constructor. Parameters:
         name:  The name of this material
         params: Material parameters dictionary.
@@ -708,8 +713,10 @@ class Material(object):
             self.updateAlloy(x)
 
     def copy(self):
-        return Material(self.name,self.params,self.mat1,self.mat2,self.C,self.x,
+        m = Material(self.name,self.params,self.mat1,self.mat2,self.C,self.x,
                         self.substrate)
+        m.strained = self.strained
+        return m
 
     def updateAlloy(self, x, reset_strain = False):
         '''Updates the alloy composition of this alloy material with x

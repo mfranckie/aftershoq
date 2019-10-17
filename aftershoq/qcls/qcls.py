@@ -181,7 +181,7 @@ class ScalariAPL2005(Structure):
         vdop = 3.8e16 # cm^-3
 
         self.addDoping(0, self.layers[idop].width, vdop, idop)
-        
+
 class WienoldEL2009(Structure):
     """Bound-to-continuum THz QCL emitting at 3 THz.
     Layer sequence:
@@ -258,8 +258,8 @@ class WienoldOE2014(Structure):
         vdop = 3e16 # cm^-3
 
         self.addDoping(0, self.layers[idop].width, vdop, idop)
-        
-        
+
+
 class ScalariOE2010(Structure):
     """2-well THz design published in:
     Optics Express 18 (2010)
@@ -314,25 +314,25 @@ class N471(Structure):
         vdop = 2.4e16 # cm^-3
 
         self.addDoping(0, self.layers[idop].width, vdop, idop)
-        
-        
+
+
 # THz InGaAs / AlInAs lasers
-#==========================   
-        
+#==========================
+
 class EV1125(Structure):
     """
     InGaAs/InAlAs lattice matched THz QCL
     M. Fischer et al., Appl. Phys. Lett. 2010
     """
-    
+
     def __init__(self, T=155):
         Structure.__init__(self, T=T)
-        
+
         self.setIFR(0.1,10)
-        
+
         alinas = AlInAs(T = self.TL)
         gainas = InGaAs(T = self.TL)
-        
+
         self.addLayerWM(2.2,alinas)
         self.addLayerWM(15.8, gainas)
         self.addLayerWM(0.9,alinas)
@@ -340,40 +340,40 @@ class EV1125(Structure):
         self.addLayerWM(1.5,alinas)
         self.addLayerWM(13.8, gainas)
         self.addLayerWM(1.6,alinas)
-        self.addLayerWM(25.5, gainas) # <-- middle 5.7nm doped 
-        
+        self.addLayerWM(25.5, gainas) # <-- middle 5.7nm doped
+
         idop= 7
         vdop = 8e16 # cm^-3
         #  1.8 + 13.3 + 0.6 + 13.3 + 1.5 = 30.5
         self.addDoping(9.9, 15.6, vdop,idop)
-        
-        
+
+
 class Deutsch2017(Structure):
     """
     InGaAs/InAlAs lattice matched THz QCL
     C. Deutsch et al., ACS Photonics 2017, 4, 957-962
     """
-    
+
     def __init__(self, T=155):
         Structure.__init__(self, T=T)
-        
+
         self.setIFR(0.1,10)
-        
+
         alinas = AlInAs(T = self.TL)
         gainas = InGaAs(T = self.TL)
-        
+
         self.addLayerWM(1.8,alinas)
         self.addLayerWM(13.3, gainas)
         self.addLayerWM(0.6,alinas)
         self.addLayerWM(13.3, gainas)
         self.addLayerWM(1.5,alinas)
-        self.addLayerWM(24, gainas) # <-- first 6nm doped 
-        
+        self.addLayerWM(24, gainas) # <-- first 6nm doped
+
         idop= 5
         vdop = 3.3e16 # cm^-3
         #  1.8 + 13.3 + 0.6 + 13.3 + 1.5 = 30.5
         self.addDoping(0, 6, vdop,idop)
-        
+
  # Mid-IR QCLs
  # ================================
 
@@ -388,7 +388,9 @@ class EV1429(Structure):
         self.setIFR(0.1, 10)
 
         alinas_s = AlInAs(x = 0.665, T = self.TL)
+        alinas_s.calcStrain()
         gainas_s = InGaAs(x = 0.635, T = self.TL)
+        gainas_s.calcStrain()
 
 
         self.addLayerWM(3.5, alinas_s)
