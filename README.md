@@ -15,6 +15,12 @@ to your needs. The current implentation also uses numpy, scipy, matplotlib, and 
 
 # Installation
 
+To install the latest stable release, use pip:
+
+python3 -m pip install aftershoq
+
+For the latest developer version, then follow the following steps to clone the project source:
+
 When cloning, use the --recursive option:
 
 git clone --recursive https://github.com/mfranckie/aftershoq.git
