@@ -34,7 +34,7 @@ class Sgenerator():
                  comp_mode = comp_modes.get("UNLINKED"),
                  width_mode = width_modes.get("CONTINUOUS"),
                  strain_mode = strain_modes.get("NO STRAIN"),
-                 p = 3 ):
+                 p = None ):
         '''
         Constructor which takes:
         origstruct: original structure to modify, with N layers
@@ -162,24 +162,33 @@ class Sgenerator():
 
 
         # 4) Add further parameters at this point...
+        if p is not None:
+            # define the Hilbert curve:
+            hilbert_curve = HilbertCurve(p, ND)
 
-        # define the Hilbert curve:
-        hilbert_curve = HilbertCurve(p, ND)
+            # imax = length of hilbert curve (# nodes)
+            imax = 2**(ND*p)-1
 
-        # imax = length of hilbert curve (# nodes)
-        imax = 2**(ND*p)-1
+            # pmax = side of hyper cube
+            pmax = 2**p-1
 
-        # pmax = side of hyper cube
-        pmax = 2**p-1
+            print('Dim = {0}, p = {1}, imax = {2}, pmax = {3}'.format(ND,p,imax,pmax))
 
-        print('Dim = {0}, p = {1}, imax = {2}, pmax = {3}'.format(ND,p,imax,pmax))
+            self.hutil = HilbertUtil(hilbert_curve)
 
-        self.hutil = HilbertUtil(hilbert_curve)
         self.params = params
         self.dparams = dparams
         self.windex = windex
         self.dopindex = dopindex
         self.xindex = xindex
+
+    def getLimits(self):
+        limits = []
+        for i in range(len(self.params)):
+            limits.append( (self.params[i] - self.dparams[i],
+                            self.params[i] + self.dparams[i]) )
+        return limits
+
 
     def genRanStructs(self,N):
         """
@@ -188,63 +197,26 @@ class Sgenerator():
         covers entire layer width.
         Doping modes "FIXED WIDTH SHEET/VOLUME" changes doping pos.
         independently of layer widths.
-        TODO: Change compositions!
         """
-        for _ in range(0,N):
-            news = Structure(self.orig)
 
-            for il in range(len(self.dw)):
-                w0 = self.orig.layers[il].width
-                width = w0 + 2*(random.random()-0.5)*self.dw[il]
-                news.layers[il].width = width
+        dpar = np.array(self.dparams)
+        parmin = np.array(self.params) - dpar
+        ranges = []
+        [ranges.append([self.params[i]-dpar[i],self.params[i]+dpar[i]]) for i in range(len(self.params)) ]
+        coordinates = []
+        for i in range(N):
 
-            news.dopings = []
-            for dl in self.orig.dopings:
+            randpar = []
+            for i in range(len(self.params)):
+                randpar.append(parmin[i] + 2*dpar[i]*random.random())
 
-                zc = (dl[0]+dl[1])/2
-                layerindex = self.orig.layerIndex(zc)
-                sheet = self.orig.layers[layerindex].width*dl[2]
-
-
-                if (self.doping_mode == doping_modes.get("FOLLOW LAYER SHEET") or
-                    self.doping_mode == doping_modes.get("FOLLOW LAYER VOLUME")):
-
-                    zi = 0
-                    zf = news.layers[layerindex].width
-
-                    if self.doping_mode == doping_modes.get("FOLLOW LAYER SHEET"):
-                        dopdens = sheet/news.layers[layerindex].width
-                    else:
-                        dopdens = dl[2]
-
-                    dopdens = dopdens + 2*(random.random()-0.5)*self.ddop[2]
-
-                else:
-
-                    dzc = zc - self.orig.layerPos(layerindex)
-
-                    # define new offset from layer start
-                    dzc = dzc + 2*(random.random()-0.5)*self.ddop[0]
-                    dopw = (dl[1]-dl[0]) + 2*(random.random()-0.5)*self.ddop[1]
-
-                    # add new doping layer
-                    zi = dzc - dopw/2
-                    zf = dzc + dopw/2
-
-                    if self.doping_mode == doping_modes.get("FIXED POSITION SHEET"):
-                        dopdens = sheet/(zf-zi)
-                    else:
-                        dopdens = dl[2]
-
-                    dopdens = dopdens + 2*(random.random()-0.5)*self.ddop[2]
-
-                news.addDoping(zi, zf, dopdens, layerindex)
-
-            if self.strain_mode == strain_modes.get("COMPENSATE X"):
-                news.compensate_strain()
+            news = self.generateStructure(randpar)
 
             self.structures.append(news)
-            del news
+
+            coordinates.append(randpar)
+
+        return coordinates
 
     def genRanHilbertStructs(self,N, p=None):
         """
@@ -305,107 +277,113 @@ class Sgenerator():
             par_unscaled = np.squeeze(
                 self.hutil.scale_coordinates(parnew,dpar,parmin) )
 
-            # generate strucure:
-            news = Structure(self.orig)
-            pindex = 0
-
-            # Layer widths:
-            for i in range(0,len(self.windex)):
-                news.layers[self.windex[i]].width = par_unscaled[pindex]
-                pindex+=1
-
-            news.dopings = []
-
-            dop_start = 0
-            dop_step = int(len(self.dopindex)/len(self.orig.dopings))
-            for d in self.orig.dopings:
-
-                # Doping layers:
-                z0 = d[0]
-                zend = d[1]
-                doping = d[2]
-                center = (z0 + zend)/2
-                width = (zend - z0)
-                sheet = width*doping
-                zizfdens = [center, width, doping]
-
-                dop_end = dop_start + dop_step
-
-                for i in range(dop_start,dop_end):
-
-                    zizfdens[self.dopindex[i]] = par_unscaled[pindex]
-
-                    pindex +=1
-
-                dop_start = dop_end
-
-                if (self.doping_mode == doping_modes.get("FOLLOW LAYER SHEET") or
-                    self.doping_mode == doping_modes.get("FOLLOW LAYER VOLUME")):
-
-                    layerindex = self.orig.layerIndex(center)
-                    z0 = news.layerPos(layerindex)
-                    zend = z0 + news.layers[layerindex].width
-
-                    if (self.doping_mode == doping_modes.get("FOLLOW LAYER SHEET") ):
-                        doping = zizfdens[2]*width/(zend-z0)
-                    else:
-                        doping = zizfdens[2]
-
-                else:
-                    z0 = zizfdens[0]
-                    zend = zizfdens[1]
-
-                    if (self.doping_mode == doping_modes.get("FIXED POSITION SHEET") ):
-                        doping = zizfdens[2]/width*(zend-z0)
-                    else:
-                        doping = zizfdens[2]
-
-                    doping = zizfdens[2]
-
-                news.addDoping(z0,zend,doping)
-
-            # Alloy composition:
-            tags = []
-            ptag = []
-            for i in range(0,len(self.xindex)):
-
-
-                if self.comp_mode == comp_modes.get("UNLINKED"):
-                    news.layers[self.xindex[i]].material.updateAlloy(par_unscaled[pindex])
-                    pindex +=1
-                elif self.comp_mode == comp_modes.get("LINKED ALL"):
-                    news.layers[self.xindex[i]].material.updateAlloy(par_unscaled[pindex])
-                    pass
-                elif self.comp_mode == comp_modes.get("LINKED LAYERS"):
-                    print("Layers are linked:")
-                    tag = self.tagindex[i]
-                    print("tag = ", tag)
-                    if tag not in tags:
-                        tags.append(tag)
-                        ptag.append(pindex)
-                    else:
-                        pindex = ptag[tags.index(tag)]
-
-                    print("pindex = ", pindex)
-                    news.layers[self.xindex[i]].material.updateAlloy(par_unscaled[pindex])
-                    news.layers[self.xindex[i]].material.name += str(tag)
-
-
-                    if len(ptag) > 0:
-                        pindex = np.max(ptag) + 1
-                    else:
-                        pindex += 1
-
-            if self.width_mode == width_modes.get("MONOLAYER"):
-                news.convert_to_ML()
-            if self.strain_mode == strain_modes.get("COMPENSATE X"):
-                news.compensate_strain()
+            news = self.generateStructure(par_unscaled)
 
             self.structures.append(news)
 
             coordinates.append(parnew)
 
         return coordinates
+
+    def generateStructure(self, params):
+        # generate strucure:
+        news = Structure(self.orig)
+        pindex = 0
+
+        # Layer widths:
+        for i in range(0,len(self.windex)):
+            news.layers[self.windex[i]].width = params[pindex]
+            pindex+=1
+
+        news.dopings = []
+
+        dop_start = 0
+        dop_step = int(len(self.dopindex)/len(self.orig.dopings))
+        for d in self.orig.dopings:
+
+            # Doping layers:
+            z0 = d[0]
+            zend = d[1]
+            doping = d[2]
+            center = (z0 + zend)/2
+            width = (zend - z0)
+            sheet = width*doping
+            zizfdens = [center, width, doping]
+
+            dop_end = dop_start + dop_step
+
+            for i in range(dop_start,dop_end):
+
+                zizfdens[self.dopindex[i]] = params[pindex]
+
+                pindex +=1
+
+            dop_start = dop_end
+
+            if (self.doping_mode == doping_modes.get("FOLLOW LAYER SHEET") or
+                self.doping_mode == doping_modes.get("FOLLOW LAYER VOLUME")):
+
+                layerindex = self.orig.layerIndex(center)
+                z0 = news.layerPos(layerindex)
+                zend = z0 + news.layers[layerindex].width
+
+                if (self.doping_mode == doping_modes.get("FOLLOW LAYER SHEET") ):
+                    doping = zizfdens[2]*width/(zend-z0)
+                else:
+                    doping = zizfdens[2]
+
+            else:
+                z0 = zizfdens[0]
+                zend = zizfdens[1]
+
+                if (self.doping_mode == doping_modes.get("FIXED POSITION SHEET") ):
+                    doping = zizfdens[2]/width*(zend-z0)
+                else:
+                    doping = zizfdens[2]
+
+                doping = zizfdens[2]
+
+            news.addDoping(z0,zend,doping)
+
+        # Alloy composition:
+        tags = []
+        ptag = []
+        for i in range(0,len(self.xindex)):
+
+
+            if self.comp_mode == comp_modes.get("UNLINKED"):
+                news.layers[self.xindex[i]].material.updateAlloy(params[pindex])
+                pindex +=1
+            elif self.comp_mode == comp_modes.get("LINKED ALL"):
+                news.layers[self.xindex[i]].material.updateAlloy(params[pindex])
+                pass
+            elif self.comp_mode == comp_modes.get("LINKED LAYERS"):
+                print("Layers are linked:")
+                tag = self.tagindex[i]
+                print("tag = ", tag)
+                if tag not in tags:
+                    tags.append(tag)
+                    ptag.append(pindex)
+                else:
+                    pindex = ptag[tags.index(tag)]
+
+                print("pindex = ", pindex)
+                news.layers[self.xindex[i]].material.updateAlloy(params[pindex])
+                news.layers[self.xindex[i]].material.name += str(tag)
+
+
+                if len(ptag) > 0:
+                    pindex = np.max(ptag) + 1
+                else:
+                    pindex += 1
+
+        if self.width_mode == width_modes.get("MONOLAYER"):
+            news.convert_to_ML()
+        if self.strain_mode == strain_modes.get("COMPENSATE X"):
+            news.compensate_strain()
+
+        return news
+
 
 
     def load_structs_on_hilbert_curve(self, structures):
@@ -450,10 +428,27 @@ class Sgenerator():
                     params.append(s.layers[i].material.x)
 
 
-            params = np.array(params)
-            dpar = np.array(self.dparams)
-            parmin = np.array(self.params) - dpar
+            #params = np.array(params)
+            #dpar = np.array(self.dparams)
+            #parmin = np.array(self.params) - dpar
 
-            coords.append(np.squeeze(self.hutil.unscale_coordinates(params,dpar,parmin)))
+            #coords.append(np.squeeze(self.hutil.unscale_coordinates(params,dpar,parmin)))
+            coords.append(params)
 
         return coords
+
+    def generateStructures(self, params):
+        """Generate structures with the parameters provided. And appends them
+        to self.structures.
+
+        Parameters:
+
+        params: (list of list of floats)
+            A list of coordinates, which in turn consists of N parameters in
+            this order: len(dw) widths, len(dx) compositions len(ddop)*3 doping
+            triplets (zstart, zend, density).
+
+        """
+
+        for par in params:
+            self.structures.append(self.generateStructure(par))
