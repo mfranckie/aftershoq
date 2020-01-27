@@ -27,7 +27,7 @@ with open("README.md", "r") as fh:
 setup(
     name="aftershoq",
     author = "Martin Franckie",
-    version = "1.0",
+    version = "1.0.dev1",
     author_email = "martin.franckie@phys.ethz.ch",
     description = "A Flexible Tool for QCL/QCD Opitmization",
     long_description = long_description,
