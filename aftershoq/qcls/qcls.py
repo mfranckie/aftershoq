@@ -85,6 +85,31 @@ class Fathololoumi2012(Structure):
         vdop = 6e16 # cm^-3
 
         self.addDoping(0, self.layers[idop].width, vdop, idop)
+        
+class Franckie2well366_2019(Structure):
+    '''
+    Optimized two-well design #366 by Franckie 2019
+    '''
+
+    def __init__(self, T = 300):
+        Structure.__init__(self, T = T)
+
+        self.setIFR(0.1, 10)
+        well = GaAs(T = self.TL)
+        barrier = AlGaAs(x = 0.25, T = self.TL)
+
+        self.addLayerWM(3.245, barrier)
+        self.addLayerWM(7.728, well)
+        self.addLayerWM(1.786, barrier)
+        self.addLayerWM(8.352, well)
+        self.addLayerWM(3.0, well) # <----- # 4 doped to 1.5*10^17 cm^-3 (4.5*10^10 cm^-2)
+        self.addLayerWM(4.565, well)
+
+        idop= 4
+        vdop = 1.5e17 # cm^-3
+
+        self.addDoping(0, self.layers[idop].width, vdop, idop)
+
 
 class DupontJAP2012(Structure):
     '''Phonon-photon-phonon 4-well THz QCL published in
