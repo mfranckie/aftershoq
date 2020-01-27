@@ -585,7 +585,7 @@ class Inegf(Interface):
             for folder in dirlist:
                 einspath = os.path.join(path,"eins",folder)
                 if( self.checkWSdens(einspath) ):
-                    with open( os.path.join(einspath,"/gainFGR.dat") ) as f:
+                    with open( os.path.join(einspath,"gainFGR.dat") ) as f:
                         for line in f:
                             linestr = line.split()
                             try:
