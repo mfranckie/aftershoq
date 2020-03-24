@@ -172,3 +172,9 @@ G_del2 = Ec(x_ge_g,y_g,'del2')-Ec(1,y_g)
 print("Grange:",'\t')
 print("CBO L (eV)",G_L)
 print("CBO Del2 (eV)", G_del2)
+
+
+#%% Effective mass tensors
+# Rieger and Vogl
+# Delta 2
+W_delta2_ml = np.asarray([[0.918, 0.0187280], [0.0828210, -0.0003930], []])

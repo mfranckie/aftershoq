@@ -538,8 +538,10 @@ class Material(object):
             return
         #Formulas are for Ge contents
         # Reverse contents for 
-        y = (1-self.substrate.x)
-        x = (1-self.x)
+        #y = (1-self.substrate.x)
+        print('x', 1+self.x)
+       # x = (1-self.x)
+        y=0
         # Interpolated average valence-band edge in eV
         self.params["Ev"] = (0.47 - 0.06*y)*(x-y)
         # Unstrained bandgaps
